@@ -13,7 +13,8 @@ import (
 const usage = `LazaScope command-line tool
 
 Usage:
-  lazascope-cli sign <file>...     Say who signed each file and whether the signature holds
+  lazascope-cli startup [--details]   List everything set to start by itself
+  lazascope-cli sign <file>...        Say who signed each file and whether the signature holds
   lazascope-cli version
 
 Everything is read from this PC. Nothing is changed and nothing is sent anywhere.
@@ -35,6 +36,8 @@ func main() {
 	}
 	var err error
 	switch os.Args[1] {
+	case "startup":
+		err = startupList(flags["--details"])
 	case "sign":
 		err = sign(args)
 	case "version", "--version":
@@ -47,4 +50,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, "lazascope-cli:", err)
 		os.Exit(1)
 	}
+}
+
+// cut shortens text to fit a column.
+func cut(text string, width int) string {
+	runes := []rune(text)
+	if len(runes) <= width {
+		return text
+	}
+	return string(runes[:width-1]) + "~"
 }
