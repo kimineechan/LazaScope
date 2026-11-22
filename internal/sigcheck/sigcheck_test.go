@@ -9,6 +9,8 @@ func TestMaker(t *testing.T) {
 	}{
 		{Result{Status: Signed, Signer: "Example Ltd"}, "Example Ltd"},
 		{Result{Status: Signed}, "Signed"},
+		{Result{Status: Signed, Signer: "EB51A5DA-0E72-4863-82E4-EA21C1F8DFE3"}, "Microsoft Store app"},
+		{Result{Status: Signed, Signer: "EB51A5DA-0E72-4863-82E4-EA21C1F8DFEZ"}, "EB51A5DA-0E72-4863-82E4-EA21C1F8DFEZ"},
 		{Result{Status: Unsigned}, "Not signed"},
 		{Result{Status: Invalid, Signer: "Example Ltd"}, "Signature not valid (Example Ltd)"},
 		{Result{Status: Invalid}, "Signature not valid"},

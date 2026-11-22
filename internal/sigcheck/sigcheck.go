@@ -76,6 +76,9 @@ func (r Result) Maker() string {
 		if r.Signer == "" {
 			return "Signed"
 		}
+		if storeCode(r.Signer) {
+			return "Microsoft Store app"
+		}
 		return r.Signer
 	case Unsigned:
 		return "Not signed"
@@ -86,6 +89,34 @@ func (r Result) Maker() string {
 		return "Signature not valid"
 	}
 	return "Not checked"
+}
+
+// storeCode reports whether a signer's name is one of the codes the
+// Microsoft Store signs apps under. The Store signs each app it hands out
+// itself, and puts the publisher's code, such as
+// EB51A5DA-0E72-4863-82E4-EA21C1F8DFE3, where a name would be.
+func storeCode(signer string) bool {
+	if len(signer) != 36 {
+		return false
+	}
+	for i, r := range signer {
+		switch {
+		case i == 8 || i == 13 || i == 18 || i == 23:
+			if r != '-' {
+				return false
+			}
+		case (r < '0' || r > '9') && (r < 'A' || r > 'F') && (r < 'a' || r > 'f'):
+			return false
+		}
+	}
+	return true
+}
+
+// FromWindows reports whether the file has a valid signature as a part of
+// Windows itself, as opposed to another Microsoft product or a driver from
+// another maker that Microsoft has approved.
+func (r Result) FromWindows() bool {
+	return r.Status == Signed && (r.Signer == "Microsoft Windows" || r.Signer == "Microsoft Windows Publisher")
 }
 
 // FromMicrosoft reports whether the file has a valid signature from

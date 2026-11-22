@@ -308,8 +308,12 @@ func (w World) follow(c *Command, depth int) {
 // the form: library,entry and then anything else.
 func rundllLibrary(arguments string) string {
 	text := strings.TrimSpace(arguments)
-	if text == "" {
-		return ""
+	// rundll32 takes a few switches of its own before the library, such as /d.
+	for len(text) > 1 && (text[0] == '/' || text[0] == '-') {
+		text = dropWord(text)
+	}
+	if text == "" || text[0] == '{' {
+		return "" // nothing, or the number of a Windows component instead of a file
 	}
 	if text[0] == '"' {
 		if end := strings.IndexByte(text[1:], '"'); end >= 0 {

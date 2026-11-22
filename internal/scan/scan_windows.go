@@ -1,17 +1,23 @@
 //go:build windows
 
-// Package scan takes one look at this PC: it runs the collectors, then
-// finds out who made every file they came across.
+// Package scan takes one look at this PC: it runs the collectors, ties
+// what they found together, then finds out who made every file they came
+// across.
 package scan
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"lazascope/internal/files"
 	"lazascope/internal/model"
+	"lazascope/internal/netconn"
 	"lazascope/internal/pcinfo"
+	"lazascope/internal/procs"
+	"lazascope/internal/protect"
+	"lazascope/internal/services"
 	"lazascope/internal/startup"
 )
 
@@ -39,11 +45,51 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	var gaps [4][]model.Gap
 	var work sync.WaitGroup
 	if parts.Startup {
-		work.Go(func() { s.Startup, gaps[0] = startup.Collect(world) })
+		work.Go(func() { s.Startup, gaps[1] = startup.Collect(world) })
+	}
+	if parts.Processes || parts.Connections {
+		// Connections are shown with the program they belong to, so the
+		// list of programs is needed for them too.
+		work.Go(func() { s.Processes, gaps[2] = procs.Collect() })
+	}
+	if parts.Connections {
+		work.Go(func() { s.Connections, gaps[3] = netconn.Collect() })
+	}
+	if parts.Guard {
+		work.Go(func() { s.Guard, gaps[0] = protect.Collect() })
 	}
 	work.Wait()
 	for _, found := range gaps {
 		s.Gaps = append(s.Gaps, found...)
+	}
+
+	// Which services run inside which program.
+	inside := map[uint32][]string{}
+	if parts.Processes || parts.Connections {
+		states, _ := services.List()
+		for _, state := range states {
+			if state.Running && state.PID != 0 && !state.Driver {
+				inside[state.PID] = append(inside[state.PID], state.Name)
+			}
+		}
+	}
+	byPID := map[uint32]*model.Process{}
+	for i := range s.Processes {
+		p := &s.Processes[i]
+		sort.Strings(inside[p.PID])
+		p.Services = inside[p.PID]
+		byPID[p.PID] = p
+	}
+	for i := range s.Connections {
+		c := &s.Connections[i]
+		switch p := byPID[c.PID]; {
+		case p != nil:
+			c.Process, c.File.Path, c.Services = p.Name, p.File.Path, p.Services
+		case c.PID == 0:
+			c.Process = "Windows" // a connection that has closed and is being tidied away
+		default:
+			c.Process = "A program that has closed"
+		}
 	}
 
 	// Every file named so far is now looked at once: does it exist, what
@@ -61,6 +107,9 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	for _, entry := range s.Startup {
 		want(entry.Program.Path)
 		want(entry.Target.Path)
+	}
+	for _, p := range s.Processes {
+		want(p.File.Path)
 	}
 	note(fmt.Sprintf("Checking who made %d files...", len(paths)))
 	queue := make(chan string)
@@ -80,6 +129,15 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	for i := range s.Startup {
 		s.Startup[i].Program = library.Look(s.Startup[i].Program.Path)
 		s.Startup[i].Target = library.Look(s.Startup[i].Target.Path)
+	}
+	for i := range s.Processes {
+		s.Processes[i].File = library.Look(s.Processes[i].File.Path)
+	}
+	for i := range s.Connections {
+		s.Connections[i].File = library.Look(s.Connections[i].File.Path)
+	}
+	if !parts.Processes {
+		s.Processes = nil // they were only gathered to name the connections
 	}
 	s.Took = time.Since(began)
 	return s

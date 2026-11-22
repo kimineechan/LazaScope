@@ -14,6 +14,9 @@ const usage = `LazaScope command-line tool
 
 Usage:
   lazascope-cli startup [--details]   List everything set to start by itself
+  lazascope-cli running [--details]   List the running programs as a family tree
+  lazascope-cli network               List the connections and the ports programs wait on
+  lazascope-cli protection            Show how the PC is protected and who can get into it
   lazascope-cli sign <file>...        Say who signed each file and whether the signature holds
   lazascope-cli version
 
@@ -38,6 +41,12 @@ func main() {
 	switch os.Args[1] {
 	case "startup":
 		err = startupList(flags["--details"])
+	case "running":
+		err = runningList(flags["--details"])
+	case "network":
+		err = networkList()
+	case "protection":
+		err = protectionList()
 	case "sign":
 		err = sign(args)
 	case "version", "--version":
