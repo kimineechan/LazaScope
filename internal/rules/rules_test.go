@@ -45,8 +45,12 @@ func untrusted(path string) model.File {
 	return model.File{Path: path, Exists: true, Program: true, Signature: sigcheck.Result{Status: sigcheck.Invalid, Signer: "Somebody", Code: 0x800B0109, Problem: "It was signed with a certificate that Windows does not trust."}}
 }
 
+// script is a file that is there and is not a program: a script, or a
+// document.
 func script(path string) model.File  { return model.File{Path: path, Exists: true} }
 func missing(path string) model.File { return model.File{Path: path} }
+
+const startupFolder = `C:\Users\sam\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
 
 // entry is a start-up entry that runs one file directly.
 func entry(kind model.StartupKind, name string, file model.File) model.Startup {
@@ -208,6 +212,22 @@ var changes = []change{
 		"startup-user-folder:medium"},
 	{"a service runs a signed program from a user's folder", add(entry(model.Service, "Thing", signed(`C:\Users\sam\AppData\Local\Thing\svc.exe`, "Thing Ltd"))), "startup-user-folder:medium"},
 	{"a task in a user's temporary folder is said once, by the rule for those", add(entry(model.ScheduledTask, `\Tmp`, signed(`C:\Users\sam\AppData\Local\Temp\t.exe`, "Thing Ltd"))), "startup-temp-folder:medium"},
+
+	// Starts with Windows: scripts.
+	{"a batch file in the Startup folder", add(entry(model.StartupFolder, "open.cmd", script(startupFolder+`\open.cmd`))), "startup-script:medium"},
+	{"the same batch file, switched off in Task Manager", add(off(entry(model.StartupFolder, "open.cmd", script(startupFolder+`\open.cmd`)))), ""},
+	{"a shortcut in the Startup folder to a script in Documents", add(entry(model.StartupFolder, "Backup.lnk", script(`C:\Users\sam\Documents\backup.ps1`))), "startup-script:medium"},
+	{"wscript is handed a script kept in ProgramData at sign-in", add(through(model.RunKey, "Upd", `wscript.exe //B "C:\ProgramData\upd\run.vbs"`, windows(`C:\Windows\System32\wscript.exe`), script(`C:\ProgramData\upd\run.vbs`))), "startup-script:medium"},
+	{"wscript is handed a script under a name that hides what it is", add(through(model.RunKey, "Data", `wscript.exe //E:vbscript C:\ProgramData\data.dat`, windows(`C:\Windows\System32\wscript.exe`), script(`C:\ProgramData\data.dat`))), "startup-script:medium"},
+	{"an encoded script starts at sign-in", add(through(model.RunKey, "Svc", `wscript.exe "C:\Users\sam\AppData\Roaming\svc.vbe"`, windows(`C:\Windows\System32\wscript.exe`), script(`C:\Users\sam\AppData\Roaming\svc.vbe`))), "startup-script:high"},
+	{"a script in Downloads is set to run once at the next sign-in", add(entry(model.RunOnceKey, "Finish", script(`C:\Users\sam\Downloads\finish.bat`))), "startup-script:medium startup-temp-folder:medium"},
+	{"a task runs a script kept in ProgramData", add(through(model.ScheduledTask, `\Upkeep`, `powershell.exe -File C:\ProgramData\Upkeep\tidy.ps1`, windows(powershell), script(`C:\ProgramData\Upkeep\tidy.ps1`))), "startup-script:low"},
+	{"a task runs an encoded script kept in ProgramData", add(through(model.ScheduledTask, `\Upkeep`, `wscript.exe C:\ProgramData\Upkeep\tidy.jse`, windows(`C:\Windows\System32\wscript.exe`), script(`C:\ProgramData\Upkeep\tidy.jse`))), "startup-script:high"},
+	{"one of Windows' own tasks runs a script kept in the Windows folder", add(entry(model.ScheduledTask, `\Microsoft\Windows\NetTrace\GatherNetworkInfo`, script(`C:\Windows\System32\gatherNetworkInfo.vbs`))), ""},
+	{"a script its maker installed in Program Files (x86)", add(through(model.RunKey, "Tray", `wscript.exe "C:\Program Files (x86)\Printer\tray.vbs"`, windows(`C:\Windows\System32\wscript.exe`), script(`C:\Program Files (x86)\Printer\tray.vbs`))), ""},
+	{"a document opens at sign-in", add(entry(model.StartupFolder, "todo.txt", script(startupFolder+`\todo.txt`))), ""},
+	{"cmd opens a document at sign-in", add(through(model.RunKey, "Todo", `cmd.exe /c start "" "C:\Users\sam\Documents\todo.txt"`, windows(`C:\Windows\System32\cmd.exe`), script(`C:\Users\sam\Documents\todo.txt`))), ""},
+	{"a script that is named and is not there", add(through(model.RunKey, "Gone", `wscript.exe "C:\ProgramData\upd\gone.vbs"`, windows(`C:\Windows\System32\wscript.exe`), missing(`C:\ProgramData\upd\gone.vbs`))), "startup-missing-file:low"},
 
 	// Starts with Windows: leftovers.
 	{"an entry whose file is gone", add(entry(model.RunKey, "Old", missing(`C:\Program Files\Old\old.exe`))), "startup-missing-file:low"},

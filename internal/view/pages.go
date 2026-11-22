@@ -49,7 +49,10 @@ func file(lines []Line, f model.File) []Line {
 	case !f.Exists:
 		return append(lines, Line{Text, "There is no file at that place."})
 	case !f.Program:
-		return append(lines, Line{Text, "This is a script or a document, not a program, so it carries no maker's signature."})
+		if rules.Script(f.Path) {
+			return append(lines, Line{Text, "This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one."})
+		}
+		return append(lines, Line{Text, "This is not a program file, so there is no maker's signature to check."})
 	}
 	lines = fact(lines, "Signature", rules.Signature(f))
 	lines = fact(lines, "The file says it is", rules.Claim(f))
@@ -82,6 +85,8 @@ func (b *builder) startup() Page {
 		}
 		if works.Path == "" {
 			maker = "No file named"
+		} else if works.Exists && !works.Program && rules.Script(works.Path) {
+			maker = "Script file"
 		}
 		row.Cells = []string{check, e.Shown(), e.Kind.String(), maker, works.Path}
 

@@ -265,8 +265,10 @@ var startupRules = []Rule{
 					continue
 				}
 				what := "The file is not signed by a known maker."
-				if !works.Program {
-					what = "The file is a script, and a script cannot carry a maker's signature."
+				if runsScript(e) {
+					what = "The file is a script: a text file of commands, which almost never carries a maker's signature."
+				} else if !works.Program {
+					what = "The file is not a program, so there is no maker's signature to check."
 				} else if works.Signature.Trusted() {
 					what = "The file is signed by " + works.Signature.Maker() + "."
 				}
@@ -301,6 +303,61 @@ var startupRules = []Rule{
 		},
 	},
 	{
+		ID: "startup-script", Area: model.StartsWithWindows, Severity: Medium,
+		Title: "Starts a script by itself",
+		Why:   "A script is a text file of commands that a scripting tool carries out. Scripts are easy to write, almost never carry a maker's signature, and can be rewritten by anything able to change the file. People use them to open their own things at sign-in, and unwanted software uses them to keep itself going. Scripts kept in the Windows folder or Program Files, where only an administrator can change them, are left out. A script run by a scheduled task or a service is only good to know, because administrators and PC makers set those up for upkeep.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
+				if !e.Enabled || !runsScript(e) {
+					continue
+				}
+				works := e.Works()
+				if Protected(works.Path, s.Folders) {
+					continue
+				}
+				upkeep := e.Kind == model.ScheduledTask || e.Kind == model.Service
+				switch {
+				case upkeep && UserFolder(works.Path, s.Folders):
+					continue // said already, by the rule for tasks and services that run from a user's folder
+				case !upkeep && e.Kind != model.RunKey && e.Kind != model.RunOnceKey && e.Kind != model.StartupFolder:
+					continue // the sign-in settings and the like have rules of their own
+				}
+				what := "This entry"
+				if upkeep {
+					what = "This " + strings.ToLower(e.Kind.String())
+				}
+				reason := what + " runs the script " + works.Path
+				if e.Program.Path != "" && !winpath.Same(e.Program.Path, works.Path) {
+					reason += ", through " + winpath.Base(e.Program.Path)
+				}
+				reason += ". A script is a text file of commands. Unlike a program it almost never carries a maker's signature, so nothing shows who wrote it or whether it has been changed since."
+				if UserFolder(works.Path, s.Folders) {
+					reason += " This one is in a user's own folder, where any program that user runs can rewrite it."
+				} else {
+					reason += " This one is kept outside the Windows and Program Files folders, where installed software normally lives."
+				}
+				severity := r.Severity
+				advice := "If you wrote this script or set it up yourself, nothing needs doing. If you did not, read it before anything else: open Notepad, then drag the file into its window. Do not double-click the file, because that runs it. "
+				switch {
+				case EncodedScript(works.Path):
+					severity = High
+					reason += " Its name says it is an encoded script, saved in a scrambled form so that it cannot be read. Honest scripts are rarely hidden like that."
+					advice = "Unless you set this up yourself, show it to someone who knows Windows well. Do not double-click the file, because that runs it. "
+				case upkeep:
+					severity = Low
+					reason += " Administrators and PC makers set up scripts like this for upkeep, so it is only good to know, unless you do not recognise it."
+				default:
+					reason += " People set scripts like this up themselves, to open things when they sign in. Unwanted software uses them too, because they are easy to make and easy to overlook."
+				}
+				f := r.find(e.Shown(), reason, advice+stop(e.Kind), about(e)...)
+				f.Severity = severity
+				found = append(found, f)
+			}
+			return
+		},
+	},
+	{
 		ID: "startup-missing-file", Area: model.StartsWithWindows, Severity: Low,
 		Title: "Points at a file that is no longer there",
 		Why:   "When a program is removed, the entry that started it is sometimes left behind. It does nothing, because there is nothing to start. It is worth tidying, and worth knowing about in case the file comes back.",
@@ -323,6 +380,27 @@ var startupRules = []Rule{
 			return
 		},
 	},
+}
+
+// runsScript reports whether the file an entry works with is a script: one
+// by its name, or any file that is not a program and is handed to a tool
+// that treats whatever it is given as a script.
+func runsScript(e model.Startup) bool {
+	works := e.Works()
+	if !works.Exists || works.Program {
+		return false
+	}
+	if Script(works.Path) {
+		return true
+	}
+	if e.Target.Path == "" || winpath.Same(e.Target.Path, e.Program.Path) {
+		return false
+	}
+	switch winpath.Stem(e.Program.Path) {
+	case "wscript", "cscript", "mshta":
+		return true
+	}
+	return false
 }
 
 // distinct returns the files an entry involves, each once: the program it

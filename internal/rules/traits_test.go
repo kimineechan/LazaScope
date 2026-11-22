@@ -231,3 +231,64 @@ func TestHidden(t *testing.T) {
 		t.Error("only scripting tools are judged")
 	}
 }
+
+func TestScript(t *testing.T) {
+	for path, want := range map[string]bool{
+		`C:\Users\sam\run.bat`:            true,
+		`C:\Users\sam\RUN.CMD`:            true, // the ending counts whatever its case
+		`C:\ProgramData\x\start.vbs`:      true,
+		`C:\ProgramData\x\job.ps1`:        true,
+		`C:\ProgramData\x\page.hta`:       true,
+		`C:\Users\sam\Documents\sync.mjs`: true,
+		`C:\Users\sam\keys.ahk`:           true,
+		`C:\Users\sam\notes.txt`:          false,
+		`C:\Users\sam\tool.exe`:           false,
+		`C:\Users\sam\library.dll`:        false,
+		`C:\Users\sam\setup.msi`:          false,
+		`C:\Users\sam\noending`:           false,
+		`C:\Users\sam\folder.bat\tool`:    false, // the ending of a folder is not the file's
+		``:                                false,
+	} {
+		if got := Script(path); got != want {
+			t.Errorf("Script(%q) = %v, want %v", path, got, want)
+		}
+	}
+	for path, want := range map[string]bool{
+		`C:\Users\sam\svc.vbe`: true,
+		`C:\Users\sam\svc.JSE`: true,
+		`C:\Users\sam\svc.vbs`: false,
+		`C:\Users\sam\svc.js`:  false,
+		`C:\Users\sam\svc.exe`: false,
+	} {
+		if got := EncodedScript(path); got != want {
+			t.Errorf("EncodedScript(%q) = %v, want %v", path, got, want)
+		}
+		if want && !Script(path) {
+			t.Errorf("%q is an encoded script and is not counted as a script", path)
+		}
+	}
+}
+
+func TestProtected(t *testing.T) {
+	for path, want := range map[string]bool{
+		`C:\Windows\System32\gatherNetworkInfo.vbs`: true,
+		`C:\Program Files\Notes\tidy.ps1`:           true,
+		`C:\Program Files (x86)\Printer\tray.vbs`:   true,
+		`C:\Windows\Temp\run.bat`:                   false, // a corner of Windows anyone can write to
+		`C:\Windows\Tasks\run.bat`:                  false,
+		`C:\ProgramData\upd\run.vbs`:                false,
+		`C:\Users\sam\AppData\Roaming\run.vbs`:      false,
+		`C:\Program Files Extra\run.bat`:            false, // only looks like Program Files
+		`C:\Scripts\login.bat`:                      false,
+		`D:\Program Files\App\run.bat`:              false, // a folder of that name on another disk is not the protected one
+		``:                                          false,
+	} {
+		if got := Protected(path, folders); got != want {
+			t.Errorf("Protected(%q) = %v, want %v", path, got, want)
+		}
+	}
+	// With nothing known about the PC, nothing is taken to be protected.
+	if Protected(`C:\Program Files\App\run.bat`, model.Folders{}) {
+		t.Error("a file was taken to be protected on a PC whose folders are not known")
+	}
+}

@@ -356,6 +356,35 @@ func TestSmallWords(t *testing.T) {
 	}
 }
 
+// A script is not a program, and the lists say which of the two a file is.
+func TestScriptsAndDocuments(t *testing.T) {
+	const folder = `C:\Users\sam\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
+	s := pc()
+	s.Startup = append(s.Startup,
+		entry(model.StartupFolder, "open.cmd", model.File{Path: folder + `\open.cmd`, Exists: true}),
+		entry(model.StartupFolder, "todo.txt", model.File{Path: folder + `\todo.txt`, Exists: true}))
+	book := build(s)
+	script := find(t, book.Startup, "open.cmd")
+	if script.Level != Look || script.Cells[0] != "Worth a look" || script.Cells[3] != "Script file" || script.Windows {
+		t.Errorf("a batch file in the Startup folder: %q, level %v", script.Cells, script.Level)
+	}
+	for _, want := range []string{"Worth a look: Starts a script by itself", "This is a script: a text file of commands, not a program.", "open Notepad, then drag the file into its window"} {
+		if !strings.Contains(words(script.Detail), want) {
+			t.Errorf("the batch file's detail lacks %q:\n%s", want, words(script.Detail))
+		}
+	}
+	document := find(t, book.Startup, "todo.txt")
+	if document.Level != Plain || document.Cells[0] != "" || document.Cells[3] != "Not a program file" {
+		t.Errorf("a text file in the Startup folder: %q, level %v", document.Cells, document.Level)
+	}
+	if !strings.Contains(words(document.Detail), "This is not a program file, so there is no maker's signature to check.") {
+		t.Errorf("the text file's detail:\n%s", words(document.Detail))
+	}
+	if len(book.Findings) != 1 || book.Findings[0].Rule != "startup-script" {
+		t.Errorf("findings: %+v", book.Findings)
+	}
+}
+
 // Which files count as parts of Windows decides what the lists show first.
 func TestPartOfWindows(t *testing.T) {
 	folders := pc().Folders

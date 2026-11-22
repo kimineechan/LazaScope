@@ -2,16 +2,18 @@
 
 // verify proves on a real PC that LazaScope notices what it should.
 //
-// It plants a handful of harmless things that look suspicious, takes a
-// look, checks that every one of them was flagged for the right reason,
-// then removes them all and checks that none is left.
+// It plants eleven harmless things: ten that look suspicious, and one that
+// does not. It takes a look, checks that each of the ten was listed and
+// flagged for the right reason and that the eleventh was listed and left
+// alone, then removes them all and checks that none is left.
 //
 // Everything it plants belongs to the account that runs it: lines in that
-// account's own Run list, files in its own temporary and Downloads folders,
-// a shortcut in its own Startup folder and one program of its own. Nothing
-// for the whole PC is touched, and no administrator rights are needed. The
-// planted files are copies of Notepad and of the Command Prompt, and of
-// this program itself, which does nothing when started from where it was
+// account's own Run and RunOnce lists, files in its own temporary and
+// Downloads folders, a shortcut and a batch file in its own Startup folder,
+// and two programs of its own that wait and do nothing. Nothing for the
+// whole PC is touched, and no administrator rights are needed. The planted
+// files are copies of Notepad and of the Command Prompt, and of this
+// program itself, which does nothing when started from where it was
 // planted.
 //
 // LazaScope itself never writes anything. The writing is all here.
@@ -31,6 +33,7 @@ import (
 	"unsafe"
 
 	"lazascope/internal/com"
+	"lazascope/internal/model"
 	"lazascope/internal/pcinfo"
 	"lazascope/internal/rules"
 	"lazascope/internal/scan"
@@ -42,7 +45,10 @@ import (
 // nothing else is ever removed.
 const mark = "LazaScope planted"
 
-const runList = `Software\Microsoft\Windows\CurrentVersion\Run`
+const (
+	runList     = `Software\Microsoft\Windows\CurrentVersion\Run`
+	runOnceList = `Software\Microsoft\Windows\CurrentVersion\RunOnce`
+)
 
 var (
 	advapi32    = sysdll.Load("advapi32.dll")
@@ -51,25 +57,35 @@ var (
 	deleteValue = advapi32.NewProc("RegDeleteValueW")
 )
 
+// The lines planted in the Run list, by the end of their names.
+var runLines = []string{" disguise", " lookalike", " download", " leftover", " scramble", " plain"}
+
 // plant is one planted thing and what must be said about it.
 type plant struct {
-	what    string   // what it is, in plain words
-	subject string   // the name it goes by in LazaScope's findings
-	rules   []string // the rules that must flag it
+	what    string            // what it is, in plain words
+	subject string            // the name it goes by in LazaScope's lists and findings
+	kind    model.StartupKind // the kind of start-up entry it must be listed as
+	running bool              // it is a running program, not a start-up entry
+	file    string            // the file LazaScope must name as doing the work, or "" when there is none to name
+	rules   []string          // the rules that must flag it; none means it must be left alone
 }
 
-// places are the folders the planted files go in.
+// places are the folders the planted things go in.
 type places struct {
 	temp, downloads, startup, system string
 }
 
 func (p places) shortcut() string { return filepath.Join(p.startup, mark+" shortcut.lnk") }
+func (p places) note() string     { return filepath.Join(p.startup, mark+" note.cmd") }
 
 func main() {
 	self, _ := os.Executable()
 	// A copy of this program is one of the planted files. Started from
-	// there, it must do nothing at all.
+	// there it must do nothing at all: it waits when told to, and ends.
 	if strings.Contains(self, mark) {
+		if len(os.Args) > 1 && os.Args[1] == "--wait" {
+			io.Copy(io.Discard, os.Stdin)
+		}
 		return
 	}
 	if err := run(self); err != nil {
@@ -110,7 +126,8 @@ func run(self string) error {
 	if err != nil {
 		return fmt.Errorf("a harmless item could not be planted: %w", err)
 	}
-	fmt.Printf("Planted %d harmless items in this account's own Run list and folders.\n", len(plants))
+	before := present(p)
+	fmt.Printf("Planted %d harmless items in this account's own Run lists and folders.\n", len(plants))
 
 	s := scan.Run(scan.Everything, nil)
 	findings := rules.Check(s)
@@ -120,29 +137,44 @@ func run(self string) error {
 		return errors.New("the look came back nearly empty, so the collectors are not working")
 	}
 	// Looking must not have changed what was planted.
-	if still, _ := planted(p); still != len(plants) {
-		return fmt.Errorf("after the look, %d of the %d planted items are still there: looking changed something", still, len(plants))
+	if after := present(p); strings.Join(after, "|") != strings.Join(before, "|") {
+		return fmt.Errorf("before the look %d planted things were there, after it %d: looking changed something", len(before), len(after))
 	}
 
 	missed := 0
+	fail := func(format string, values ...any) {
+		missed++
+		fmt.Printf("    "+format+"\n", values...)
+	}
 	for _, item := range plants {
 		fmt.Println(item.what)
+		// First, is it in the list at all, as the right kind of thing and
+		// with the right file?
+		switch where, file, found := listed(s, item); {
+		case !found:
+			fail("NOT LISTED")
+		case item.file != "" && !strings.EqualFold(file, item.file):
+			fail("LISTED WITH THE WRONG FILE: %s, want %s", file, item.file)
+		default:
+			fmt.Printf("    listed under %s\n", where)
+		}
+		// Then, what was said about it.
 		for _, rule := range item.rules {
-			title, ok := flagged(findings, item.subject, rule)
-			if !ok {
-				missed++
-				fmt.Printf("    NOT FLAGGED by the rule %s\n", rule)
-				continue
+			if title, ok := flagged(findings, item.subject, rule); ok {
+				fmt.Printf("    flagged: %s\n", title)
+			} else {
+				fail("NOT FLAGGED by the rule %s", rule)
 			}
-			fmt.Printf("    flagged: %s\n", title)
+		}
+		if len(item.rules) == 0 {
+			fmt.Println("    left alone, as it should be")
 		}
 	}
-	// Whatever else was flagged with the planted name would be a rule
-	// firing where it should not.
+	// Anything else said about a planted thing would be a rule firing where
+	// it should not.
 	for _, f := range findings {
-		if strings.Contains(f.Subject, mark) && !expected(plants, f) {
-			missed++
-			fmt.Printf("UNEXPECTED: %s was also flagged by %s\n", f.Subject, f.Rule)
+		if planted(plants, f.Subject) && !expected(plants, f) {
+			fail("UNEXPECTED: %s was also flagged by %s", f.Subject, f.Rule)
 		}
 	}
 
@@ -150,15 +182,15 @@ func run(self string) error {
 	if err := remove(p); err != nil {
 		return fmt.Errorf("a planted item could not be removed: %w", err)
 	}
-	if left, where := planted(p); left != 0 {
-		return fmt.Errorf("%d planted items are still there after removal, for example %s", left, where)
+	if left := present(p); len(left) != 0 {
+		return fmt.Errorf("%d planted things are still there after removal, for example %s", len(left), left[0])
 	}
 	fmt.Println()
 	fmt.Println("Removed every planted item and checked that none is left.")
 	if missed > 0 {
 		return fmt.Errorf("%d checks did not come out as they should", missed)
 	}
-	fmt.Printf("All %d planted items were flagged for the right reasons.\n", len(plants))
+	fmt.Printf("All %d planted items came out as they should.\n", len(plants))
 	return nil
 }
 
@@ -178,6 +210,25 @@ func signatures(self string) error {
 	return nil
 }
 
+// listed looks for a planted thing in what LazaScope read, and returns
+// where it was found and the file LazaScope names for it.
+func listed(s *model.Snapshot, item plant) (where, file string, found bool) {
+	if item.running {
+		for _, p := range s.Processes {
+			if strings.EqualFold(p.Name, item.subject) && strings.Contains(p.File.Path, mark) {
+				return "running programs", p.File.Path, true
+			}
+		}
+		return "", "", false
+	}
+	for _, e := range s.Startup {
+		if e.Kind == item.kind && e.Shown() == item.subject && e.Enabled {
+			return e.Kind.String(), e.Works().Path, true
+		}
+	}
+	return "", "", false
+}
+
 func flagged(findings []rules.Finding, subject, rule string) (title string, ok bool) {
 	for _, f := range findings {
 		if f.Subject == subject && f.Rule == rule {
@@ -185,6 +236,15 @@ func flagged(findings []rules.Finding, subject, rule string) (title string, ok b
 		}
 	}
 	return "", false
+}
+
+func planted(plants []plant, subject string) bool {
+	for _, item := range plants {
+		if item.subject == subject {
+			return true
+		}
+	}
+	return false
 }
 
 func expected(plants []plant, f rules.Finding) bool {
@@ -201,9 +261,44 @@ func expected(plants []plant, f rules.Finding) bool {
 	return false
 }
 
-// put plants everything. stop ends the one planted program that runs.
+// wait starts a planted program that does nothing but wait, with no window,
+// and returns the way to end it.
+func wait(program string, arguments ...string) (stop func(), err error) {
+	waiting := exec.Command(program, arguments...)
+	waiting.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	input, err := waiting.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+	if err := waiting.Start(); err != nil {
+		return nil, err
+	}
+	return func() {
+		io.WriteString(input, "\r\n")
+		input.Close()
+		done := make(chan struct{})
+		go func() { waiting.Wait(); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			waiting.Process.Kill()
+			<-done
+		}
+	}, nil
+}
+
+// put plants everything. stop ends the two planted programs that run.
 func put(p places, self string) (plants []plant, stop func(), err error) {
-	stop = func() {}
+	var stops []func()
+	stopped := false
+	stop = func() {
+		if !stopped {
+			stopped = true
+			for _, end := range stops {
+				end()
+			}
+		}
+	}
 	for _, folder := range []string{p.temp, p.downloads} {
 		if err := os.MkdirAll(folder, 0o700); err != nil {
 			return nil, stop, err
@@ -224,91 +319,114 @@ func put(p places, self string) (plants []plant, stop func(), err error) {
 		{mark + " download", `"` + download + `" --idle`},
 		{mark + " leftover", `"` + gone + `" /tray`},
 		{mark + " scramble", `cmd.exe /c echo %COMSPEC:~0,1%`},
+		// The one that must stay quiet: a part of Windows, started from where
+		// Windows keeps it.
+		{mark + " plain", `"` + notepad + `"`},
 	} {
-		if err := setRun(line[0], line[1]); err != nil {
+		if err := setValueIn(runList, line[0], line[1]); err != nil {
 			return nil, stop, err
 		}
+	}
+	if err := setValueIn(runOnceList, mark+" once", `"`+download+`" --idle`); err != nil {
+		return nil, stop, err
 	}
 	if err := makeShortcut(p.shortcut(), download, "--idle"); err != nil {
 		return nil, stop, err
 	}
-	// One planted program is started, to be seen running: the copy of the
-	// Command Prompt, told to wait. It shows no window and ends when told.
-	waiting := exec.Command(running, "/c", "pause")
-	waiting.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
-	input, err := waiting.StdinPipe()
-	if err != nil {
+	// A batch file that does nothing. A script that starts by itself is
+	// worth a look whatever is in it, because nothing shows who wrote it.
+	if err := os.WriteFile(p.note(), []byte("@rem "+mark+": a harmless test item. It does nothing and is safe to delete.\r\n"), 0o600); err != nil {
 		return nil, stop, err
 	}
-	if err := waiting.Start(); err != nil {
-		return nil, stop, err
-	}
-	stopped := false
-	stop = func() {
-		if stopped {
-			return
+	// Two planted programs are started, to be seen running. Both show no
+	// window, do nothing, and end when told: a copy of the Command Prompt
+	// told to wait, and the unsigned program from Downloads.
+	for _, program := range [][]string{{running, "/c", "pause"}, {download, "--wait"}} {
+		end, err := wait(program[0], program[1:]...)
+		if err != nil {
+			return nil, stop, err
 		}
-		stopped = true
-		io.WriteString(input, "\r\n")
-		input.Close()
-		done := make(chan struct{})
-		go func() { waiting.Wait(); close(done) }()
-		select {
-		case <-done:
-		case <-time.After(3 * time.Second):
-			waiting.Process.Kill()
-			<-done
-		}
+		stops = append(stops, end)
 	}
-	time.Sleep(300 * time.Millisecond) // let it get going before the look
+	time.Sleep(300 * time.Millisecond) // let them get going before the look
 
 	return []plant{
-		{"A copy of Notepad named svchost.exe in the temporary folder, set to start at sign-in", mark + " disguise", []string{"startup-system-name", "startup-temp-folder"}},
-		{"A copy of Notepad named scvhost.exe, one slip from svchost, set to start at sign-in", mark + " lookalike", []string{"startup-system-name", "startup-temp-folder"}},
-		{"An unsigned program in the Downloads folder, set to start at sign-in", mark + " download", []string{"startup-temp-folder", "startup-unsigned"}},
-		{"A start-up line that points at a file that is not there", mark + " leftover", []string{"startup-missing-file"}},
-		{"A start-up line that runs the Command Prompt with its words broken up", mark + " scramble", []string{"startup-scrambled-command"}},
-		{"A shortcut in the Startup folder to the unsigned program in Downloads", mark + " shortcut.lnk", []string{"startup-temp-folder", "startup-unsigned"}},
-		{"A copy of the Command Prompt named lsass.exe, running from the temporary folder", "lsass.exe", []string{"running-system-name", "running-temp-folder"}},
+		{what: "A copy of Notepad named svchost.exe in the temporary folder, set to start at sign-in",
+			subject: mark + " disguise", kind: model.RunKey, file: disguise, rules: []string{"startup-system-name", "startup-temp-folder"}},
+		{what: "A copy of Notepad named scvhost.exe, one slip from svchost, set to start at sign-in",
+			subject: mark + " lookalike", kind: model.RunKey, file: lookalike, rules: []string{"startup-system-name", "startup-temp-folder"}},
+		{what: "An unsigned program in the Downloads folder, set to start at sign-in",
+			subject: mark + " download", kind: model.RunKey, file: download, rules: []string{"startup-temp-folder", "startup-unsigned"}},
+		{what: "The same program, set to start once at the next sign-in",
+			subject: mark + " once", kind: model.RunOnceKey, file: download, rules: []string{"startup-temp-folder", "startup-unsigned"}},
+		{what: "A start-up line that points at a file that is not there",
+			subject: mark + " leftover", kind: model.RunKey, file: gone, rules: []string{"startup-missing-file"}},
+		{what: "A start-up line that runs the Command Prompt with its words broken up",
+			subject: mark + " scramble", kind: model.RunKey, file: prompt, rules: []string{"startup-scrambled-command"}},
+		{what: "A shortcut in the Startup folder to the unsigned program in Downloads",
+			subject: mark + " shortcut.lnk", kind: model.StartupFolder, file: download, rules: []string{"startup-temp-folder", "startup-unsigned"}},
+		{what: "A batch file in the Startup folder",
+			subject: mark + " note.cmd", kind: model.StartupFolder, file: p.note(), rules: []string{"startup-script"}},
+		{what: "A start-up line for the real Notepad, in the Windows folder",
+			subject: mark + " plain", kind: model.RunKey, file: notepad},
+		{what: "A copy of the Command Prompt named lsass.exe, running from the temporary folder",
+			subject: "lsass.exe", running: true, file: running, rules: []string{"running-system-name", "running-temp-folder"}},
+		{what: "The unsigned program, running from the Downloads folder",
+			subject: "freebie.exe", running: true, file: download, rules: []string{"running-temp-folder"}},
 	}, stop, nil
 }
 
-// planted counts what is there of the planted things, and names one.
-func planted(p places) (count int, example string) {
-	note := func(where string) {
-		count++
-		example = where
-	}
-	if key, err := openRun(); err == nil {
-		defer syscall.RegCloseKey(key)
-		for _, name := range []string{" disguise", " lookalike", " download", " leftover", " scramble"} {
+// present lists what is there of the planted things: every line, every
+// file, the shortcut and the batch file.
+func present(p places) []string {
+	var found []string
+	for list, names := range map[string][]string{runList: runLines, runOnceList: {" once"}} {
+		key, err := open(list)
+		if err != nil {
+			continue
+		}
+		for _, name := range names {
 			wide, _ := syscall.UTF16PtrFromString(mark + name)
 			if syscall.RegQueryValueEx(key, wide, nil, nil, nil, nil) == nil {
-				note("the Run line " + mark + name)
+				found = append(found, "the line "+mark+name)
 			}
 		}
+		syscall.RegCloseKey(key)
 	}
-	if _, err := os.Stat(p.shortcut()); err == nil {
-		note(p.shortcut())
+	for _, path := range []string{p.shortcut(), p.note(), filepath.Join(p.temp, "svchost.exe"), filepath.Join(p.temp, "scvhost.exe"), filepath.Join(p.temp, "lsass.exe"), filepath.Join(p.downloads, "freebie.exe")} {
+		if _, err := os.Stat(path); err == nil {
+			found = append(found, path)
+		}
 	}
-	// The program that runs counts as one with the folder it runs from.
-	if _, err := os.Stat(filepath.Join(p.temp, "lsass.exe")); err == nil {
-		note(filepath.Join(p.temp, "lsass.exe"))
+	for _, folder := range []string{p.temp, p.downloads} {
+		if _, err := os.Stat(folder); err == nil {
+			found = append(found, folder)
+		}
 	}
-	return count, example
+	return found
 }
 
 // remove takes away everything put could have planted, and nothing else.
 func remove(p places) error {
-	if key, err := openRun(); err == nil {
-		for _, name := range []string{" disguise", " lookalike", " download", " leftover", " scramble"} {
+	for list, names := range map[string][]string{runList: runLines, runOnceList: {" once"}} {
+		key, err := open(list)
+		if err != nil {
+			continue
+		}
+		for _, name := range names {
 			wide, _ := syscall.UTF16PtrFromString(mark + name)
 			deleteValue.Call(uintptr(key), uintptr(unsafe.Pointer(wide)))
 		}
 		syscall.RegCloseKey(key)
 	}
-	if err := os.Remove(p.shortcut()); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
+	for _, path := range []string{p.shortcut(), p.note()} {
+		// Only a file with the planted name is ever removed.
+		if !strings.HasPrefix(filepath.Base(path), mark) {
+			return fmt.Errorf("refusing to remove %s", path)
+		}
+		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
 	}
 	for _, folder := range []string{p.temp, p.downloads} {
 		// Only a folder with the planted name is ever removed.
@@ -316,7 +434,7 @@ func remove(p places) error {
 			return fmt.Errorf("refusing to remove %s", folder)
 		}
 		var err error
-		for range 10 {
+		for range 15 {
 			if err = os.RemoveAll(folder); err == nil {
 				break
 			}
@@ -329,10 +447,10 @@ func remove(p places) error {
 	return nil
 }
 
-// openRun opens this account's Run list for writing, making it if this
-// account has never had one.
-func openRun() (syscall.Handle, error) {
-	path, _ := syscall.UTF16PtrFromString(runList)
+// open opens one of this account's own start-up lists for writing, making
+// it if this account has never had one.
+func open(list string) (syscall.Handle, error) {
+	path, _ := syscall.UTF16PtrFromString(list)
 	const query, set = 0x1, 0x2
 	var key syscall.Handle
 	if r, _, _ := createKey.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(path)), 0, 0, 0, query|set, 0, uintptr(unsafe.Pointer(&key)), 0); r != 0 {
@@ -341,8 +459,8 @@ func openRun() (syscall.Handle, error) {
 	return key, nil
 }
 
-func setRun(name, command string) error {
-	key, err := openRun()
+func setValueIn(list, name, command string) error {
+	key, err := open(list)
 	if err != nil {
 		return err
 	}
