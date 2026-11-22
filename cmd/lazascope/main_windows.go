@@ -113,7 +113,7 @@ func (l *list) fill() {
 	// The running programs are set in from the left to show what started
 	// what. With some of them left out that would mislead, so a narrowed
 	// list is flat.
-	flat := len(l.shown) == 0 && l.choice != nil && l.choice.Chosen() > 0
+	flat := l.choice != nil && l.choice.Chosen() > 0
 	for _, row := range l.page.Rows {
 		if keep(row) {
 			l.shown = append(l.shown, row)
