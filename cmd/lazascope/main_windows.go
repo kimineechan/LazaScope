@@ -56,7 +56,11 @@ func everything(view.Row) bool { return true }
 func flagged(row view.Row) bool {
 	return row.Level == view.Look || row.Level == view.First || row.Level == view.Info
 }
-func notWindows(row view.Row) bool { return !row.Windows }
+
+// notWindows leaves out the parts of Windows itself, which are most of
+// every list. A part of Windows that a rule flagged is kept: a filter must
+// never hide a finding.
+func notWindows(row view.Row) bool { return !row.Windows || flagged(row) }
 
 // list is one page that shows a table with a box of detail under it.
 type list struct {
@@ -164,8 +168,13 @@ func main() {
 	w.Quiet("What starts. What runs. What is worth a second look.", left+1, 66, 880, 22)
 	w.Strip(left, 104, across, 44)
 	var nav []*winui.Control
-	for i, label := range []string{"01  Overview", "02  Protection", "03  Start-up", "04  Running", "05  Connections", "06  Accounts", "07  Worth a look"} {
-		nav = append(nav, w.Section(label, i, left+4+i*138, 108, 136, 36))
+	x := left + 4
+	for i, section := range []struct {
+		label string
+		width int
+	}{{"01  Overview", 126}, {"02  Protection", 132}, {"03  Start-up", 120}, {"04  Running", 118}, {"05  Connections", 144}, {"06  Accounts", 126}, {"07  Worth a look", 184}} {
+		nav = append(nav, w.Section(section.label, i, x, 108, section.width, 36))
+		x += section.width + 3
 	}
 	w.Rule(left, 722, across)
 	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
@@ -198,7 +207,7 @@ func main() {
 
 	// The six lists.
 	lists := map[int]*list{}
-	addList := func(page int, filters []filter) {
+	addList := func(page int, files bool, filters []filter) {
 		w.Page(page)
 		l := &list{filters: filters, picked: -1}
 		lists[page] = l
@@ -214,15 +223,17 @@ func main() {
 			x += 342
 		}
 		l.count = w.Caption("", x, 250, 300, 34)
-		w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
-			if l.picked < 0 || l.picked >= len(l.shown) {
-				w.Info("Show in folder", "Select a row first.")
-			} else if path := l.shown[l.picked].Path; path == "" {
-				w.Info("Show in folder", "This row is not about a file on disk, so there is no folder to show.")
-			} else {
-				w.Reveal(path)
-			}
-		})
+		if files {
+			w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
+				if l.picked < 0 || l.picked >= len(l.shown) {
+					w.Info("Show in folder", "Select a row first.")
+				} else if path := l.shown[l.picked].Path; path == "" {
+					w.Info("Show in folder", "This row is not about a file on disk, so there is no folder to show.")
+				} else {
+					w.Reveal(path)
+				}
+			})
+		}
 		w.Button("Copy details", left+across-136, 250, 136, 34, func() {
 			if w.Copy(l.detail.Words()) {
 				status.SetText("Copied the details shown below the list.")
@@ -235,18 +246,18 @@ func main() {
 		// The heading and the introduction are set from the page itself.
 		pageTexts[page] = [2]*winui.Control{heading, intro}
 	}
-	addList(pageProtection, nil)
-	addList(pageStartup, []filter{{"Not part of Windows", notWindows}, {"Everything", everything}, {"Only what is worth a look", flagged}, {"Only what is switched on", func(row view.Row) bool { return !row.Off }}})
-	addList(pageRunning, []filter{{"Everything, as a family tree", everything}, {"Not part of Windows", notWindows}, {"Only what is worth a look", flagged}})
-	addList(pageConnections, []filter{
+	addList(pageProtection, false, nil)
+	addList(pageStartup, true, []filter{{"Not part of Windows", notWindows}, {"Everything", everything}, {"Only what is worth a look", flagged}, {"Only what is switched on", func(row view.Row) bool { return !row.Off }}})
+	addList(pageRunning, true, []filter{{"Everything, as a family tree", everything}, {"Not part of Windows", notWindows}, {"Only what is worth a look", flagged}})
+	addList(pageConnections, true, []filter{
 		{"Everything", everything},
 		{"Connections to the internet", func(row view.Row) bool { return row.Group == "internet" }},
 		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }},
 		{"Not part of Windows", notWindows},
 		{"Only what is worth a look", flagged},
 	})
-	addList(pageAccounts, nil)
-	addList(pageWorth, nil)
+	addList(pageAccounts, false, nil)
+	addList(pageWorth, true, nil)
 
 	// show puts a finished look on every page.
 	show := func(b *view.Book) {

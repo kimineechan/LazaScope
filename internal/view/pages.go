@@ -174,7 +174,7 @@ func (b *builder) connections() Page {
 	page := Page{
 		Name: "Connections", Title: "What is talking to the network",
 		Intro:   "Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. Addresses are shown as numbers, because looking their names up would mean going online.",
-		Columns: []Column{{"Check", 112}, {"Program", 230}, {"What", 170}, {"Address", 250}, {"Reach", 120}, {"Maker", 0}},
+		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 214}, {"Reach", 112}, {"Maker", 0}},
 		Unseen:  b.unseen(model.Connections),
 	}
 	for _, c := range s.Connections {
