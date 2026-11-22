@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -497,5 +499,23 @@ func TestSmallHelpers(t *testing.T) {
 		if severity.String() == "" {
 			t.Errorf("severity %d has no words", severity)
 		}
+	}
+}
+
+// The page that describes the rules must describe the rules there are.
+func TestRulesAreDocumented(t *testing.T) {
+	page, err := os.ReadFile(filepath.Join("..", "..", "docs", "RULES.md"))
+	if err != nil {
+		t.Fatal("docs/RULES.md could not be read:", err)
+	}
+	text := string(page)
+	for _, rule := range All() {
+		row := "| `" + rule.ID + "` | " + rule.Area.String() + " | " + rule.Severity.String() + " | " + rule.Title + " | " + rule.Why + " |"
+		if !strings.Contains(text, row) {
+			t.Errorf("docs/RULES.md is out of step for %s. Print the table again with: lazascope-cli rules --markdown", rule.ID)
+		}
+	}
+	if rows := strings.Count(text, "\n| `"); rows != len(All()) {
+		t.Errorf("docs/RULES.md lists %d rules and the program has %d", rows, len(All()))
 	}
 }

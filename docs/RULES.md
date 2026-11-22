@@ -1,0 +1,73 @@
+# The rules
+
+Everything LazaScope flags comes from one of the rules on this page. A rule is a written test with a reason, so that the program can always say why it flagged something, and so that anyone can disagree with it.
+
+## How to read a flag
+
+| Shown as | Meaning | Light |
+| --- | --- | --- |
+| Look first | Rare on a healthy PC, and what an intruder would do. Start here | Red |
+| Worth a look | Unusual. Often explained by something you installed or set up yourself | Amber |
+| Good to know | Not a sign of anything wrong. A weakness or a leftover you may want to deal with | Stays green |
+
+**A flag is a reason to look, not a verdict.** The same signs that mark an intruder also mark plenty of honest software. LazaScope never says that something is malware, because it cannot know. It says what it saw, why that matters and what you can do.
+
+A light shows a ring when that part of the PC could not be read. An empty list is then not a clean one, and LazaScope says which is the case.
+
+## Every rule
+
+"Usually" is how a rule's findings are normally shown. A rule raises a finding when two signs meet, for example when a program runs from the Downloads folder and is also unsigned, and lowers it when the cause is plainly harmless.
+
+| Rule | Area | Usually | What it flags | Why it matters |
+| --- | --- | --- | --- | --- |
+| `antivirus-off` | Protection | Look first | Antivirus protection is off | Antivirus checks every file as it is opened. Malware often switches it off first, and a PC without it has no second line of defence against a bad download. |
+| `antivirus-out-of-date` | Protection | Worth a look | Antivirus is on but out of date | Antivirus recognises threats from a list that is renewed several times a day. With an old list it misses whatever is new. |
+| `defender-tamper-off` | Protection | Worth a look | Defender's settings are not locked | Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings. Malware that gets in tries to do exactly that. |
+| `defender-exclusions` | Protection | Worth a look | Microsoft Defender has been told to skip some places | An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Developers and games sometimes need one. Malware adds its own folder to the list so that it is never scanned. |
+| `firewall-off` | Protection | Look first | The firewall is off | The firewall decides which programs on other devices may start a connection to this PC. With it off, every program that is waiting for connections can be reached by anything on the same network. |
+| `uac-off` | Protection | Look first | Windows does not ask before giving a program full rights | User Account Control is the prompt that asks "Do you want to allow this app to make changes?". It is the moment at which a person can say no. With it off or silenced, any program an administrator runs can take full control of the PC without anyone seeing it happen. |
+| `updates-old` | Protection | Worth a look | Windows has not installed an update for some time | Microsoft fixes security holes in Windows every month. Each month without updates leaves known holes open, and those are the ones attackers use most. |
+| `hosts-entries` | Protection | Worth a look | The hosts file sends website names somewhere else | Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can silently send a name to any address, for instance a bank's name to a fake copy, or stop security sites from being reached at all. |
+| `disk-not-encrypted` | Protection | Good to know | The Windows disk is not encrypted | Encryption (BitLocker, or Device encryption) scrambles the disk so that it can only be read after signing in. Without it, anyone who takes the PC or the disk can read every file on it without knowing the password. It matters most for a laptop. |
+| `secure-boot-off` | Protection | Good to know | Secure Boot is off | Secure Boot lets the PC start only software its maker or Microsoft has signed, which blocks malware that loads before Windows does and so hides from it. |
+| `startup-altered` | Starts with Windows | Look first | Starts by itself and was changed after its maker signed it | A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker. Unwanted code that hides inside another program does that. |
+| `startup-system-name` | Starts with Windows | Look first | Named like a part of Windows, but not where Windows keeps it | Windows' own programs, such as svchost.exe, live in the Windows folder. A file with one of those names anywhere else is a classic disguise: it hopes to be passed over in a list. |
+| `startup-scrambled-command` | Starts with Windows | Look first | Starts a scripting tool with a scrambled command | PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions from people and from antivirus by encoding them, breaking the words up, or fetching the real commands from the internet at the last moment. |
+| `startup-logon-setting` | Starts with Windows | Look first | Windows' sign-in programs have been changed | Two settings name what Windows runs while a user signs in: the desktop (explorer.exe) and a helper (userinit.exe). Anything added there runs at every sign-in before the user sees the desktop, which makes these settings a favourite hiding place. |
+| `startup-debugger` | Starts with Windows | Worth a look | Another program is set to run in place of a normal one | Windows has a developer setting called a debugger: when the named program is opened, Windows starts the debugger in its place. It is a known trick for swapping one program for another, most famously to open a command window from the sign-in screen without a password. |
+| `startup-loaded-library` | Starts with Windows | Worth a look | A library is set to load into every program | An old Windows setting (AppInit_DLLs) loads the named libraries into every program that shows a window. Very little modern software uses it, and it gives whatever is named there a view into almost everything the user does. |
+| `startup-temp-folder` | Starts with Windows | Worth a look | Starts from a temporary or download folder | Installed software lives in Program Files. Temporary and download folders are where files land from the internet and where installers unpack, so something that starts from there at every boot was probably never properly installed. Malware often runs from these folders because any program may write to them. |
+| `startup-user-folder` | Starts with Windows | Worth a look | A task, service or driver runs from a user's folder | Services, drivers and most scheduled tasks belong to the whole PC and are installed into Program Files or Windows, where only an administrator can change them. One that runs a file from a user's own folder is unusual for real software, and the file can be swapped by any program that user runs. |
+| `startup-unsigned` | Starts with Windows | Worth a look | Starts by itself and is not signed by its maker | A digital signature is a maker's seal on a file. Nearly all commercial software is signed, so that Windows can show who made it and that nobody has changed it since. Something that starts by itself with no valid signature is not proof of harm, as small free tools are often unsigned, but it cannot be traced to anyone. |
+| `startup-missing-file` | Starts with Windows | Good to know | Points at a file that is no longer there | When a program is removed, the entry that started it is sometimes left behind. It does nothing, because there is nothing to start. It is worth tidying, and worth knowing about in case the file comes back. |
+| `running-altered` | Running now | Look first | A running program was changed after its maker signed it | A digital signature breaks if a single byte of the file changes. A running program that no longer matches its signature has been altered since it left its maker. |
+| `running-system-name` | Running now | Look first | A running program is named like a part of Windows, but is not where Windows keeps it | Windows' own programs, such as svchost.exe, run from the Windows folder. A running program with one of those names from anywhere else is a classic disguise: in Task Manager it looks like one more piece of Windows. |
+| `running-temp-folder` | Running now | Worth a look | A program is running from a temporary or download folder | Installed software runs from Program Files. Temporary and download folders are where files land from the internet and where installers unpack. An installer or a portable tool you just opened runs from there for a while. Malware runs from there because any program may write to those folders. |
+| `running-scrambled-command` | Running now | Worth a look | A scripting tool is running a scrambled command | PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything. |
+| `listener-unsigned` | Internet connections | Worth a look | An unsigned program is waiting for incoming connections | A program that waits for connections lets other devices start a conversation with this PC. That is how file sharing and games work, and it is also how a back door works. When the program has no valid signature, nobody can say who made it. |
+| `remote-desktop-on` | Accounts and remote access | Worth a look | Remote Desktop is switched on | Remote Desktop lets someone sign in to this PC from another device and use it as if they sat in front of it. It is off by default. When it is on, anyone who can reach the PC and guess or steal a password gets the whole desktop, and it is one of the most attacked doors on the internet. |
+| `remote-tool` | Accounts and remote access | Worth a look | Remote-control software is on this PC | Programs such as AnyDesk and TeamViewer let someone else see the screen and use the mouse and keyboard from anywhere. That is exactly what they are for, and it is fine if you installed one. They are also the first thing a fake support caller asks a victim to install, and intruders leave them behind as a way back in. |
+| `guest-on` | Accounts and remote access | Worth a look | The Guest account is switched on | Guest is a built-in account with no password. Windows keeps it switched off. Switched on, it lets anyone at the keyboard, and in some set-ups anyone on the network, use the PC without proving who they are. |
+| `auto-sign-in` | Accounts and remote access | Worth a look | Windows signs in by itself | Automatic sign-in skips the password when the PC starts. Anyone who switches the PC on gets the account and everything in it. The password is also kept on the PC where programs can read it. |
+| `builtin-administrator-on` | Accounts and remote access | Good to know | The built-in Administrator account is switched on | Every PC has a hidden account called Administrator that Windows keeps switched off. It has full rights, its name is known to every attacker, and by default Windows does not ask it to confirm anything. |
+
+This table is printed by `lazascope-cli rules --markdown`, and a test fails if it falls out of step with the program.
+
+## What the rules deliberately leave alone
+
+- **A running program that is unsigned but properly installed.** Plenty of honest tools are unsigned. An unsigned program is flagged when it also starts by itself, runs from a temporary or download folder, or waits for connections from the network.
+- **A signed program that keeps itself up to date from a user's folder.** Many apps install for one account and update themselves with a scheduled task. A task is flagged for running from a user's folder only when the file is unsigned or is a script.
+- **Start-up entries that are switched off** in Task Manager or Task Scheduler. They are listed, marked Off, and not judged, because they do not start.
+- **Windows' own tasks and drivers for features that are not installed.** Windows ships entries for parts that not every edition has. Those are not leftovers.
+- **Ports that only this PC can reach.** A program waiting on `127.0.0.1` is no door for anyone else.
+- **LazaScope itself.** It is unsigned and is often started straight from the Downloads folder. It lists itself like any other program and does not judge itself.
+
+## How the rules are tested
+
+Each rule is a plain function over the collected facts. It reads nothing from the PC itself, so it is tested with made-up PCs: a healthy one that must produce no findings at all, then about ninety single changes to it, each of which must produce exactly the findings it should and no others. Many of those changes are things that look odd and are fine, and must stay quiet.
+
+On a real PC, `cmd/verify` plants seven harmless items in the current account, checks that each is flagged for the right reason and removes them again. See [VALIDATION.md](../VALIDATION.md).
+
+## If a rule is wrong
+
+A false alarm on ordinary software, or something LazaScope should have flagged and did not, is a bug. Please [report it](https://github.com/kimineechan/LazaScope/issues/new/choose) with the rule's name, which is shown at the foot of every finding.

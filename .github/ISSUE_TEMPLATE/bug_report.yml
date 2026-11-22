@@ -1,0 +1,80 @@
+name: Bug report
+description: Report a reproducible LazaScope problem, a false alarm, or something it missed.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please do not paste a whole report. It names your PC, your account, the programs you run and the addresses they talk to. Copy only the rows that matter and replace your account name.
+  - type: input
+    id: version
+    attributes:
+      label: LazaScope version
+      placeholder: '1.0.0'
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: 'Windows 11, version and build number'
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem is it?
+      options:
+        - A false alarm (something ordinary was flagged)
+        - A miss (something should have been flagged or listed)
+        - A wrong fact (maker, file, account, address)
+        - The window
+        - The report
+        - Command-line tool
+        - Source build or release workflow
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: section
+    attributes:
+      label: Affected section
+      options:
+        - Overview
+        - Protection
+        - Start-up
+        - Running
+        - Connections
+        - Accounts
+        - Worth a look
+        - Not a section of the window
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: Rule, if a finding is involved
+      description: The rule's name is shown at the foot of every finding.
+      placeholder: 'startup-unsigned'
+  - type: input
+    id: rights
+    attributes:
+      label: Was LazaScope run with administrator rights?
+      placeholder: 'No'
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error text or useful screenshots
+      description: Include the exact error message if one appeared. Check a screenshot for names and paths before attaching it.
