@@ -158,6 +158,29 @@ func TestLaunch(t *testing.T) {
 	}
 }
 
+// cmd carries out words such as echo itself. A program that happens to
+// have the same name, as the echo.exe of some developer tools does, is not
+// what runs, and must not be reported as the file doing the work.
+func TestCmdBuiltIns(t *testing.T) {
+	w := pc(`C:\Tools\bin\echo.exe`, `C:\Tools\bin\set.exe`, `C:\Tools\bin\tool.exe`)
+	w.Search = append(w.Search, `C:\Tools\bin`)
+	for _, command := range []string{`cmd /c echo hello`, `cmd.exe /c echo %COMSPEC:~0,1%`, `cmd /c @echo off`, `cmd /c echo.`, `cmd /c set X=1`, `cmd /c (echo a)`, `cmd /k title Work`} {
+		got := w.Read(command)
+		if got.Target != "" || !got.Inline || got.Works() != `C:\Windows\System32\cmd.exe` {
+			t.Errorf("%s: got %+v, want cmd itself doing the work", command, got)
+		}
+	}
+	// A real program of another name is still followed.
+	if got := w.Read(`cmd /c tool --run`); got.Target != `C:\Tools\bin\tool.exe` || got.Inline {
+		t.Errorf("a program started through cmd: got %+v", got)
+	}
+	for word, want := range map[string]bool{"echo hi": true, "ECHO.": true, "@echo off": true, "rem note": true, "echoes": false, "tool": false, "": false, "setx X 1": false} {
+		if got := builtIn(word); got != want {
+			t.Errorf("builtIn(%q) = %v, want %v", word, got, want)
+		}
+	}
+}
+
 func TestWords(t *testing.T) {
 	got := Words(`-a  "two words" c:\x\y.exe ""  "tail`)
 	want := []string{"-a", "two words", `c:\x\y.exe`, "", "tail"}

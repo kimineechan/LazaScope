@@ -138,9 +138,19 @@ func Folders() model.Folders {
 func World() cmdline.World {
 	folders := Folders()
 	search := []string{folders.System, folders.Windows}
-	for _, folder := range strings.Split(os.Getenv("PATH"), ";") {
-		if folder = strings.TrimSpace(folder); folder != "" {
-			search = append(search, folder)
+	// The folders Windows searches for a bare name are taken from where
+	// Windows keeps them, for the whole PC and then for this account. The
+	// list this program was started with may hold extra folders, added by
+	// whatever started it, that a start-up entry would never see.
+	for _, place := range []struct {
+		root syscall.Handle
+		path string
+	}{{reg.Machine, `SYSTEM\CurrentControlSet\Control\Session Manager\Environment`}, {reg.User, `Environment`}} {
+		list, _ := reg.Text(place.root, place.path, reg.Native, "Path")
+		for _, folder := range strings.Split(Expand(list), ";") {
+			if folder = winpath.Tidy(folder); folder != "" {
+				search = append(search, folder)
+			}
 		}
 	}
 	return cmdline.World{

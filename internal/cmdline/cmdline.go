@@ -243,6 +243,12 @@ func (w World) follow(c *Command, depth int) {
 		if inner == "" || depth >= 3 {
 			return
 		}
+		// A word such as echo or set is carried out by cmd itself. There is
+		// no program of that name to look for, even if one happens to exist.
+		if builtIn(inner) {
+			c.Inline = true
+			return
+		}
 		next := w.Read(inner)
 		if next.Found {
 			c.Target = next.Works()
@@ -302,6 +308,29 @@ func (w World) follow(c *Command, depth int) {
 			}
 		}
 	}
+}
+
+// The commands cmd.exe carries out itself, without starting a program.
+var builtIns = map[string]bool{}
+
+func init() {
+	for _, word := range strings.Fields(`assoc break call cd chdir cls color copy date del dir echo endlocal erase exit for ftype goto if md mkdir
+		mklink move path pause popd prompt pushd rd rem ren rename rmdir set setlocal shift time title type ver verify vol`) {
+		builtIns[word] = true
+	}
+}
+
+// builtIn reports whether a command line for cmd begins with one of cmd's
+// own commands.
+func builtIn(command string) bool {
+	word := strings.ToLower(strings.TrimLeft(strings.TrimSpace(command), "@("))
+	for i, r := range word {
+		if r < 'a' || r > 'z' {
+			word = word[:i]
+			break
+		}
+	}
+	return builtIns[word]
 }
 
 // rundllLibrary picks the library out of what rundll32 is told, which has
