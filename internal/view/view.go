@@ -81,6 +81,7 @@ type Row struct {
 	Path    string // the file the row is about, to show in its folder
 	Windows bool   // it is a part of Windows itself
 	Off     bool   // it is switched off
+	Group   string // which of a page's groups it belongs to, for showing one group alone
 }
 
 // Column is one column of a list.

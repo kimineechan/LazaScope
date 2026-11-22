@@ -213,3 +213,10 @@ func (c *Control) drawTable(cv *Canvas) {
 			pick(t.scrolling || w.hover == c, theme.SwitchEdge, theme.FieldEdge))
 	}
 }
+
+// SetColumns replaces the columns of a table. Its rows are kept, so fill
+// it again if they no longer fit the columns.
+func (c *Control) SetColumns(columns []Column) {
+	c.table.columns = columns
+	c.redraw()
+}

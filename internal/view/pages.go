@@ -219,6 +219,16 @@ func (b *builder) connections() Page {
 		if use != "" {
 			lines = append(lines, Line{Text, "That port is normally used for " + use + "."})
 		}
+		switch {
+		case c.Listening && c.Reach == model.ThisPC:
+			row.Group = "waits here"
+		case c.Listening:
+			row.Group = "waits"
+		case c.Reach == model.Internet:
+			row.Group = "internet"
+		default:
+			row.Group = "near"
+		}
 		row.Cells = []string{row.Level.String(), program, what, address, reach, c.File.Maker()}
 		if c.File.Path == "" {
 			row.Cells[5] = "Part of Windows itself"

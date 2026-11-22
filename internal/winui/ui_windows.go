@@ -15,6 +15,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"unicode/utf16"
@@ -211,6 +212,15 @@ func New(title, class string, width, height int) (*Window, error) {
 	const layered, onTaskbar = 0x00080000, 0x00040000
 	winWidth, winHeight := w.px(width), w.px(height)
 	x, y := max((int(screenWidth)-winWidth)/2, 0), max((int(screenHeight)-winHeight)/2, 0)
+	// For taking pictures of the window without it appearing on the screen
+	// in use: LAZASCOPE_PLACE=6000,100 opens it at that point instead.
+	if place := strings.Split(os.Getenv("LAZASCOPE_PLACE"), ","); len(place) == 2 {
+		if px, err := strconv.Atoi(strings.TrimSpace(place[0])); err == nil {
+			if py, err := strconv.Atoi(strings.TrimSpace(place[1])); err == nil {
+				x, y = px, py
+			}
+		}
+	}
 	h, _, e := createWindow.Call(layered|onTaskbar, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(ptr(title))),
 		popup|systemMenu|minimiseBox, uintptr(x), uintptr(y), uintptr(winWidth), uintptr(winHeight), 0, 0, w.instance, 0)
 	if h == 0 {
@@ -532,6 +542,14 @@ func (w *Window) OpenFolder(path string) {
 	if r <= 32 {
 		w.Alert("Could not open folder", fmt.Sprintf("Windows error %d", r))
 	}
+}
+
+// Elevated starts a program with administrator rights, which makes Windows
+// ask the user first. It reports whether the program was started: the user
+// may say no.
+func (w *Window) Elevated(program, arguments string) bool {
+	r, _, _ := shell32.NewProc("ShellExecuteW").Call(w.Handle, uintptr(unsafe.Pointer(ptr("runas"))), uintptr(unsafe.Pointer(ptr(program))), uintptr(unsafe.Pointer(ptr(arguments))), 0, 1)
+	return r > 32
 }
 
 // Reveal opens the folder of a file in Explorer with the file selected.
