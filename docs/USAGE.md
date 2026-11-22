@@ -41,7 +41,7 @@ Each of these sections is a list with a box of details under it.
 
 - Select a row to read what it is, where it is recorded, who made it and, if a rule flagged it, why.
 - The first column is coloured: red for **Look first**, amber for **Worth a look**, grey for **Good to know**. On the Protection and Accounts pages a green **OK** means the setting is as it should be, and **Not known** means Windows would not say.
-- The list above the table narrows what is shown. A flagged row is never hidden by it.
+- The list above the table narrows what is shown, and the count beside it says how many rows that leaves. A flagged row is never hidden: under **Not part of Windows**, a part of Windows that a rule flagged stays in the list, and the count says so. When a view matches nothing, the box of details says what that means.
 - **Show in folder** opens Explorer at the file the row is about.
 - **Copy details** puts the text of the details box on the clipboard.
 
@@ -58,6 +58,7 @@ Each of these sections is a list with a box of details under it.
 | Word | Meaning |
 | --- | --- |
 | Maker | The name on the file's digital signature, which is a maker's seal that breaks if the file is changed. "Not signed (says X)" means the file has no seal and only claims to come from X |
+| Script file | Shown as the maker of a script: a text file of commands, such as a batch file. LazaScope checks signatures on programs only, and scripts almost never carry one |
 | Registry Run | A line in the registry, Windows' settings database, that starts a program each time someone signs in |
 | Scheduled task | An entry in Task Scheduler, the part of Windows that starts programs at set times or when something happens |
 | Service | A background program that Windows starts by itself and keeps running |
@@ -90,7 +91,7 @@ Under the list, **What could not be read** names everything LazaScope had no acc
 | --- | --- |
 | Web page (`.html`) | Reading, printing, or sending to someone who is helping you. It opens in any browser, holds no scripts and loads nothing from the internet |
 | Plain text (`.txt`) | Pasting into a message or a forum post |
-| Data (`.json`) | Other tools |
+| Data (`.json`) | Other tools. It holds the findings and, under `facts`, every start-up entry, running program, connection and protection setting as it was read. Each finding has a `ref` that names the fact it is about |
 
 The report starts with the five lights and everything worth a look, then lists every fact LazaScope read. In the web page, select any row to open its details.
 
@@ -102,6 +103,8 @@ To make a report without opening the window, for instance when someone is guidin
 .\LazaScope.exe --report "C:\Users\you\Desktop\report.html"
 ```
 
+The ending of the name chooses the kind, as in the Save dialog. A name with any other ending is refused, so that a report never lands in a file that will not open.
+
 ## Administrator rights
 
 LazaScope works without administrator rights and never asks for them by itself. Without them, Windows keeps a few things back:
@@ -110,7 +113,9 @@ LazaScope works without administrator rights and never asks for them by itself. 
 - the command lines and accounts of programs that run as other accounts,
 - a few protected services.
 
-Each page says what it could not read, and **07 Worth a look** lists it all. **Look again as administrator** on the Overview reads these too. Windows asks for your permission first, and if you say no, nothing changes.
+Each page says what it could not read, and **07 Worth a look** lists it all. **Look again as administrator** on the Overview reads these too. Windows asks for your permission first, and if you say no, nothing changes and the line at the foot of the window says so. Once LazaScope has the rights, the button reads **Running as administrator**.
+
+If User Account Control is set to never notify, Windows gives the rights without asking. LazaScope flags that setting under 02 Protection.
 
 With or without administrator rights, LazaScope only reads.
 
@@ -135,8 +140,11 @@ With or without administrator rights, LazaScope only reads.
 | `network` | Lists the connections and the waiting ports |
 | `protection` | Shows the protection settings, the administrators and the hosts file |
 | `sign <file>...` | Says who signed each file, where the signature was found and whether it holds |
-| `rules` | Lists every rule and why it exists |
+| `rules` | Lists every rule and why it exists. `--markdown` prints the table in [The rules](RULES.md) |
 | `version` | Prints the version |
+| `help` | Prints the list of commands |
+
+A command that is given an option or a file name it does not take says so and does nothing. The tool ends with 0 when it worked, 1 when what it was asked could not be done, 2 when the command itself was wrong, and 3 if it stopped on a fault of its own.
 
 `scan` and `report` take `--demo` to show the made-up PC. The exit code is 0 on success and 1 when something could not be done.
 

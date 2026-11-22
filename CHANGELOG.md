@@ -11,8 +11,9 @@ First version.
 - List the network connections and the ports programs wait on, each with its program and how far its other end is.
 - Read the protection of the PC: antivirus and firewall as Windows Security reports them, Microsoft Defender's settings and exclusions, User Account Control, the last installed update, disk encryption, Secure Boot, Remote Desktop, the Administrators group, the hosts file and remote-control software.
 - Say who signed every file, looking both inside the file and in Windows' catalogues and the catalogues of Store apps, with a memory so that hundreds of files take seconds.
-- Flag what is worth a look with thirty written rules, each with its reason and what to do.
-- Save a report as one self-contained web page, as plain text or as JSON.
+- Flag what is worth a look with thirty-one written rules, each with its reason and what to do.
+- Save a report as one self-contained web page, as plain text, or as JSON that carries every fact as it was read, with a reference from each finding to the fact it is about.
+- Say so in words when something could not be read, when a view of a list matches nothing, and when a fault inside LazaScope stopped one part of a look. The rest of the look carries on.
 - Show a made-up PC with `--demo`.
-- Include a command-line tool, a check that plants harmless items and confirms each is flagged, Windows build and release automation, and tests.
+- Include a command-line tool, a check that plants eleven harmless items and confirms that ten are flagged and one is left alone, Windows build and release automation, and tests.
 - Read only, with no network client, and without needing administrator rights.
