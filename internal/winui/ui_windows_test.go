@@ -512,3 +512,52 @@ func TestLightsAndTints(t *testing.T) {
 		t.Error("a new colour asked for no redraw")
 	}
 }
+
+// The wheel turns whatever the pointer is over: a table by rows, a reader
+// by a few lines.
+func TestWheel(t *testing.T) {
+	b := newBench()
+	b.Page(-1)
+	table := b.Table(10, 40, 380, 32+4+26*4, []Column{{Title: "A"}}, nil)
+	rows := make([][]string, 40)
+	for i := range rows {
+		rows[i] = []string{"a"}
+	}
+	table.Fill(rows, nil)
+	reader := b.Reader(10, 200, 380, 100)
+	long := ""
+	for range 80 {
+		long += "words and more words "
+	}
+	reader.Read(Paragraph{long, Body})
+	down := uintptr(uint32(0xFF88) << 16) // one notch towards the user: minus 120 in the high half
+	up := uintptr(uint32(120) << 16)
+
+	b.hoverOn(table)
+	b.handle(0, wmMouseWheel, down, nil)
+	if table.table.top != 3 {
+		t.Errorf("one notch down moved the table to row %d, want 3", table.table.top)
+	}
+	b.handle(0, wmMouseWheel, up, nil)
+	b.handle(0, wmMouseWheel, up, nil)
+	if table.table.top != 0 {
+		t.Errorf("two notches up left the table at row %d, want 0", table.table.top)
+	}
+	if reader.reader.offset != 0 {
+		t.Error("the wheel over the table moved the reader")
+	}
+
+	b.hoverOn(reader)
+	b.handle(0, wmMouseWheel, down, nil)
+	if reader.reader.offset != 60 {
+		t.Errorf("one notch down moved the reader by %d, want 60", reader.reader.offset)
+	}
+	b.handle(0, wmMouseWheel, up, nil)
+	b.handle(0, wmMouseWheel, up, nil)
+	if reader.reader.offset != 0 {
+		t.Errorf("two notches up left the reader at %d, want 0", reader.reader.offset)
+	}
+	if table.table.top != 0 {
+		t.Error("the wheel over the reader moved the table")
+	}
+}

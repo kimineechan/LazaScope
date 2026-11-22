@@ -208,7 +208,10 @@ func (b *builder) connections() Page {
 			}
 		} else {
 			if c.State == "Closing" {
+				// Windows keeps a finished connection in its table for a
+				// short while, sometimes after the program itself has gone.
 				what = "Closing"
+				lines = []Line{{Heading, c.Process + " had a connection to " + address + ", which is closing"}}
 			}
 			switch c.Reach {
 			case model.ThisPC:
@@ -234,9 +237,9 @@ func (b *builder) connections() Page {
 		}
 		row.Cells = []string{row.Level.String(), program, what, address, reach, c.File.Maker()}
 		if c.File.Path == "" {
-			row.Cells[5] = "Part of Windows itself"
-			if c.PID != 0 && c.PID != 4 {
-				row.Cells[5] = "Not known"
+			row.Cells[5] = "Not known"
+			if c.PID == 4 {
+				row.Cells[5] = "Part of Windows itself"
 			}
 		}
 		if ref != "" {

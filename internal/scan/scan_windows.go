@@ -100,7 +100,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		case p != nil:
 			c.Process, c.File.Path, c.Services = p.Name, p.File.Path, p.Services
 		case c.PID == 0:
-			c.Process = "Windows" // a connection that has closed and is being tidied away
+			c.Process = "A program that has closed" // Windows is tidying the connection away
 		default:
 			c.Process = "A program that has closed"
 		}

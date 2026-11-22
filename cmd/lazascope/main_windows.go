@@ -110,10 +110,19 @@ func (l *list) fill() {
 	l.shown, l.picked = l.shown[:0], -1
 	var cells [][]string
 	var tints []winui.Colour
+	// The running programs are set in from the left to show what started
+	// what. With some of them left out that would mislead, so a narrowed
+	// list is flat.
+	flat := len(l.shown) == 0 && l.choice != nil && l.choice.Chosen() > 0
 	for _, row := range l.page.Rows {
 		if keep(row) {
 			l.shown = append(l.shown, row)
-			cells = append(cells, row.Cells)
+			shown := row.Cells
+			if flat && len(shown) > 1 && strings.HasPrefix(shown[1], " ") {
+				shown = append([]string{}, shown...)
+				shown[1] = strings.TrimLeft(shown[1], " ")
+			}
+			cells = append(cells, shown)
 			tints = append(tints, tint(row))
 		}
 	}

@@ -131,6 +131,10 @@ func Collect() ([]model.Connection, []model.Gap) {
 		if a.Listening != b.Listening {
 			return !a.Listening
 		}
+		// Connections that are closing go after the ones in use.
+		if closing := a.State == "Closing"; closing != (b.State == "Closing") {
+			return !closing
+		}
 		if a.Reach != b.Reach {
 			return a.Reach > b.Reach
 		}
