@@ -255,14 +255,14 @@ var startupRules = []Rule{
 				if e.Kind == model.ScheduledTask && works.Program && works.Signature.Trusted() {
 					continue
 				}
-				what := "a file that is not signed by a known maker"
+				what := "The file is not signed by a known maker."
 				if !works.Program {
-					what = "a script, which cannot carry a maker's signature"
+					what = "The file is a script, and a script cannot carry a maker's signature."
 				} else if works.Signature.Trusted() {
-					what = "a signed program"
+					what = "The file is signed by " + works.Signature.Maker() + "."
 				}
 				found = append(found, r.find(e.Shown(),
-					"This "+strings.ToLower(e.Kind.String())+" runs "+works.Path+", "+what+" in a user's own folder. Software for the whole PC is normally installed where only an administrator can change it. A file here can be replaced by any program that user runs.",
+					"This "+strings.ToLower(e.Kind.String())+" runs "+works.Path+", which is in a user's own folder. "+what+" Software for the whole PC is normally installed where only an administrator can change it. A file here can be replaced by any program that user runs.",
 					known+stop(e.Kind), about(e)...))
 			}
 			return

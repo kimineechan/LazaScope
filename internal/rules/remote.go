@@ -94,7 +94,7 @@ func RemoteTools(s *model.Snapshot) []RemoteTool {
 			for _, service := range p.Services {
 				if matches(tool.services, strings.ToLower(service)) {
 					hit.Running = true
-					note("Running as the service " + service)
+					note("Running service: " + service)
 				}
 			}
 		}
