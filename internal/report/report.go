@@ -150,7 +150,7 @@ func HTML(b *view.Book, version string) []byte {
 
 	w.WriteString("<h2 class=\"part\">The facts</h2>\n<p class=\"quiet\">Everything LazaScope read, whether or not a rule flagged it. Select a row to open what is known about it.</p>\n")
 	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Startup, &b.Running, &b.Connections} {
-		fmt.Fprintf(&w, "<h2>%s</h2>\n<p class=\"quiet\">%s %s.</p>\n", e(page.Title), e(page.Intro), count(len(page.Rows), "row", "rows"))
+		fmt.Fprintf(&w, "<h2 id=\"%s\">%s</h2>\n<p class=\"quiet\">%s %s.</p>\n", e(strings.ToLower(page.Name)), e(page.Title), e(page.Intro), count(len(page.Rows), "row", "rows"))
 		fmt.Fprintf(&w, "<div class=\"list\" style=\"--columns:%s\">\n<div class=\"head\">", columns(page.Columns))
 		for _, column := range page.Columns {
 			fmt.Fprintf(&w, "<span>%s</span>", e(column.Title))

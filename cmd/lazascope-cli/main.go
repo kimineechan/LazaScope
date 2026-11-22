@@ -14,6 +14,7 @@ const usage = `LazaScope command-line tool
 
 Usage:
   lazascope-cli scan [--details]      Take a full look and list what is worth a look, with the reasons
+  lazascope-cli report <file> [--demo] Take a full look and write the report (.html, .txt or .json)
   lazascope-cli startup [--details]   List everything set to start by itself
   lazascope-cli running [--details]   List the running programs as a family tree
   lazascope-cli network               List the connections and the ports programs wait on
@@ -42,6 +43,8 @@ func main() {
 	switch os.Args[1] {
 	case "scan":
 		err = scanAll(flags["--details"])
+	case "report":
+		err = saveReport(strings.Join(args, " "), flags["--demo"])
 	case "startup":
 		err = startupList(flags["--details"])
 	case "running":

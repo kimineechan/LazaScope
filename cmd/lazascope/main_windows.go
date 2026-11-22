@@ -152,10 +152,22 @@ func (l *list) pick(row int) {
 func main() {
 	// "LazaScope.exe --report file" takes a look and writes the report
 	// without showing a window, for someone helping from a distance.
-	if len(os.Args) >= 3 && os.Args[1] == "--report" {
-		os.Exit(headless(os.Args[2]))
+	// "--demo" shows a made-up PC in place of this one.
+	demo, reportTo := false, ""
+	for i := 1; i < len(os.Args); i++ {
+		switch os.Args[i] {
+		case "--demo":
+			demo = true
+		case "--report":
+			if i+1 < len(os.Args) {
+				reportTo = os.Args[i+1]
+				i++
+			}
+		}
 	}
-	demo := len(os.Args) >= 2 && os.Args[1] == "--demo"
+	if reportTo != "" {
+		os.Exit(headless(reportTo, demo))
+	}
 
 	w, err := winui.New("LazaScope | a plain look at this PC", "LazaScopeNativeWindow", width, height)
 	if err != nil {
@@ -385,8 +397,13 @@ func render(b *view.Book, path string) []byte {
 }
 
 // headless takes a look and writes the report with no window.
-func headless(path string) int {
-	s := scan.Run(scan.Everything, nil)
+func headless(path string, demo bool) int {
+	var s *model.Snapshot
+	if demo {
+		s = sample.PC()
+	} else {
+		s = scan.Run(scan.Everything, nil)
+	}
 	b := view.Build(s, rules.Check(s))
 	if err := os.WriteFile(path, render(b, path), 0600); err != nil {
 		winui.Fatal("LazaScope", fmt.Errorf("the report could not be saved: %s", sentence(err)))

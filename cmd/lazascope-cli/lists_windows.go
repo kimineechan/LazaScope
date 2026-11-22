@@ -5,12 +5,17 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"lazascope"
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
+	"lazascope/internal/report"
 	"lazascope/internal/rules"
+	"lazascope/internal/sample"
 	"lazascope/internal/scan"
+	"lazascope/internal/view"
 )
 
 func progress(stage string) { fmt.Fprintln(os.Stderr, stage) }
@@ -235,5 +240,36 @@ func scanAll(details bool) error {
 			fmt.Printf("  %s: %s\n", gap.Area, gap.What)
 		}
 	}
+	return nil
+}
+
+// saveReport takes a full look, or shows the made-up PC, and writes the
+// report in the form the file's name asks for.
+func saveReport(path string, demo bool) error {
+	if path == "" {
+		return fmt.Errorf("name the file to write, ending in .html, .txt or .json")
+	}
+	var s *model.Snapshot
+	if demo {
+		s = sample.PC()
+	} else {
+		s = scan.Run(scan.Everything, progress)
+	}
+	book := view.Build(s, rules.Check(s))
+	var content []byte
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".json":
+		content = report.JSON(book, lazascope.Version())
+	case ".txt":
+		content = []byte(report.Text(book, lazascope.Version()))
+	case ".html", ".htm":
+		content = report.HTML(book, lazascope.Version())
+	default:
+		return fmt.Errorf("the report's name must end in .html, .txt or .json")
+	}
+	if err := os.WriteFile(path, content, 0600); err != nil {
+		return err
+	}
+	fmt.Printf("Wrote %s (%d findings). %s\n", path, len(book.Findings), report.Careful)
 	return nil
 }
