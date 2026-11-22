@@ -2,7 +2,10 @@
 
 package winui
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 // bench is a window that exists only in memory. It is enough for the
 // controls to work out what the keyboard and the pointer do; nothing is
@@ -559,5 +562,37 @@ func TestWheel(t *testing.T) {
 	}
 	if table.table.top != 0 {
 		t.Error("the wheel over the reader moved the table")
+	}
+}
+
+// Copying replaces whatever is on the clipboard of the person using the PC,
+// and Windows gives a program no clipboard of its own to practise on. So
+// this test only runs when asked for, with LAZASCOPE_TEST_CLIPBOARD=1. Even
+// then it leaves the clipboard alone when that holds something other than
+// text, such as a picture, and it puts the text back that was there.
+func TestCopy(t *testing.T) {
+	if os.Getenv("LAZASCOPE_TEST_CLIPBOARD") != "1" {
+		t.Skip("set LAZASCOPE_TEST_CLIPBOARD=1 to let this test use the clipboard")
+	}
+	w, err := New("LazaScope test", "LazaScopeClipboardTestWindow", 320, 200)
+	if err != nil {
+		t.Skip("no window can be made here:", err)
+	}
+	defer w.Close()
+	const unicodeText = 13
+	formats, _, _ := user32.NewProc("CountClipboardFormats").Call()
+	text, _, _ := user32.NewProc("IsClipboardFormatAvailable").Call(unicodeText)
+	if formats != 0 && text == 0 {
+		t.Skip("the clipboard holds something that is not text; leaving it alone")
+	}
+	before := clipboard(w.Handle)
+	defer w.Copy(before)
+	for _, sample := range []string{`LazaScope copies details: C:\Program Files\App\app.exe, signed by Example Ltd`, "Signed by Søren Ångström GmbH"} {
+		if !w.Copy(sample) {
+			t.Fatalf("%q could not be put on the clipboard", sample)
+		}
+		if got := clipboard(w.Handle); got != sample {
+			t.Errorf("the clipboard holds %q, want %q", got, sample)
+		}
 	}
 }

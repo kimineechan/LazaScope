@@ -76,7 +76,7 @@ Neither program links Go's networking packages: `go list -deps` on both shows no
 
 ### Interface
 
-The seven sections were exercised on Windows 10 at 100% display scaling and drawn again at 128%, with the made-up PC and with the real one. The screenshots in `docs/screenshots` are of the made-up PC.
+The seven sections were exercised on Windows 10 at 100% display scaling and drawn again at 128%, with the made-up PC and with the real one: every section button, every way of narrowing a list, choosing rows, the state while the first look is still running, and saving a report through the Save dialog. The mouse wheel is tested through the window's own message handling. The screenshots in `docs/screenshots` are of the made-up PC.
 
 ## GitHub checks
 
@@ -90,6 +90,7 @@ The included workflow runs the platform-neutral tests on Linux with the race det
 - The rules for antivirus, firewall, the hosts file, Defender's exclusions, Remote Desktop, the Guest account, automatic sign-in, debugger settings, `AppInit_DLLs`, the sign-in settings, a changed signature and an unsigned program waiting for connections were tested with made-up data only. On the test PC all of those were in their normal state, so only the normal state was read from a real PC.
 - No PC with another antivirus than Microsoft Defender was available, and disk encryption was read on one PC only.
 - The start-up list was compared with Windows' own tools, not with Sysinternals Autoruns, which lists many more places than LazaScope reads.
+- Two buttons were not pressed in testing. **Copy details** replaces whatever is on the clipboard of the PC in use, and Windows gives a program no clipboard of its own to practise on, so its test only runs when asked for (`LAZASCOPE_TEST_CLIPBOARD=1`). **Show in folder** opens an Explorer window. Both use the same few Windows calls as LazaScrub and LazaBinder.
 - The window draws its own controls, so a screen reader cannot read them. The command-line tool and the report give the same information as text.
 - The dialogs for saving a file, and the boxes that report an error, are the standard ones of Windows and are not dark.
 - A look is one moment. Whether LazaScope keeps up with a PC that is changing fast was not measured.
