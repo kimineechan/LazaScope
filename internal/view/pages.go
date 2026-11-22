@@ -29,6 +29,15 @@ func partOfWindows(f model.File, folders model.Folders) bool {
 	return false
 }
 
+// windowsEntry reports whether a start-up entry is Windows' own: the file
+// that does its work is a part of Windows, or it names no file and is one
+// of the tasks Windows comes with. The list and the overview both count
+// with this, so that their numbers agree.
+func windowsEntry(e model.Startup, folders model.Folders) bool {
+	works := e.Works()
+	return partOfWindows(works, folders) || (works.Path == "" && e.Kind == model.ScheduledTask && strings.HasPrefix(strings.ToLower(e.Name), `\microsoft\windows\`))
+}
+
 // place returns a file's path when the file is there to be shown.
 func place(f model.File) string {
 	if f.Exists {
@@ -78,7 +87,7 @@ func (b *builder) startup() Page {
 		ref := rules.StartupRef(i)
 		works := e.Works()
 		row := Row{Level: b.worst(ref), Path: place(works), Off: !e.Enabled}
-		row.Windows = partOfWindows(works, s.Folders) || (works.Path == "" && e.Kind == model.ScheduledTask && strings.HasPrefix(strings.ToLower(e.Name), `\microsoft\windows\`))
+		row.Windows = windowsEntry(e, s.Folders)
 		check, maker := row.Level.String(), works.Maker()
 		if !e.Enabled && check == "" {
 			check = "Off"
@@ -601,13 +610,20 @@ func (b *builder) facts(area model.Area) string {
 		if len(s.Startup) == 0 {
 			return ""
 		}
-		other := 0
+		other, off := 0, 0
 		for _, e := range s.Startup {
-			if works := e.Works(); !partOfWindows(works, s.Folders) && works.Path != "" && e.Enabled {
+			if !windowsEntry(e, s.Folders) {
 				other++
 			}
+			if !e.Enabled {
+				off++
+			}
 		}
-		return count(len(s.Startup), "thing starts", "things start") + " by themselves. " + count(other, "of them is", "of them are") + " not part of Windows."
+		text := count(len(s.Startup), "thing is set to start by itself", "things are set to start by themselves")
+		if off > 0 {
+			text += ", " + strconv.Itoa(off) + " of them switched off"
+		}
+		return text + ". " + count(other, "is", "are") + " not part of Windows."
 	case model.RunningNow:
 		if len(s.Processes) == 0 {
 			return ""

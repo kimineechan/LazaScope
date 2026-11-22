@@ -126,7 +126,7 @@ func TestHealthyPC(t *testing.T) {
 	if got := book.Glances[model.Protection].Facts; got != "Antivirus on. Firewall on. Last update 9 days ago." {
 		t.Errorf("protection in a line: %q", got)
 	}
-	if got := book.Glances[model.StartsWithWindows].Facts; got != "3 things start by themselves. 1 of them is not part of Windows." {
+	if got := book.Glances[model.StartsWithWindows].Facts; got != "3 things are set to start by themselves. 1 is not part of Windows." {
 		t.Errorf("start-up in a line: %q", got)
 	}
 	if got := book.Glances[model.Accounts].Facts; got != "1 administrator account in use. Remote Desktop off. No remote-control software found." {
@@ -353,6 +353,48 @@ func TestSmallWords(t *testing.T) {
 	}
 	if count(1, "thing", "things") != "1 thing" || count(2, "thing", "things") != "2 things" {
 		t.Error("count words wrongly")
+	}
+}
+
+// The overview's count of what is not part of Windows is the count of rows
+// the list shows under the view of that name. Entries that are switched
+// off and entries that name no file are counted the same way in both.
+func TestOverviewAgreesWithTheList(t *testing.T) {
+	s := pc()
+	off := entry(model.RunKey, "Old", unsigned(`C:\Program Files\Old\old.exe`))
+	off.Enabled = false
+	s.Startup = append(s.Startup, off,
+		model.Startup{Kind: model.StoreApp, Name: "Music", Where: "a made-up place", Enabled: true, Untraced: true},              // names no file, and is not Windows' own
+		model.Startup{Kind: model.ScheduledTask, Name: `\Updater\Check`, Where: "Task Scheduler", Enabled: true, Untraced: true}) // the same, for a task of another maker
+	book := build(s)
+	other := 0
+	for _, row := range book.Startup.Rows {
+		if !row.Windows {
+			other++
+		}
+	}
+	if other != 4 {
+		t.Fatalf("%d rows are not part of Windows, want 4 (Notes, Old, Music and the updater's task)", other)
+	}
+	if got, want := book.Glances[model.StartsWithWindows].Facts, "6 things are set to start by themselves, 1 of them switched off. 4 are not part of Windows."; got != want {
+		t.Errorf("start-up in a line:\n   got %s\n  want %s", got, want)
+	}
+	// One entry alone reads as one.
+	s = pc()
+	s.Startup = s.Startup[:1]
+	if got, want := build(s).Glances[model.StartsWithWindows].Facts, "1 thing is set to start by itself. 1 is not part of Windows."; got != want {
+		t.Errorf("a single entry in a line:\n   got %s\n  want %s", got, want)
+	}
+	// The same holds for the running programs.
+	book = build(pc())
+	other = 0
+	for _, row := range book.Running.Rows {
+		if !row.Windows {
+			other++
+		}
+	}
+	if got, want := book.Glances[model.RunningNow].Facts, "4 programs are running. 1 of them is not part of Windows."; got != want || other != 1 {
+		t.Errorf("running in a line: %q, and %d rows are not part of Windows", got, other)
 	}
 }
 
