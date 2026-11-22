@@ -5,7 +5,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"lazascope"
@@ -254,6 +253,10 @@ func saveReport(path string, demo bool) error {
 	if path == "" {
 		return fmt.Errorf("name the file to write, ending in .html, .txt or .json")
 	}
+	// The name is checked before the look is taken, not after it.
+	if err := report.Fits(path); err != nil {
+		return err
+	}
 	var s *model.Snapshot
 	if demo {
 		s = sample.PC()
@@ -261,16 +264,9 @@ func saveReport(path string, demo bool) error {
 		s = scan.Run(scan.Everything, progress)
 	}
 	book := view.Build(s, rules.Check(s))
-	var content []byte
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".json":
-		content = report.JSON(book, lazascope.Version())
-	case ".txt":
-		content = []byte(report.Text(book, lazascope.Version()))
-	case ".html", ".htm":
-		content = report.HTML(book, lazascope.Version())
-	default:
-		return fmt.Errorf("the report's name must end in .html, .txt or .json")
+	content, err := report.Render(book, lazascope.Version(), path)
+	if err != nil {
+		return err
 	}
 	if err := os.WriteFile(path, content, 0600); err != nil {
 		return err

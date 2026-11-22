@@ -31,6 +31,18 @@ type Parts struct {
 // Everything is a look at all four.
 var Everything = Parts{true, true, true, true}
 
+// guard runs one collector. A fault inside it must not take the whole look
+// down with it: the part it was reading is left empty, which the lights
+// show as "could not be read", and a note says why.
+func guard(area model.Area, what string, gaps *[]model.Gap, collect func()) {
+	defer func() {
+		if fault := recover(); fault != nil {
+			*gaps = append(*gaps, model.Gap{Area: area, What: fmt.Sprintf("%s could not be read, because of an error inside LazaScope itself (%v). Please report it.", what, fault)})
+		}
+	}()
+	collect()
+}
+
 // Run takes a look at this PC. It only reads. note, when given, is told
 // what is being done, for a status line.
 func Run(parts Parts, note func(stage string)) *model.Snapshot {
@@ -46,18 +58,26 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	var gaps [4][]model.Gap
 	var work sync.WaitGroup
 	if parts.Startup {
-		work.Go(func() { s.Startup, gaps[1] = startup.Collect(world) })
+		work.Go(func() {
+			guard(model.StartsWithWindows, "What starts with Windows", &gaps[1], func() { s.Startup, gaps[1] = startup.Collect(world) })
+		})
 	}
 	if parts.Processes || parts.Connections {
 		// Connections are shown with the program they belong to, so the
 		// list of programs is needed for them too.
-		work.Go(func() { s.Processes, gaps[2] = procs.Collect() })
+		work.Go(func() {
+			guard(model.RunningNow, "What is running", &gaps[2], func() { s.Processes, gaps[2] = procs.Collect() })
+		})
 	}
 	if parts.Connections {
-		work.Go(func() { s.Connections, gaps[3] = netconn.Collect() })
+		work.Go(func() {
+			guard(model.Connections, "The internet connections", &gaps[3], func() { s.Connections, gaps[3] = netconn.Collect() })
+		})
 	}
 	if parts.Guard {
-		work.Go(func() { s.Guard, gaps[0] = protect.Collect() })
+		work.Go(func() {
+			guard(model.Protection, "The state of the protections", &gaps[0], func() { s.Guard, gaps[0] = protect.Collect() })
+		})
 	}
 	work.Wait()
 	for _, found := range gaps {

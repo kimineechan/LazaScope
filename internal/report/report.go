@@ -8,13 +8,41 @@ package report
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"strings"
 
 	"lazascope/internal/rules"
 	"lazascope/internal/view"
+	"lazascope/internal/winpath"
 )
+
+// Fits reports whether a file name ends in one of the forms a report can
+// take. Any other ending is refused, so that a report never lands in a file
+// that will not open.
+func Fits(name string) error {
+	switch winpath.Ext(name) {
+	case ".html", ".htm", ".txt", ".json":
+		return nil
+	}
+	return errors.New("the name of the report must end in .html, .txt or .json")
+}
+
+// Render writes the report in the form a file name asks for: a web page for
+// .html, plain text for .txt and data for .json.
+func Render(b *view.Book, version, name string) ([]byte, error) {
+	if err := Fits(name); err != nil {
+		return nil, err
+	}
+	switch winpath.Ext(name) {
+	case ".txt":
+		return []byte(Text(b, version)), nil
+	case ".json":
+		return JSON(b, version), nil
+	}
+	return HTML(b, version), nil
+}
 
 // Careful is the warning every report carries: it is full of details that
 // belong to the PC's owner.

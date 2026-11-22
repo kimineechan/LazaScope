@@ -253,3 +253,38 @@ func TestColumns(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// The ending of the file name chooses the form, and an ending that is not a
+// report's is refused before anything is written.
+func TestRender(t *testing.T) {
+	b := book(nil)
+	for name, starts := range map[string]string{
+		`C:\Users\sam\Desktop\report.html`: "<!doctype html>",
+		`report.HTM`:                       "<!doctype html>",
+		`report.txt`:                       "LazaScope report\r\n",
+		`C:\out.put\report.JSON`:           "{",
+	} {
+		content, err := Render(b, "1.0.0", name)
+		if err != nil {
+			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		if !strings.HasPrefix(string(content), starts) {
+			t.Errorf("%s starts with %q, want %q", name, string(content[:min(len(content), 40)]), starts)
+		}
+		if Fits(name) != nil {
+			t.Errorf("%s is said not to fit", name)
+		}
+	}
+	for _, name := range []string{"report", "report.pdf", "report.html.exe", `C:\folder.html\report`, ""} {
+		content, err := Render(b, "1.0.0", name)
+		if err == nil || content != nil {
+			t.Errorf("%q was written as a report", name)
+		} else if !strings.Contains(err.Error(), ".html, .txt or .json") {
+			t.Errorf("%q: the refusal does not say what is taken: %v", name, err)
+		}
+		if Fits(name) == nil {
+			t.Errorf("%q is said to fit", name)
+		}
+	}
+}

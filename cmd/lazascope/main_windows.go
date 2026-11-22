@@ -8,7 +8,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"lazascope"
@@ -50,6 +49,7 @@ var areaPage = [model.Areas]int{
 type filter struct {
 	name string
 	keep func(row view.Row) bool
+	none string // what to say when the list has rows and none of them is kept
 }
 
 func everything(view.Row) bool { return true }
@@ -104,9 +104,9 @@ func paragraphs(lines []view.Line) []winui.Paragraph {
 
 // fill puts the page's rows in the table, as the filter in use allows.
 func (l *list) fill() {
-	keep := everything
+	keep, none := everything, ""
 	if l.choice != nil && l.choice.Chosen() >= 0 && l.choice.Chosen() < len(l.filters) {
-		keep = l.filters[l.choice.Chosen()].keep
+		keep, none = l.filters[l.choice.Chosen()].keep, l.filters[l.choice.Chosen()].none
 	}
 	l.shown, l.picked = l.shown[:0], -1
 	var cells [][]string
@@ -146,8 +146,19 @@ func (l *list) fill() {
 	// Until a row is chosen, the box says what the page is and what could
 	// not be read for it.
 	lines := []view.Line{{Style: view.Heading, Text: l.page.Title}, {Style: view.Text, Text: "Select a row to read what it is and why it is there."}}
-	if l.page.Name == "Worth a look" && len(l.page.Rows) == 0 {
+	switch {
+	case l.page.Name == "Worth a look" && len(l.page.Rows) == 0:
 		lines[1].Text = "Nothing on this PC stood out to the rules. That is not a promise that nothing is wrong: LazaScope only knows the signs it was taught."
+	case len(l.page.Rows) == 0 && len(l.page.Unseen) > 0:
+		// An empty list is not a clean one when the reading failed.
+		lines[1].Text = "This list is empty because it could not be read, not because there is nothing there."
+	case len(l.page.Rows) == 0:
+		lines[1].Text = "Windows reported nothing for this list."
+	case len(l.shown) == 0:
+		if none == "" {
+			none = "Nothing in this list matches the view chosen above."
+		}
+		lines[1].Text = none + " Choose another view above to see the rest of the list."
 	}
 	if len(l.page.Unseen) > 0 {
 		lines = append(lines, view.Line{Style: view.Heading, Text: "What could not be read"})
@@ -227,7 +238,7 @@ func main() {
 		page := areaPage[area]
 		w.Button("Open", left+across-118, y+7, 104, 32, func() { w.ShowPage(page) })
 	}
-	about := w.Box("", left, 508, across, 100)
+	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network and whether the protections are on. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 508, across, 100)
 	again := w.Button("Look again", left, 628, 200, 38, nil)
 	raise := w.Button("Look again as administrator", left+212, 628, 250, 38, nil)
 	save := w.Button("Save report...", left+across-266, 628, 266, 38, nil)
@@ -266,6 +277,8 @@ func main() {
 		w.Button("Copy details", left+across-136, 250, 136, 34, func() {
 			if w.Copy(l.detail.Words()) {
 				status.SetText("Copied the details shown below the list.")
+			} else {
+				status.SetText("The details could not be copied, because another program is using the clipboard. Try again in a moment.")
 			}
 		})
 		// The columns come with the first look; until then the table has one.
@@ -276,14 +289,27 @@ func main() {
 		pageTexts[page] = [2]*winui.Control{heading, intro}
 	}
 	addList(pageProtection, false, nil)
-	addList(pageStartup, true, []filter{{"Not part of Windows", notWindows}, {"Everything", everything}, {"Only what is worth a look", flagged}, {"Only what is switched on", func(row view.Row) bool { return !row.Off }}})
-	addList(pageRunning, true, []filter{{"Everything, as a family tree", everything}, {"Not part of Windows", notWindows}, {"Only what is worth a look", flagged}})
+	const (
+		allWindows = "Everything in this list is a part of Windows."
+		noneWorth  = "Nothing in this list was flagged by the rules."
+	)
+	addList(pageStartup, true, []filter{
+		{"Not part of Windows", notWindows, allWindows},
+		{"Everything", everything, ""},
+		{"Only what is worth a look", flagged, noneWorth},
+		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, "Everything in this list is switched off."},
+	})
+	addList(pageRunning, true, []filter{
+		{"Everything, as a family tree", everything, ""},
+		{"Not part of Windows", notWindows, allWindows},
+		{"Only what is worth a look", flagged, noneWorth},
+	})
 	addList(pageConnections, true, []filter{
-		{"Everything", everything},
-		{"Connections to the internet", func(row view.Row) bool { return row.Group == "internet" }},
-		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }},
-		{"Not part of Windows", notWindows},
-		{"Only what is worth a look", flagged},
+		{"Everything", everything, ""},
+		{"Connections to the internet", func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
+		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, "No program is waiting for connections from the network."},
+		{"Not part of Windows", notWindows, allWindows},
+		{"Only what is worth a look", flagged, noneWorth},
 	})
 	addList(pageAccounts, false, nil)
 	addList(pageWorth, true, nil)
@@ -332,6 +358,11 @@ func main() {
 			note += fmt.Sprintf("\r\nWithout administrator rights, %d things could not be read. They are listed under 07 Worth a look.", unseen)
 		}
 		about.SetText(note)
+		// With the rights already held there is nothing more to ask for, and
+		// the button says so.
+		if b.Snapshot.Elevated {
+			raise.SetText("Running as administrator")
+		}
 		raise.Enable(!b.Snapshot.Elevated && !demo)
 		lay(b, false)
 		nav[pageWorth].SetText(fmt.Sprintf("07  Worth a look (%d)", len(b.Findings)))
@@ -351,6 +382,20 @@ func main() {
 		}
 		status.SetText("Looking at this PC...")
 		go func() {
+			// A fault of LazaScope's own while looking must end in words on
+			// the screen, not in a window that vanishes.
+			defer func() {
+				if fault := recover(); fault != nil {
+					w.Post(func() {
+						busy = false
+						for _, c := range jobs {
+							c.Enable(true)
+						}
+						status.SetText("The look stopped on an error inside LazaScope. Nothing on this PC was changed.")
+						w.Alert("LazaScope", fmt.Sprintf("LazaScope ran into an error of its own while looking at this PC, and stopped.\r\n\r\n%v\r\n\r\nNothing on this PC was changed. You can try Look again. If it happens every time, please report it with the line above.", fault))
+					})
+				}
+			}()
 			var s *model.Snapshot
 			if demo {
 				s = sample.PC()
@@ -379,9 +424,12 @@ func main() {
 			w.Alert("Look again as administrator", "LazaScope could not find its own file to start again.")
 			return
 		}
-		// Windows asks before giving the rights. On a no, this window stays.
+		// Windows asks before giving the rights. On a no, this window stays
+		// and says what happened.
 		if w.Elevated(self, "") {
 			w.Close()
+		} else {
+			status.SetText("Windows did not start LazaScope as administrator. Nothing has changed, and this look is still the one shown.")
 		}
 	})
 	save.Do(func() {
@@ -398,7 +446,12 @@ func main() {
 		if path == "" {
 			return
 		}
-		if err := os.WriteFile(path, render(b, path), 0600); err != nil {
+		content, err := report.Render(b, lazascope.Version(), path)
+		if err != nil {
+			w.Alert("Save the report", sentence(err)+" Choose one of the three kinds in the list at the foot of the Save window.")
+			return
+		}
+		if err := os.WriteFile(path, content, 0600); err != nil {
 			w.Alert("Save the report", "The report could not be saved: "+sentence(err))
 			return
 		}
@@ -414,19 +467,20 @@ func main() {
 // pageTexts holds the heading and the introduction of each list page.
 var pageTexts = map[int][2]*winui.Control{}
 
-// render writes the report in the form the file's name asks for.
-func render(b *view.Book, path string) []byte {
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".json":
-		return report.JSON(b, lazascope.Version())
-	case ".txt":
-		return []byte(report.Text(b, lazascope.Version()))
-	}
-	return report.HTML(b, lazascope.Version())
-}
-
 // headless takes a look and writes the report with no window.
-func headless(path string, demo bool) int {
+func headless(path string, demo bool) (code int) {
+	// With no window, a message box is the only place left to say that
+	// something went wrong.
+	defer func() {
+		if fault := recover(); fault != nil {
+			winui.Fatal("LazaScope", fmt.Errorf("LazaScope ran into an error of its own and wrote no report (%v). Nothing on this PC was changed", fault))
+			code = 3
+		}
+	}()
+	if err := report.Fits(path); err != nil {
+		winui.Fatal("LazaScope", err)
+		return 2
+	}
 	var s *model.Snapshot
 	if demo {
 		s = sample.PC()
@@ -434,7 +488,11 @@ func headless(path string, demo bool) int {
 		s = scan.Run(scan.Everything, nil)
 	}
 	b := view.Build(s, rules.Check(s))
-	if err := os.WriteFile(path, render(b, path), 0600); err != nil {
+	content, err := report.Render(b, lazascope.Version(), path)
+	if err == nil {
+		err = os.WriteFile(path, content, 0600)
+	}
+	if err != nil {
 		winui.Fatal("LazaScope", fmt.Errorf("the report could not be saved: %s", sentence(err)))
 		return 1
 	}

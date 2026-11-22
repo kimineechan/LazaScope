@@ -71,8 +71,16 @@ func (l *Library) Look(path string) model.File {
 	return entry.file
 }
 
-func (l *Library) look(path string) model.File {
-	file := model.File{Path: path}
+func (l *Library) look(path string) (file model.File) {
+	file = model.File{Path: path}
+	// One odd file must not end the whole look. If reading it goes wrong
+	// inside LazaScope, what was learnt up to then is kept and the file says
+	// that it could not be checked.
+	defer func() {
+		if fault := recover(); fault != nil && file.Signature.Status == sigcheck.Unknown {
+			file.Signature.Problem = fmt.Sprintf("LazaScope could not finish looking at this file, because of an error of its own (%v).", fault)
+		}
+	}()
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
 		file.Signature = l.checker.Check(path) // for its wording of why not
