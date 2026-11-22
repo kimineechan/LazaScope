@@ -5,9 +5,20 @@ package netconn
 
 import (
 	"net/netip"
+	"strconv"
+	"strings"
 
 	"lazascope/internal/model"
 )
+
+// Join writes an address with its port. An IPv6 address is full of colons
+// itself, so it goes in square brackets to keep the port apart.
+func Join(address string, port int) string {
+	if strings.Contains(address, ":") {
+		address = "[" + address + "]"
+	}
+	return address + ":" + strconv.Itoa(port)
+}
 
 // Reach says how far away an address is: on this PC, on the local network,
 // or out on the internet.

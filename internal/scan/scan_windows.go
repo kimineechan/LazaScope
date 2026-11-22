@@ -74,11 +74,23 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		}
 	}
 	byPID := map[uint32]*model.Process{}
+	ownerless := 0
 	for i := range s.Processes {
 		p := &s.Processes[i]
 		sort.Strings(inside[p.PID])
 		p.Services = inside[p.PID]
 		byPID[p.PID] = p
+		// A program that cannot be asked whose it is can still be placed by
+		// the services inside it, which are set to run as a known account.
+		if p.User == "" && len(p.Services) > 0 {
+			p.User = services.Account(p.Services[0])
+		}
+		if p.User == "" {
+			ownerless++
+		}
+	}
+	if ownerless > 0 && parts.Processes {
+		s.Gaps = append(s.Gaps, model.Gap{Area: model.RunningNow, What: fmt.Sprintf("The account behind %d running programs can only be read with administrator rights.", ownerless)})
 	}
 	for i := range s.Connections {
 		c := &s.Connections[i]

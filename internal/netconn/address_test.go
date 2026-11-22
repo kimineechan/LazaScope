@@ -53,6 +53,15 @@ func TestListens(t *testing.T) {
 	}
 }
 
+func TestJoin(t *testing.T) {
+	if got := Join("192.168.1.20", 443); got != "192.168.1.20:443" {
+		t.Errorf("got %s", got)
+	}
+	if got := Join("2606:4700::1111", 443); got != "[2606:4700::1111]:443" {
+		t.Errorf("got %s", got)
+	}
+}
+
 func TestService(t *testing.T) {
 	if Service(443) == "" || Service(3389) != "Remote Desktop" || Service(50123) != "" {
 		t.Error("well-known ports are named and others are not")

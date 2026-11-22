@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"lazascope/internal/model"
+	"lazascope/internal/netconn"
 	"lazascope/internal/scan"
 )
 
@@ -111,13 +112,13 @@ func networkList() error {
 	for _, c := range s.Connections {
 		remote := ""
 		if !c.Listening {
-			remote = fmt.Sprintf("%s:%d", c.Remote, c.RemotePort)
+			remote = netconn.Join(c.Remote, c.RemotePort)
 		}
 		program := c.Process
 		if len(c.Services) > 0 {
 			program += " (" + strings.Join(c.Services, ", ") + ")"
 		}
-		fmt.Printf("%-4s %-24s %-28s %-28s %-14s %-7d %-26s %s\n", c.Protocol, c.State, cut(fmt.Sprintf("%s:%d", c.Local, c.LocalPort), 28), cut(remote, 28), c.Reach, c.PID, cut(program, 26), c.File.Maker())
+		fmt.Printf("%-4s %-24s %-28s %-28s %-14s %-7d %-26s %s\n", c.Protocol, c.State, cut(netconn.Join(c.Local, c.LocalPort), 28), cut(remote, 28), c.Reach, c.PID, cut(program, 26), c.File.Maker())
 	}
 	return nil
 }

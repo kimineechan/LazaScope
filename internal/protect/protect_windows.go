@@ -32,6 +32,7 @@ var (
 	logicalDrives  = kernel32.NewProc("GetLogicalDrives")
 	driveType      = kernel32.NewProc("GetDriveTypeW")
 	shellItem      = shell32.NewProc("SHCreateItemFromParsingName")
+	keyFromName    = sysdll.Load("propsys.dll").NewProc("PSGetPropertyKeyFromName")
 )
 
 // at reads an address Windows returned as the pointer it is.
@@ -279,21 +280,33 @@ func (c *collector) updates() {
 	}
 }
 
-var (
-	shellItem2 = com.ID("7E9FB0D3-919F-4307-AB2E-9B1860310C93") // IShellItem2
-	// System.Volume.BitLockerProtection, the property Explorer reads to
-	// draw a padlock on a drive.
-	encryptionProperty = struct {
-		Set    com.GUID
-		Number uint32
-	}{com.ID("2D152B40-CA39-40DB-B2CC-573725B2FEC5"), 2}
-)
+var shellItem2 = com.ID("7E9FB0D3-919F-4307-AB2E-9B1860310C93") // IShellItem2
+
+// propertyKey mirrors PROPERTYKEY, the number Windows knows a property of a
+// file or drive by.
+type propertyKey struct {
+	Set    com.GUID
+	Number uint32
+}
+
+// encryptionKey asks Windows for the number of the property Explorer reads
+// to draw a padlock on a drive. Asking by name is safer than writing the
+// number down, which differs from what is published in places.
+func encryptionKey() (key propertyKey, ok bool) {
+	if keyFromName.Find() != nil {
+		return key, false
+	}
+	name, _ := syscall.UTF16PtrFromString("System.Volume.BitLockerProtection")
+	r, _, _ := keyFromName.Call(uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(&key)))
+	return key, r == 0
+}
 
 // volumes asks, for each fixed disk, whether it is encrypted. The usual
 // tools for this need administrator rights. Explorer's own property for
 // the padlock it draws on a drive does not, so that is what is read.
 func (c *collector) volumes(objects bool) {
-	if !objects || shellItem.Find() != nil {
+	encryptionProperty, known := encryptionKey()
+	if !objects || !known || shellItem.Find() != nil {
 		c.gap(model.Protection, "Whether the disks are encrypted could not be read.")
 		return
 	}

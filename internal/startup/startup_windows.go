@@ -567,7 +567,7 @@ func (c *collector) services() {
 			c.entries = append(c.entries, entry)
 			continue
 		}
-		entry.Account = serviceAccount(account)
+		entry.Account = services.Plain(account)
 		if delayed == 1 {
 			entry.Trigger = "A little after Windows starts"
 		}
@@ -582,19 +582,6 @@ func (c *collector) services() {
 	if refused > 0 {
 		c.gap(fmt.Sprintf("%d services or drivers are protected and can only be read with administrator rights.", refused))
 	}
-}
-
-// serviceAccount puts the account a service runs as into plain words.
-func serviceAccount(account string) string {
-	switch strings.ToLower(account) {
-	case "", "localsystem":
-		return "SYSTEM"
-	case `nt authority\localservice`:
-		return "LOCAL SERVICE"
-	case `nt authority\networkservice`:
-		return "NETWORK SERVICE"
-	}
-	return account
 }
 
 // settings reads three settings that are meant for something else and get

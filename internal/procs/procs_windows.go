@@ -99,7 +99,7 @@ func Collect() ([]model.Process, []model.Gap) {
 
 	drives := driveNames()
 	names := map[string]string{} // account names already looked up
-	pathless, commandless, ownerless := 0, 0, 0
+	pathless, commandless := 0, 0
 	for i := range list {
 		p := &list[i]
 		if p.PID == system {
@@ -149,9 +149,6 @@ func Collect() ([]model.Process, []model.Gap) {
 		if p.Parent == 0 || !running || (!parent.IsZero() && !p.Started.IsZero() && parent.After(p.Started)) {
 			p.ParentGone = p.Parent != 0
 		}
-		if p.User == "" {
-			ownerless++
-		}
 	}
 	var gaps []model.Gap
 	if pathless > 0 {
@@ -159,9 +156,6 @@ func Collect() ([]model.Process, []model.Gap) {
 	}
 	if commandless > 0 {
 		gaps = append(gaps, gap(fmt.Sprintf("The command lines of %d programs that run as other accounts can only be read with administrator rights.", commandless))...)
-	}
-	if ownerless > 0 {
-		gaps = append(gaps, gap(fmt.Sprintf("The account behind %d running programs could not be read.", ownerless))...)
 	}
 	return list, gaps
 }

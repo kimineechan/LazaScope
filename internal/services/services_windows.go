@@ -8,9 +8,11 @@ package services
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"syscall"
 	"unsafe"
 
+	"lazascope/internal/reg"
 	"lazascope/internal/sysdll"
 )
 
@@ -28,6 +30,27 @@ type State struct {
 	Driver  bool
 	Running bool
 	PID     uint32 // the program it runs inside, for a running service
+}
+
+// Account returns the account a service is set to run as.
+func Account(name string) string {
+	account, _ := reg.Text(reg.Machine, `SYSTEMCurrentControlSetServices`+name, reg.Native, "ObjectName")
+	return Plain(account)
+}
+
+// Plain puts the account a service runs as into plain words. Windows
+// writes its three built-in service accounts in a form of its own.
+func Plain(account string) string {
+	switch strings.ToLower(account) {
+	case "", "localsystem":
+		return "SYSTEM"
+	case `nt authoritylocalservice`:
+		return "LOCAL SERVICE"
+	case `nt authority
+etworkservice`:
+		return "NETWORK SERVICE"
+	}
+	return account
 }
 
 // List returns every service and driver Windows knows of.
