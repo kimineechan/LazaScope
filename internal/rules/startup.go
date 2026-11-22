@@ -84,12 +84,12 @@ var startupRules = []Rule{
 	{
 		ID: "startup-altered", Area: model.StartsWithWindows, Severity: High,
 		Title: "Starts by itself and was changed after its maker signed it",
-		Why:   "A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker, which a virus that hides inside another program does.",
+		Why:   "A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker. Unwanted code that hides inside another program does that.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, e := range s.Startup {
 				if works := e.Works(); e.Enabled && works.Exists && works.Signature.Changed() {
 					found = append(found, r.find(e.Shown(),
-						"This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can a virus that hides inside another program.",
+						"This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
 						"Reinstall the program from its maker's website and scan the PC with your antivirus. "+stop(e.Kind), about(e)...))
 				}
 			}

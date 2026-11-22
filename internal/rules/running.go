@@ -48,7 +48,7 @@ var runningRules = []Rule{
 			for _, p := range once(s.Processes) {
 				if p.File.Exists && p.File.Signature.Changed() {
 					found = append(found, r.find(p.Name,
-						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can a virus that hides inside another program.",
+						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
 						"Reinstall the program from its maker's website and scan the PC with your antivirus.", aboutProcess(p)...))
 				}
 			}

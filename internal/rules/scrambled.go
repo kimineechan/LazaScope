@@ -53,7 +53,8 @@ func Scrambled(program, command string) []string {
 	if strings.Count(lower, "^") >= 4 || strings.Count(lower, "`") >= 4 || strings.Count(lower, `"+"`)+strings.Count(lower, `'+'`)+strings.Count(lower, `" + "`)+strings.Count(lower, `' + '`) >= 3 || strings.Contains(lower, ":~") {
 		add("Its words are broken into pieces so that they are hard to read or search for.")
 	}
-	if blob(command) {
+	// The encoded commands themselves are such a block, and have been said.
+	if !encoded(command) && blob(command) {
 		add("It carries a long block of unreadable text.")
 	}
 	return signs

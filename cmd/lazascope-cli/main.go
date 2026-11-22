@@ -13,6 +13,7 @@ import (
 const usage = `LazaScope command-line tool
 
 Usage:
+  lazascope-cli scan [--details]      Take a full look and list what is worth a look, with the reasons
   lazascope-cli startup [--details]   List everything set to start by itself
   lazascope-cli running [--details]   List the running programs as a family tree
   lazascope-cli network               List the connections and the ports programs wait on
@@ -39,6 +40,8 @@ func main() {
 	}
 	var err error
 	switch os.Args[1] {
+	case "scan":
+		err = scanAll(flags["--details"])
 	case "startup":
 		err = startupList(flags["--details"])
 	case "running":

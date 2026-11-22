@@ -9,6 +9,7 @@ import (
 
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
+	"lazascope/internal/rules"
 	"lazascope/internal/scan"
 )
 
@@ -205,4 +206,34 @@ func good(a model.Answer) string {
 		return "needs attention"
 	}
 	return "not known"
+}
+
+// scanAll takes a full look at the PC and prints what is worth a look.
+func scanAll(details bool) error {
+	s := scan.Run(scan.Everything, progress)
+	findings := rules.Check(s)
+	lights := rules.Lights(s, findings)
+	fmt.Printf("%s, %s, signed in as %s, administrator rights: %s\n", s.Computer, s.Windows, s.User, onOff(s.Elevated))
+	fmt.Printf("%d start-up entries, %d running programs, %d connections and waiting ports, read in %d ms\n\n", len(s.Startup), len(s.Processes), len(s.Connections), s.Took.Milliseconds())
+	for area := model.Protection; area < model.Areas; area++ {
+		high, medium, low := rules.Count(findings, area)
+		fmt.Printf("  %-28s %-20s look first: %d, worth a look: %d, good to know: %d\n", area, lights[area], high, medium, low)
+	}
+	fmt.Printf("\nWorth a look: %d\n", len(findings))
+	for _, f := range findings {
+		fmt.Printf("\n[%s] %s\n    %s  (%s, rule %s)\n", f.Severity, f.Title, f.Subject, f.Area, f.Rule)
+		fmt.Printf("    Why:  %s\n    Do:   %s\n", f.Reason, f.Advice)
+		if details {
+			for _, fact := range f.Facts {
+				fmt.Printf("      %-22s %s\n", fact.Label+":", fact.Value)
+			}
+		}
+	}
+	if len(s.Gaps) > 0 {
+		fmt.Println("\nWhat could not be seen:")
+		for _, gap := range s.Gaps {
+			fmt.Printf("  %s: %s\n", gap.Area, gap.What)
+		}
+	}
+	return nil
 }
