@@ -72,6 +72,7 @@ type list struct {
 	detail  *winui.Control
 	shown   []view.Row // the rows in the table, after the filter
 	picked  int        // the chosen row of shown, or -1
+	waiting bool       // the first look has not come back yet
 }
 
 // tint is the colour of the first cell of a row.
@@ -127,6 +128,13 @@ func (l *list) fill() {
 		}
 	}
 	l.table.Fill(cells, tints)
+	if l.waiting {
+		// Nothing has been read yet. An empty list now must not look like a
+		// clean one.
+		l.count.SetText("Looking...")
+		l.detail.Read(winui.Paragraph{Text: l.page.Title, Style: winui.Head}, winui.Paragraph{Text: "LazaScope is looking at this PC. That takes a few seconds, and this list fills in when it is done."})
+		return
+	}
 	switch {
 	case len(l.page.Rows) == 0:
 		l.count.SetText("Nothing to show.")
@@ -280,6 +288,26 @@ func main() {
 	addList(pageAccounts, false, nil)
 	addList(pageWorth, true, nil)
 
+	// lay sets every list out from a book: its heading, its columns and its
+	// rows. While waiting for the first look only the first two are shown.
+	lay := func(b *view.Book, waiting bool) {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageWorth: &b.Worth} {
+			l := lists[index]
+			l.page, l.waiting = page, waiting
+			if waiting {
+				l.page = &view.Page{Name: page.Name, Title: page.Title, Intro: page.Intro, Columns: page.Columns}
+			}
+			pageTexts[index][0].SetText(page.Title)
+			pageTexts[index][1].SetText(page.Intro)
+			columns := make([]winui.Column, len(page.Columns))
+			for i, column := range page.Columns {
+				columns[i] = winui.Column{Title: column.Title, Width: column.Width}
+			}
+			l.table.SetColumns(columns)
+			l.fill()
+		}
+	}
+
 	// show puts a finished look on every page.
 	show := func(b *view.Book) {
 		book = b
@@ -305,20 +333,12 @@ func main() {
 		}
 		about.SetText(note)
 		raise.Enable(!b.Snapshot.Elevated && !demo)
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageWorth: &b.Worth} {
-			l := lists[index]
-			l.page = page
-			pageTexts[index][0].SetText(page.Title)
-			pageTexts[index][1].SetText(page.Intro)
-			columns := make([]winui.Column, len(page.Columns))
-			for i, column := range page.Columns {
-				columns[i] = winui.Column{Title: column.Title, Width: column.Width}
-			}
-			l.table.SetColumns(columns)
-			l.fill()
-		}
+		lay(b, false)
 		nav[pageWorth].SetText(fmt.Sprintf("07  Worth a look (%d)", len(b.Findings)))
 	}
+	// Until the first look comes back, every list has its heading and its
+	// columns and says that it is waiting.
+	lay(view.Build(&model.Snapshot{}, nil), true)
 
 	// look takes a look at the PC off the window's thread.
 	look := func() {
