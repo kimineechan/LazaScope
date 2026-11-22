@@ -57,8 +57,15 @@ var (
 	deleteValue = advapi32.NewProc("RegDeleteValueW")
 )
 
-// The lines planted in the Run list, by the end of their names.
-var runLines = []string{" disguise", " lookalike", " download", " leftover", " scramble", " plain"}
+// The lines planted in each start-up list, by the end of their names. The
+// order is fixed, so that two listings of what is there can be compared.
+var planted = []struct {
+	list  string
+	names []string
+}{
+	{runList, []string{" disguise", " lookalike", " download", " leftover", " scramble", " plain"}},
+	{runOnceList, []string{" once"}},
+}
 
 // plant is one planted thing and what must be said about it.
 type plant struct {
@@ -138,7 +145,7 @@ func run(self string) error {
 	}
 	// Looking must not have changed what was planted.
 	if after := present(p); strings.Join(after, "|") != strings.Join(before, "|") {
-		return fmt.Errorf("before the look %d planted things were there, after it %d: looking changed something", len(before), len(after))
+		return fmt.Errorf("looking changed something. Before the look these planted things were there:\n  %s\nand after it:\n  %s", strings.Join(before, "\n  "), strings.Join(after, "\n  "))
 	}
 
 	missed := 0
@@ -173,7 +180,7 @@ func run(self string) error {
 	// Anything else said about a planted thing would be a rule firing where
 	// it should not.
 	for _, f := range findings {
-		if planted(plants, f.Subject) && !expected(plants, f) {
+		if isPlanted(plants, f.Subject) && !expected(plants, f) {
 			fail("UNEXPECTED: %s was also flagged by %s", f.Subject, f.Rule)
 		}
 	}
@@ -238,7 +245,7 @@ func flagged(findings []rules.Finding, subject, rule string) (title string, ok b
 	return "", false
 }
 
-func planted(plants []plant, subject string) bool {
+func isPlanted(plants []plant, subject string) bool {
 	for _, item := range plants {
 		if item.subject == subject {
 			return true
@@ -380,12 +387,12 @@ func put(p places, self string) (plants []plant, stop func(), err error) {
 // file, the shortcut and the batch file.
 func present(p places) []string {
 	var found []string
-	for list, names := range map[string][]string{runList: runLines, runOnceList: {" once"}} {
-		key, err := open(list)
+	for _, lines := range planted {
+		key, err := open(lines.list)
 		if err != nil {
 			continue
 		}
-		for _, name := range names {
+		for _, name := range lines.names {
 			wide, _ := syscall.UTF16PtrFromString(mark + name)
 			if syscall.RegQueryValueEx(key, wide, nil, nil, nil, nil) == nil {
 				found = append(found, "the line "+mark+name)
@@ -408,12 +415,12 @@ func present(p places) []string {
 
 // remove takes away everything put could have planted, and nothing else.
 func remove(p places) error {
-	for list, names := range map[string][]string{runList: runLines, runOnceList: {" once"}} {
-		key, err := open(list)
+	for _, lines := range planted {
+		key, err := open(lines.list)
 		if err != nil {
 			continue
 		}
-		for _, name := range names {
+		for _, name := range lines.names {
 			wide, _ := syscall.UTF16PtrFromString(mark + name)
 			deleteValue.Call(uintptr(key), uintptr(unsafe.Pointer(wide)))
 		}
