@@ -10,10 +10,23 @@ import (
 	"lazascope/internal/winpath"
 )
 
-// partOfWindows reports whether a file is a part of Windows itself: signed
-// as one, and kept where Windows keeps its own files.
+// partOfWindows reports whether a file is a part of Windows itself: kept
+// where Windows keeps its own files, and signed by Microsoft as its own.
+//
+// Some parts of Windows carry two signatures, one in the file in the name
+// "Microsoft Corporation" and one in a catalogue in the name "Microsoft
+// Windows". The checker reports the one in the file, so that name counts
+// too when the file is in the Windows folder. The name Microsoft signs
+// other makers' drivers under does not: those are not parts of Windows.
 func partOfWindows(f model.File, folders model.Folders) bool {
-	return f.Signature.FromWindows() && rules.InWindows(f.Path, folders)
+	if !rules.InWindows(f.Path, folders) || !f.Signature.Trusted() {
+		return false
+	}
+	switch f.Signature.Signer {
+	case "Microsoft Windows", "Microsoft Windows Publisher", "Microsoft Corporation", "Microsoft Windows Hardware Abstraction Layer Publisher":
+		return true
+	}
+	return false
 }
 
 // place returns a file's path when the file is there to be shown.

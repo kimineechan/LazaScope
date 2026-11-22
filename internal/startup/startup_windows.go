@@ -519,6 +519,13 @@ func (c *collector) services() {
 			library, _ = key.Text("ServiceDll")
 		}
 		key.Close()
+		// Windows comes with drivers for disk controllers this PC may not
+		// have. They are recorded as loading at boot, and beside that record
+		// Windows keeps an override that says "not on this hardware". The
+		// override is what counts, and it is what Windows itself reports.
+		if override, ok := reg.Number(reg.Machine, where+`\`+name+`\StartOverride`, reg.Native, "0"); ok {
+			start = override
+		}
 
 		const (
 			kernelDriver, fileDriver = 0x01, 0x02

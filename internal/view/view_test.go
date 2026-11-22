@@ -355,3 +355,31 @@ func TestSmallWords(t *testing.T) {
 		t.Error("count words wrongly")
 	}
 }
+
+// Which files count as parts of Windows decides what the lists show first.
+func TestPartOfWindows(t *testing.T) {
+	folders := pc().Folders
+	for _, test := range []struct {
+		file model.File
+		want bool
+	}{
+		{signed(`C:\Windows\System32\svchost.exe`, "Microsoft Windows"), true},
+		{signed(`C:\Windows\System32\smss.exe`, "Microsoft Windows Publisher"), true},
+		{signed(`C:\Windows\System32\compattelrunner.exe`, "Microsoft Corporation"), true}, // signed twice; the checker reports this name
+		{signed(`C:\Windows\System32\drivers\intelpep.sys`, "Microsoft Windows Hardware Abstraction Layer Publisher"), true},
+		// Another maker's driver that Microsoft approved is not a part of Windows.
+		{signed(`C:\Windows\System32\drivers\gfx.sys`, "Microsoft Windows Hardware Compatibility Publisher"), false},
+		{signed(`C:\Windows\System32\DriverStore\FileRepository\audio.inf_amd64_1\AudioService.exe`, "Northwind Audio Ltd"), false},
+		// A Microsoft product outside the Windows folder is an installed program like any other.
+		{signed(`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`, "Microsoft Corporation"), false},
+		// The right name in the wrong place, or with no signature, counts for nothing.
+		{signed(`C:\Users\sam\Downloads\svchost.exe`, "Microsoft Windows"), false},
+		{signed(`C:\Windows\Temp\svchost.exe`, "Microsoft Windows"), false},
+		{unsigned(`C:\Windows\System32\thing.exe`), false},
+		{model.File{}, false},
+	} {
+		if got := partOfWindows(test.file, folders); got != test.want {
+			t.Errorf("%s signed by %q: got %v, want %v", test.file.Path, test.file.Signature.Signer, got, test.want)
+		}
+	}
+}
