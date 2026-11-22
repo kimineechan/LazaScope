@@ -68,6 +68,14 @@ func file(lines []Line, f model.File) []Line {
 	return fact(lines, "Version", f.Version)
 }
 
+// and joins words the way a sentence does: a, b and c.
+func and(words []string) string {
+	if len(words) < 2 {
+		return strings.Join(words, "")
+	}
+	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
+}
+
 func yes(b bool) string {
 	if b {
 		return "Yes"
@@ -80,7 +88,7 @@ func (b *builder) startup() Page {
 	page := Page{
 		Name: "Start-up", Title: "What starts by itself",
 		Intro:   "Every program, task, service and driver that Windows starts without being asked. Most of them belong to Windows or to software you installed.",
-		Columns: []Column{{"Check", 112}, {"Name", 250}, {"Kind", 128}, {"Maker", 200}, {"File", 0}},
+		Columns: []Column{{"Check", 124}, {"Name", 250}, {"Kind", 128}, {"Maker", 200}, {"File", 0}},
 		Unseen:  b.unseen(model.StartsWithWindows),
 	}
 	for i, e := range s.Startup {
@@ -325,7 +333,7 @@ func (b *builder) protection() Page {
 	page := Page{
 		Name: "Protection", Title: "How this PC is protected",
 		Intro:   "The settings that keep unwanted software out and limit what it can do. These are facts read from Windows. Nothing was tested by attacking the PC.",
-		Columns: []Column{{"Check", 112}, {"What", 250}, {"How it stands", 0}},
+		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
 		Unseen:  b.unseen(model.Protection),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
@@ -384,11 +392,11 @@ func (b *builder) protection() Page {
 	text := "Not known"
 	switch {
 	case len(offFor) > 0 && len(onFor) > 0:
-		text = "Windows Firewall is on for " + strings.Join(onFor, ", ") + ", but off for " + strings.Join(offFor, ", ")
+		text = "Windows Firewall is on for " + and(onFor) + ", but off for " + and(offFor)
 	case len(offFor) > 0:
 		text = "Windows Firewall is off"
 	case len(onFor) > 0:
-		text = "Windows Firewall is on for " + strings.Join(onFor, ", ")
+		text = "Windows Firewall is on for " + and(onFor)
 		if firewall == model.NotKnown {
 			firewall = model.Yes
 		}
@@ -462,7 +470,7 @@ func (b *builder) accounts() Page {
 	page := Page{
 		Name: "Accounts", Title: "Who can get into this PC",
 		Intro:   "The accounts with full rights over the PC, and the ways it can be used from somewhere else.",
-		Columns: []Column{{"Check", 112}, {"What", 250}, {"How it stands", 0}},
+		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
 		Unseen:  b.unseen(model.Accounts),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
@@ -538,7 +546,7 @@ func (b *builder) worth() Page {
 	page := Page{
 		Name: "Worth a look", Title: "What is worth a second look",
 		Intro:   "Everything the written rules flagged, the most serious first. A flag is a reason to look, not a verdict: the same signs that mark an intruder also mark plenty of honest software.",
-		Columns: []Column{{"How soon", 112}, {"Where", 190}, {"What was found", 380}, {"About", 0}},
+		Columns: []Column{{"How soon", 124}, {"Where", 214}, {"What was found", 430}, {"About", 0}},
 	}
 	for _, gap := range b.s.Gaps {
 		page.Unseen = append(page.Unseen, gap.What)

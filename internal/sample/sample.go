@@ -48,7 +48,9 @@ const (
 	runMachine = `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
 	services   = `HKLM\SYSTEM\CurrentControlSet\Services\`
 	scheduler  = "Task Scheduler"
-	hidden     = `powershell.exe -NoP -W Hidden -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQA`
+
+	startupFolder = profile + `\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
+	hidden        = `powershell.exe -NoP -W Hidden -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQA`
 )
 
 // service is a Windows service that runs inside the shared host program.
@@ -101,6 +103,11 @@ func PC() *model.Snapshot {
 	spool := entry(model.Service, "ContosoSpool", services+"ContosoSpool", `"C:\Program Files\Contoso\Print\spool.exe"`, signed(`C:\Program Files\Contoso\Print\spool.exe`, "Contoso Print Ltd", "Contoso Print Service"))
 	spool.Title, spool.Running, spool.Account, spool.Trigger = "Contoso Print Service", true, "SYSTEM", "When Windows starts"
 
+	// A batch file the owner wrote to open a few things at sign-in: flagged,
+	// and harmless. It shows that worth a look does not mean something is wrong.
+	own := entry(model.StartupFolder, "Open study apps.cmd", startupFolder, startupFolder+`\Open study apps.cmd`, model.File{Path: startupFolder + `\Open study apps.cmd`, Exists: true, Size: 212})
+	own.AllUsers = false
+
 	s.Startup = []model.Startup{
 		entry(model.RunKey, "SecurityHealth", runMachine, `%windir%\system32\SecurityHealthSystray.exe`, part(system+"SecurityHealthSystray.exe", "Windows Security notification icon")),
 		entry(model.RunKey, "NorthwindAudio", runMachine, `"C:\Program Files\Northwind\Audio\NwAudioTray.exe" -background`, audio),
@@ -110,6 +117,7 @@ func PC() *model.Snapshot {
 		entry(model.RunKey, "Windows Host Service", runUser, impostor.Path, impostor),
 		off, gone,
 		entry(model.StartupFolder, "AnyDesk.lnk", `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`, `"C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --control`, anydesk),
+		own,
 		task(`\Microsoft\Windows\Defrag\ScheduledDefrag`, system+`defrag.exe -c -h -o`, "Weekly", "SYSTEM", part(system+"defrag.exe", "Disk Defragmenter Module"), part(system+"defrag.exe", "Disk Defragmenter Module")),
 		task(`\Microsoft\Windows\UpdateOrchestrator\Schedule Scan`, system+`usoclient.exe StartScan`, "Daily", "SYSTEM", part(system+"usoclient.exe", "UsoClient"), part(system+"usoclient.exe", "UsoClient")),
 		task(`\Microsoft\Windows\Windows Defender\Windows Defender Scheduled Scan`, `"C:\Program Files\Windows Defender\MpCmdRun.exe" Scan -ScheduleJob`, "Daily", "SYSTEM",

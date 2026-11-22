@@ -208,10 +208,13 @@ func Count(findings []Finding, area model.Area) (high, medium, low int) {
 
 // list joins a few values for a sentence and says how many more there are.
 func list(values []string, most int) string {
-	if len(values) <= most {
-		return strings.Join(values, ", ")
+	if len(values) > most {
+		return strings.Join(values[:most], ", ") + " and " + plural(len(values)-most, "other", "others")
 	}
-	return strings.Join(values[:most], ", ") + " and " + plural(len(values)-most, "other", "others")
+	if len(values) < 2 {
+		return strings.Join(values, "")
+	}
+	return strings.Join(values[:len(values)-1], ", ") + " and " + values[len(values)-1]
 }
 
 // plural writes a count with the right form of a word.

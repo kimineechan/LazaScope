@@ -89,7 +89,7 @@ func TestText(t *testing.T) {
 	b := book(nil)
 	text := Text(b, "1.0.0")
 	for _, want := range []string{
-		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (10)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
+		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (11)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
 		"    Why: ", "    What you can do: ", "    Rule: startup-system-name\r\n", "WHAT COULD NOT BE READ\r\n", "WHAT STARTS BY ITSELF (", "Check | Name | Kind | Maker | File\r\n",
 		"Look first | Windows Host Service | Registry Run | Not signed | C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n", "LazaScope is not an antivirus",
 	} {
@@ -99,6 +99,19 @@ func TestText(t *testing.T) {
 	}
 	if strings.Contains(strings.ReplaceAll(text, "\r\n", ""), "\n") {
 		t.Error("a line of the text report does not end the way Notepad expects")
+	}
+	// A cell with nothing in it is written as a dash, so that no line ends
+	// in a bar and a space as if something had been cut off.
+	untraced := Text(book(func(s *model.Snapshot) {
+		s.Startup = append(s.Startup, model.Startup{Kind: model.ScheduledTask, Name: `\Microsoft\Windows\Thing\Task`, Where: "Task Scheduler", Enabled: true, Untraced: true})
+	}), "1.0.0")
+	if want := "- | \\Microsoft\\Windows\\Thing\\Task | Scheduled task | No file named | -\r\n"; !strings.Contains(untraced, want) {
+		t.Errorf("the text report lacks %q", want)
+	}
+	for _, line := range strings.Split(untraced, "\r\n") {
+		if strings.HasSuffix(line, " ") || strings.HasSuffix(line, "|") {
+			t.Errorf("a line of the text report ends in a space or a bar: %q", line)
+		}
 	}
 	if clean := Text(book(func(s *model.Snapshot) { *s = model.Snapshot{Taken: s.Taken, Computer: "PC"} }), "1.0.0"); !strings.Contains(clean, "Nothing on this PC stood out to the rules.") {
 		t.Error("a report with no findings does not say so")

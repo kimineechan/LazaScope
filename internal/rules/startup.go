@@ -81,6 +81,10 @@ func stop(kind model.StartupKind) string {
 
 const known = "If you know this program and installed it yourself, nothing needs doing. If you do not, search the web for its file name and maker before touching it. "
 
+// ownScript is the advice for a script, which has no maker to look up but
+// can be read.
+const ownScript = "If you wrote this script or set it up yourself, nothing needs doing. If you did not, read it before anything else: open Notepad, then drag the file into its window. Do not double-click the file, because that runs it. "
+
 var startupRules = []Rule{
 	{
 		ID: "startup-altered", Area: model.StartsWithWindows, Severity: High,
@@ -272,9 +276,13 @@ var startupRules = []Rule{
 				} else if works.Signature.Trusted() {
 					what = "The file is signed by " + works.Signature.Maker() + "."
 				}
+				advice := known
+				if runsScript(e) {
+					advice = ownScript
+				}
 				found = append(found, r.find(e.Shown(),
 					"This "+strings.ToLower(e.Kind.String())+" runs "+works.Path+", which is in a user's own folder. "+what+" Software for the whole PC is normally installed where only an administrator can change it. A file here can be replaced by any program that user runs.",
-					known+stop(e.Kind), about(e)...))
+					advice+stop(e.Kind), about(e)...))
 			}
 			return
 		},
@@ -338,7 +346,7 @@ var startupRules = []Rule{
 					reason += " This one is kept outside the Windows and Program Files folders, where installed software normally lives."
 				}
 				severity := r.Severity
-				advice := "If you wrote this script or set it up yourself, nothing needs doing. If you did not, read it before anything else: open Notepad, then drag the file into its window. Do not double-click the file, because that runs it. "
+				advice := ownScript
 				switch {
 				case EncodedScript(works.Path):
 					severity = High

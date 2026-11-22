@@ -52,6 +52,31 @@ type filter struct {
 	none string // what to say when the list has rows and none of them is kept
 }
 
+// kept says how many rows are on show, and owns up to the one case where
+// the view shows more than its name says: a part of Windows that a rule
+// flagged stays in the list of what is not part of Windows.
+func kept(shown []view.Row, all int, name string) string {
+	text := fmt.Sprintf("%d of %d shown.", len(shown), all)
+	if name != notWindowsName {
+		return text
+	}
+	parts := 0
+	for _, row := range shown {
+		if row.Windows {
+			parts++
+		}
+	}
+	switch parts {
+	case 0:
+		return text
+	case 1:
+		return text + " 1 is a flagged part of Windows."
+	}
+	return text + fmt.Sprintf(" %d are flagged parts of Windows.", parts)
+}
+
+const notWindowsName = "Not part of Windows"
+
 func everything(view.Row) bool { return true }
 func flagged(row view.Row) bool {
 	return row.Level == view.Look || row.Level == view.First || row.Level == view.Info
@@ -104,9 +129,10 @@ func paragraphs(lines []view.Line) []winui.Paragraph {
 
 // fill puts the page's rows in the table, as the filter in use allows.
 func (l *list) fill() {
-	keep, none := everything, ""
+	keep, none, name := everything, "", ""
 	if l.choice != nil && l.choice.Chosen() >= 0 && l.choice.Chosen() < len(l.filters) {
-		keep, none = l.filters[l.choice.Chosen()].keep, l.filters[l.choice.Chosen()].none
+		chosen := l.filters[l.choice.Chosen()]
+		keep, none, name = chosen.keep, chosen.none, chosen.name
 	}
 	l.shown, l.picked = l.shown[:0], -1
 	var cells [][]string
@@ -141,7 +167,7 @@ func (l *list) fill() {
 	case len(l.shown) == len(l.page.Rows):
 		l.count.SetText(fmt.Sprintf("%d shown.", len(l.shown)))
 	default:
-		l.count.SetText(fmt.Sprintf("%d of %d shown.", len(l.shown), len(l.page.Rows)))
+		l.count.SetText(kept(l.shown, len(l.page.Rows), name))
 	}
 	// Until a row is chosen, the box says what the page is and what could
 	// not be read for it.
@@ -240,7 +266,7 @@ func main() {
 	}
 	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network and whether the protections are on. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 508, across, 100)
 	again := w.Button("Look again", left, 628, 200, 38, nil)
-	raise := w.Button("Look again as administrator", left+212, 628, 250, 38, nil)
+	raise := w.Button("Look again as administrator", left+212, 628, 264, 38, nil)
 	save := w.Button("Save report...", left+across-266, 628, 266, 38, nil)
 	save.Lead(true)
 	jobs = append(jobs, again, raise, save)
@@ -262,7 +288,7 @@ func main() {
 			l.choice = w.Choice(names, left, 250, 330, 34, func() { l.fill() })
 			x += 342
 		}
-		l.count = w.Caption("", x, 250, 300, 34)
+		l.count = w.Caption("", x, 250, 360, 34)
 		if files {
 			w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
 				if l.picked < 0 || l.picked >= len(l.shown) {
@@ -294,21 +320,21 @@ func main() {
 		noneWorth  = "Nothing in this list was flagged by the rules."
 	)
 	addList(pageStartup, true, []filter{
-		{"Not part of Windows", notWindows, allWindows},
+		{notWindowsName, notWindows, allWindows},
 		{"Everything", everything, ""},
 		{"Only what is worth a look", flagged, noneWorth},
 		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, "Everything in this list is switched off."},
 	})
 	addList(pageRunning, true, []filter{
 		{"Everything, as a family tree", everything, ""},
-		{"Not part of Windows", notWindows, allWindows},
+		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
 	})
 	addList(pageConnections, true, []filter{
 		{"Everything", everything, ""},
 		{"Connections to the internet", func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
 		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, "No program is waiting for connections from the network."},
-		{"Not part of Windows", notWindows, allWindows},
+		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
 	})
 	addList(pageAccounts, false, nil)

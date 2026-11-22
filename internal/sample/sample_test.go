@@ -29,6 +29,7 @@ func TestTheMadeUpPC(t *testing.T) {
 		`running-temp-folder (worth a look): FabrikamLauncherSetup.exe`,
 		`startup-missing-file (good to know): ContosoPrintTool`,
 		`startup-scrambled-command (look first): \Updater\Check`,
+		`startup-script (worth a look): Open study apps.cmd`,
 		`startup-system-name (look first): Windows Host Service`,
 		`startup-unsigned (worth a look): PhotoSorter`,
 		`startup-unsigned (worth a look): Windows Host Service`,

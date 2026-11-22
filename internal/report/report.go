@@ -297,9 +297,13 @@ func Text(b *view.Book, version string) string {
 		}
 		line("%s", strings.Join(titles, " | "))
 		for _, row := range page.Rows {
+			// An empty cell would leave the line ending in nothing, and a
+			// reader wondering whether something was cut off.
 			cells := append([]string{}, row.Cells...)
-			if cells[0] == "" {
-				cells[0] = "-"
+			for i, cell := range cells {
+				if strings.TrimSpace(cell) == "" {
+					cells[i] = "-"
+				}
 			}
 			line("%s", strings.Join(cells, " | "))
 		}

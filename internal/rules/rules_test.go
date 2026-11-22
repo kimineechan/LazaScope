@@ -503,8 +503,10 @@ func TestRemoteTools(t *testing.T) {
 }
 
 func TestSmallHelpers(t *testing.T) {
-	if got := list([]string{"a", "b", "c"}, 3); got != "a, b, c" {
-		t.Errorf("got %q", got)
+	for want, values := range map[string][]string{"": nil, "a": {"a"}, "a and b": {"a", "b"}, "a, b and c": {"a", "b", "c"}} {
+		if got := list(values, 3); got != want {
+			t.Errorf("list(%q) = %q, want %q", values, got, want)
+		}
 	}
 	if got := list([]string{"a", "b", "c", "d"}, 2); got != "a, b and 2 others" {
 		t.Errorf("got %q", got)

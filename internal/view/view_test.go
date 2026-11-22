@@ -191,7 +191,7 @@ func TestRowsOfAHealthyPC(t *testing.T) {
 	// Protection and accounts read as settled facts.
 	for needle, want := range map[string]string{
 		"Antivirus":            "OK | Antivirus | Microsoft Defender Antivirus: on, up to date",
-		"Firewall":             "OK | Firewall | Windows Firewall is on for private networks, public networks",
+		"Firewall":             "OK | Firewall | Windows Firewall is on for private networks and public networks",
 		"User Account Control": "OK | User Account Control | On, and asks before giving a program full rights",
 		"Windows updates":      "OK | Windows updates | Last update installed on 13 November 2026, 9 days ago",
 		"Places Defender":      "OK | Places Defender skips | None",
