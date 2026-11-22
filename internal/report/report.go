@@ -290,21 +290,8 @@ type jsonFinding struct {
 	Subject  string            `json:"subject"`
 	Reason   string            `json:"reason"`
 	Advice   string            `json:"advice"`
-	Facts    map[string]string `json:"facts,omitempty"`
-}
-
-type jsonRow struct {
-	Check   string            `json:"check,omitempty"`
-	Values  map[string]string `json:"values"`
-	File    string            `json:"file,omitempty"`
-	Windows bool              `json:"partOfWindows,omitempty"`
-	Off     bool              `json:"switchedOff,omitempty"`
-	Detail  []string          `json:"detail"`
-}
-
-type jsonPage struct {
-	Title string    `json:"title"`
-	Rows  []jsonRow `json:"rows"`
+	Ref      string            `json:"ref"` // which fact it is about
+	Evidence map[string]string `json:"evidence,omitempty"`
 }
 
 type jsonLight struct {
@@ -314,54 +301,47 @@ type jsonLight struct {
 	Facts   string `json:"facts"`
 }
 
-// JSON writes the report as data for other tools to read.
+// JSON writes the report as data for other tools to read: the lights, the
+// findings, and every fact that was read.
+//
+// A finding's ref says which fact it is about. "startup:12" and
+// "process:4321" are the ref of one start-up entry or running program.
+// "file:" and "listen:" followed by a path in small letters stand for every
+// running copy of that program and for the ports it waits on. A plain word
+// such as "firewall" names a setting under protection.
 func JSON(b *view.Book, version string) []byte {
 	s := b.Snapshot
 	document := struct {
-		Tool          string              `json:"tool"`
-		Generated     string              `json:"generated"`
-		Computer      string              `json:"computer"`
-		User          string              `json:"user"`
-		Windows       string              `json:"windows"`
-		Administrator bool                `json:"administratorRights"`
-		Lights        []jsonLight         `json:"lights"`
-		Findings      []jsonFinding       `json:"findings"`
-		CouldNotRead  []string            `json:"couldNotRead"`
-		Pages         map[string]jsonPage `json:"pages"`
+		Tool          string        `json:"tool"`
+		Generated     string        `json:"generated"`
+		TookMillis    int64         `json:"tookMilliseconds"`
+		Computer      string        `json:"computer"`
+		User          string        `json:"user"`
+		Windows       string        `json:"windows"`
+		Administrator bool          `json:"administratorRights"`
+		Summary       string        `json:"summary"`
+		Lights        []jsonLight   `json:"lights"`
+		Findings      []jsonFinding `json:"findings"`
+		CouldNotRead  []string      `json:"couldNotRead"`
+		Facts         jsonFacts     `json:"facts"`
 	}{
-		Tool: "LazaScope " + version, Generated: s.Taken.UTC().Format("2006-01-02T15:04:05Z"),
-		Computer: s.Computer, User: s.User, Windows: s.Windows, Administrator: s.Elevated,
-		Findings: []jsonFinding{}, CouldNotRead: append([]string{}, b.Worth.Unseen...), Pages: map[string]jsonPage{},
+		Tool: "LazaScope " + version, Generated: stamp(s.Taken), TookMillis: s.Took.Milliseconds(),
+		Computer: s.Computer, User: s.User, Windows: s.Windows, Administrator: s.Elevated, Summary: b.Summary,
+		Lights: []jsonLight{}, Findings: []jsonFinding{}, CouldNotRead: append([]string{}, b.Worth.Unseen...), Facts: facts(s),
 	}
 	for _, glance := range b.Glances {
 		document.Lights = append(document.Lights, jsonLight{glance.Area.String(), lamp(glance.Light), glance.Verdict, glance.Facts})
 	}
 	for _, f := range b.Findings {
-		finding := jsonFinding{f.Rule, strings.ToLower(f.Severity.String()), f.Area.String(), f.Title, f.Subject, f.Reason, f.Advice, map[string]string{}}
+		finding := jsonFinding{f.Rule, strings.ToLower(f.Severity.String()), f.Area.String(), f.Title, f.Subject, f.Reason, f.Advice, f.Ref, map[string]string{}}
 		for _, fact := range f.Facts {
-			if have, ok := finding.Facts[fact.Label]; ok {
-				finding.Facts[fact.Label] = have + "; " + fact.Value
+			if have, ok := finding.Evidence[fact.Label]; ok {
+				finding.Evidence[fact.Label] = have + "; " + fact.Value
 			} else {
-				finding.Facts[fact.Label] = fact.Value
+				finding.Evidence[fact.Label] = fact.Value
 			}
 		}
 		document.Findings = append(document.Findings, finding)
-	}
-	for key, page := range map[string]*view.Page{"protection": &b.Protection, "accounts": &b.Accounts, "startup": &b.Startup, "running": &b.Running, "connections": &b.Connections} {
-		out := jsonPage{Title: page.Title, Rows: []jsonRow{}}
-		for _, row := range page.Rows {
-			item := jsonRow{Check: row.Level.String(), Values: map[string]string{}, File: row.Path, Windows: row.Windows, Off: row.Off, Detail: []string{}}
-			for i, cell := range row.Cells {
-				if i > 0 && i < len(page.Columns) {
-					item.Values[page.Columns[i].Title] = strings.TrimLeft(cell, " ")
-				}
-			}
-			for _, line := range row.Detail {
-				item.Detail = append(item.Detail, line.Text)
-			}
-			out.Rows = append(out.Rows, item)
-		}
-		document.Pages[key] = out
 	}
 	out, _ := json.MarshalIndent(document, "", "  ")
 	return append(out, '\n')

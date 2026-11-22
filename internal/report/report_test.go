@@ -2,6 +2,7 @@ package report
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -106,22 +107,49 @@ func TestText(t *testing.T) {
 
 func TestJSON(t *testing.T) {
 	b := book(nil)
+	type file struct {
+		Path, Signature, SignedBy, SignatureIn, SaysCompany string
+		Exists, Program                                     bool
+	}
 	var document struct {
-		Tool, Generated, Computer, User, Windows string
-		AdministratorRights                      bool
-		Lights                                   []struct{ Area, Light, Verdict, Facts string }
-		Findings                                 []struct {
-			Rule, Severity, Area, Title, Subject, Reason, Advice string
-			Facts                                                map[string]string
+		Tool, Generated, Computer, User, Windows, Summary string
+		TookMilliseconds                                  int64
+		AdministratorRights                               bool
+		Lights                                            []struct{ Area, Light, Verdict, Facts string }
+		Findings                                          []struct {
+			Rule, Severity, Area, Title, Subject, Reason, Advice, Ref string
+			Evidence                                                  map[string]string
 		}
 		CouldNotRead []string
-		Pages        map[string]struct {
-			Title string
-			Rows  []struct {
-				Check  string
-				Values map[string]string
-				File   string
-				Detail []string
+		Facts        struct {
+			Startup []struct {
+				Ref, Kind, Name, RecordedIn, Command, StartedThrough, Trigger string
+				Enabled                                                       bool
+				File                                                          *file
+			}
+			Processes []struct {
+				Ref, Name, Command, User, Started string
+				PID, Parent                       uint32
+				File                              *file
+				Services                          []string
+			}
+			Connections []struct {
+				Protocol, State, Local, Remote, Reach, Process, Path string
+				LocalPort, RemotePort                                int
+				Listening                                            bool
+			}
+			Protection struct {
+				Antivirus                                           []struct{ Name, On, UpToDate string }
+				AntivirusVerdict, UserAccountControl, RemoteDesktop string
+				DefenderExclusionsReadable                          bool
+				Volumes                                             []struct{ Drive, Encrypted, State string }
+				Administrators                                      []struct{ Name, Disabled, BuiltIn string }
+				HostsEntries                                        []struct {
+					Address string
+					Names   []string
+				}
+				InstalledPrograms []struct{ Name string }
+				LastUpdate        string
 			}
 		}
 	}
@@ -129,30 +157,90 @@ func TestJSON(t *testing.T) {
 	if err := json.Unmarshal(data, &document); err != nil {
 		t.Fatalf("the data is not valid JSON: %v", err)
 	}
-	if document.Tool != "LazaScope 1.0.0" || document.Computer != "STUDY-PC" || document.User != "sam" || len(document.Generated) != 20 {
+	if document.Tool != "LazaScope 1.0.0" || document.Computer != "STUDY-PC" || document.User != "sam" || len(document.Generated) != 20 || document.TookMilliseconds != 1900 || document.Summary != b.Summary {
 		t.Errorf("the head of the data: %+v", document)
 	}
 	if len(document.Lights) != int(model.Areas) || document.Lights[1].Light != "red" || document.Lights[3].Light != "green" {
 		t.Errorf("lights: %+v", document.Lights)
 	}
-	if len(document.Findings) != len(b.Findings) || document.Findings[0].Severity != "look first" || document.Findings[0].Facts["File"] == "" {
-		t.Errorf("findings: %d, first %+v", len(document.Findings), document.Findings[0])
+	if len(document.Findings) != len(b.Findings) || len(document.CouldNotRead) != 2 {
+		t.Fatalf("%d findings and %d notes", len(document.Findings), len(document.CouldNotRead))
 	}
-	if len(document.CouldNotRead) != 2 || len(document.Pages) != 5 {
-		t.Errorf("%d notes and %d pages", len(document.CouldNotRead), len(document.Pages))
+	// Every fact that was read is there, one record each.
+	s, facts := b.Snapshot, document.Facts
+	if len(facts.Startup) != len(s.Startup) || len(facts.Processes) != len(s.Processes) || len(facts.Connections) != len(s.Connections) {
+		t.Fatalf("%d start-up entries, %d programs and %d connections in the data", len(facts.Startup), len(facts.Processes), len(facts.Connections))
 	}
-	startup := document.Pages["startup"]
-	if len(startup.Rows) != len(b.Startup.Rows) || startup.Rows[0].Check != "Look first" || startup.Rows[0].Values["Name"] == "" || len(startup.Rows[0].Detail) == 0 {
-		t.Errorf("the start-up page: %d rows, first %+v", len(startup.Rows), startup.Rows[0])
+	// A finding points at the fact it is about.
+	first := document.Findings[0]
+	if first.Severity != "look first" || first.Rule != "startup-system-name" || first.Evidence["File"] == "" || !strings.HasPrefix(first.Ref, "startup:") {
+		t.Fatalf("the first finding: %+v", first)
 	}
-	// The family tree's indenting is for the eye, not for data.
-	for _, row := range document.Pages["running"].Rows {
-		if strings.HasPrefix(row.Values["Program"], " ") {
-			t.Errorf("a program's name starts with a space: %q", row.Values["Program"])
+	pointed := false
+	for _, entry := range facts.Startup {
+		if entry.Ref != first.Ref {
+			continue
 		}
+		pointed = true
+		if entry.Name != "Windows Host Service" || entry.Kind != "Registry Run" || !entry.Enabled || entry.File == nil ||
+			entry.File.Path != `C:\Users\sam\AppData\Roaming\svchost.exe` || entry.File.Signature != "unsigned" || !entry.File.Program || !entry.File.Exists {
+			t.Errorf("the entry the first finding points at: %+v, file %+v", entry, entry.File)
+		}
+	}
+	if !pointed {
+		t.Errorf("no start-up entry has the ref %s", first.Ref)
+	}
+	// A service shows the library that does its work, and the host that runs it.
+	for _, entry := range facts.Startup {
+		if entry.Name == "Audiosrv" {
+			if entry.File == nil || entry.File.Path != `C:\Windows\System32\audiosrv.dll` || entry.StartedThrough != `C:\Windows\System32\svchost.exe` ||
+				entry.File.Signature != "signed" || entry.File.SignedBy != "Microsoft Windows" || entry.File.SignatureIn != "catalogue" {
+				t.Errorf("the audio service: %+v, file %+v", entry, entry.File)
+			}
+		}
+	}
+	for _, p := range facts.Processes {
+		if p.Ref != "process:"+strconv.Itoa(int(p.PID)) || p.Name == "" {
+			t.Errorf("a program without its ref or name: %+v", p)
+		}
+		if p.Name == "notes.exe" && (p.File == nil || p.File.SignedBy != "Brightline Software Ltd" || p.Parent != 3000 || p.User != "sam" || len(p.Started) != 20 || p.Command == "") {
+			t.Errorf("notes.exe: %+v, file %+v", p, p.File)
+		}
+		if p.Name == "System" && p.File != nil {
+			t.Errorf("the System process has a file: %+v", p.File)
+		}
+	}
+	waiting := 0
+	for _, c := range facts.Connections {
+		if c.Listening {
+			waiting++
+			if c.Remote != "" || c.RemotePort != 0 {
+				t.Errorf("a waiting port has another end: %+v", c)
+			}
+		} else if c.Remote == "" || c.RemotePort == 0 || c.Process == "" {
+			t.Errorf("a connection without its other end or its program: %+v", c)
+		}
+	}
+	if waiting != 8 {
+		t.Errorf("%d waiting ports in the data, want 8", waiting)
+	}
+	p := facts.Protection
+	if len(p.Antivirus) != 1 || p.Antivirus[0].On != "yes" || p.AntivirusVerdict != "yes" || p.UserAccountControl != "yes" || p.RemoteDesktop != "no" || p.DefenderExclusionsReadable ||
+		len(p.Volumes) != 1 || p.Volumes[0].Encrypted != "no" || len(p.Administrators) != 2 || p.Administrators[0].Disabled != "yes" || len(p.HostsEntries) != 2 || len(p.InstalledPrograms) != 6 || len(p.LastUpdate) != 20 {
+		t.Errorf("protection: %+v", p)
 	}
 	if !strings.HasSuffix(string(data), "}\n") {
 		t.Error("the data does not end with a line break")
+	}
+	// A look that read nothing still gives well-formed data, with empty lists and not nulls.
+	empty := string(JSON(book(func(s *model.Snapshot) { *s = model.Snapshot{Taken: s.Taken, Computer: "PC"} }), "1.0.0"))
+	for _, want := range []string{`"findings": []`, `"startup": []`, `"processes": []`, `"connections": []`, `"antivirus": []`, `"installedPrograms": []`, `"couldNotRead": []`} {
+		if !strings.Contains(empty, want) {
+			t.Errorf("the data of an empty look lacks %s", want)
+		}
+	}
+	if strings.Contains(empty, "null") {
+		t.Error("the data of an empty look holds a null")
 	}
 }
 
