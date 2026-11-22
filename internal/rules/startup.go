@@ -138,7 +138,7 @@ var startupRules = []Rule{
 					continue
 				}
 				found = append(found, r.find(e.Shown(),
-					"This entry runs "+winpath.Base(e.Program.Path)+", a tool that carries out whatever commands it is given, and the commands are hidden: "+strings.Join(signs, " ")+" Honest software has little reason to hide what it runs at start-up.",
+					"This entry runs "+winpath.Base(e.Program.Path)+", a tool that carries out whatever commands it is given, and the commands are hidden. "+strings.Join(signs, " ")+" Honest software has little reason to hide what it runs at start-up.",
 					"Do not run the command to see what it does. Unless you set this up yourself, show it to someone who knows Windows well. "+stop(e.Kind), about(e)...))
 			}
 			return

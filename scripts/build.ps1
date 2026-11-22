@@ -1,0 +1,24 @@
+$ErrorActionPreference = 'Stop'
+Set-Location (Join-Path $PSScriptRoot '..')
+if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+    throw 'Install Go from https://go.dev/dl/, reopen PowerShell, then run this script.'
+}
+$env:GOOS = 'windows'
+$env:GOARCH = 'amd64'
+$env:CGO_ENABLED = '0'
+New-Item -ItemType Directory -Force dist | Out-Null
+go run -buildvcs=false ./tools/mkres
+if ($LASTEXITCODE -ne 0) { throw 'Resource generation failed.' }
+go vet -buildvcs=false ./...
+if ($LASTEXITCODE -ne 0) { throw 'Go vet failed.' }
+go test -buildvcs=false ./...
+if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
+go build -buildvcs=false -trimpath -ldflags '-H=windowsgui -s -w' -o dist/LazaScope.exe ./cmd/lazascope
+if ($LASTEXITCODE -ne 0) { throw 'LazaScope build failed.' }
+go build -buildvcs=false -trimpath -ldflags '-s -w' -o dist/lazascope-cli.exe ./cmd/lazascope-cli
+if ($LASTEXITCODE -ne 0) { throw 'Command-line tool build failed.' }
+# Plants harmless test items in this account's own Run list and folders,
+# checks that each is flagged, and removes them again. See VALIDATION.md.
+go run -buildvcs=false ./cmd/verify
+if ($LASTEXITCODE -ne 0) { throw 'Verification failed.' }
+Write-Host 'Built dist\LazaScope.exe and dist\lazascope-cli.exe'

@@ -106,7 +106,7 @@ var runningRules = []Rule{
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range s.Processes {
 				r.at(ProcessRef(p.PID))
-				if p.CommandHidden || p.Command == "" {
+				if p.CommandHidden || p.Command == "" || p.Self {
 					continue
 				}
 				signs := Scrambled(p.File.Path, p.Command)
@@ -114,7 +114,7 @@ var runningRules = []Rule{
 					continue
 				}
 				f := r.find(p.Name,
-					p.Name+" carries out whatever commands it is given, and the commands it is running now are hidden: "+strings.Join(signs, " ")+" Some developer tools and management software do this for ordinary reasons.",
+					p.Name+" carries out whatever commands it is given, and the commands it is running now are hidden. "+strings.Join(signs, " ")+" Some developer tools and management software do this for ordinary reasons.",
 					"Look at what started it: the Running now page shows each program under the one that launched it. If it belongs to a tool you use, nothing needs doing. If nothing explains it, show it to someone who knows Windows well.", aboutProcess(p)...)
 				if Hidden(p.File.Path, p.Command) {
 					f.Reason += " It was also told to work without showing a window."
@@ -132,7 +132,9 @@ func once(list []model.Process) []model.Process {
 	seen := map[string]bool{}
 	var kept []model.Process
 	for _, p := range list {
-		if p.File.Path == "" {
+		// The program taking the look is listed like any other but not judged:
+		// whoever is reading this started it.
+		if p.File.Path == "" || p.Self {
 			continue
 		}
 		if key := strings.ToLower(p.File.Path); !seen[key] {

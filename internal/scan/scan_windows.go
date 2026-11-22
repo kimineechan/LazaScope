@@ -7,6 +7,7 @@ package scan
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -79,6 +80,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		p := &s.Processes[i]
 		sort.Strings(inside[p.PID])
 		p.Services = inside[p.PID]
+		p.Self = int(p.PID) == os.Getpid()
 		byPID[p.PID] = p
 		// A program that cannot be asked whose it is can still be placed by
 		// the services inside it, which are set to run as a known account.

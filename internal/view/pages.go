@@ -138,6 +138,9 @@ func (b *builder) running() Page {
 		row.Cells = []string{row.Level.String(), strings.Repeat("    ", member.Depth) + p.Name, strconv.Itoa(int(p.PID)), account, maker}
 
 		lines := []Line{{Heading, p.Name}}
+		if p.Self {
+			lines = append(lines, Line{Text, "This is LazaScope itself, the program you are looking at. It is listed like any other program, but the rules do not judge it."})
+		}
 		lines = b.said(lines, refs...)
 		lines = append(lines, Line{Heading, "Details"})
 		switch {

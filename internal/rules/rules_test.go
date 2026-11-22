@@ -229,6 +229,8 @@ var changes = []change{
 	{"PowerShell is running an encoded command", run(model.Process{PID: 9000, Name: "powershell.exe", File: windows(powershell), Command: encodedRun}), "running-scrambled-command:medium"},
 	{"the same, but its command cannot be read", run(model.Process{PID: 9000, Name: "powershell.exe", File: windows(powershell), CommandHidden: true}), ""},
 	{"a program Windows will not give the place of", run(model.Process{PID: 9000, Name: "svchost.exe"}), ""},
+	{"LazaScope itself, unsigned and started straight from Downloads", run(model.Process{PID: 9000, Name: "LazaScope.exe", File: unsigned(`C:\Users\sam\Downloads\LazaScope.exe`), Command: `powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA`, Self: true}), ""},
+	{"another program, unsigned and started straight from Downloads", run(model.Process{PID: 9000, Name: "LazaScope.exe", File: unsigned(`C:\Users\sam\Downloads\LazaScope.exe`)}), "running-temp-folder:high"},
 
 	// Internet connections.
 	{"an unsigned program waits for the network on two ports", func(s *model.Snapshot) {

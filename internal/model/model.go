@@ -230,6 +230,7 @@ type Process struct {
 
 	ParentGone    bool // the program that started it has closed since
 	CommandHidden bool // its command line can only be read with administrator rights
+	Self          bool // it is the program taking this look
 }
 
 // Reach is how far away the other end of a connection is, or for a program
