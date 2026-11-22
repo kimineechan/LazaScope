@@ -19,8 +19,8 @@ func aboutProcess(p model.Process) []Fact {
 	}
 	add("File", p.File.Path)
 	if p.File.Exists && p.File.Program {
-		add("Signature", signature(p.File))
-		add("The file says it is", claim(p.File))
+		add("Signature", Signature(p.File))
+		add("The file says it is", Claim(p.File))
 	}
 	if p.CommandHidden {
 		add("Command", "Can only be read with administrator rights")
@@ -179,8 +179,8 @@ var connectionRules = []Rule{
 				found = append(found, r.find(c.Process,
 					c.Process+" is waiting for other devices to connect to it on port "+list(ports[key], 6)+", and it is not signed by a known maker. Programs you build or run for development often look like this. So does a back door.",
 					"If this is a program you run on purpose, such as a game server or a development tool, nothing needs doing. If you do not recognise it, find it on the Running now page and look at what started it. Windows Firewall decides whether other devices can actually reach it.",
-					Fact{"Program", c.Process + " (process " + strconv.Itoa(int(c.PID)) + ")"}, Fact{"File", c.File.Path}, Fact{"Signature", signature(c.File)},
-					Fact{"Waits on", c.Protocol + " port " + strings.Join(ports[key], ", ")}, Fact{"The file says it is", claim(c.File)}))
+					Fact{"Program", c.Process + " (process " + strconv.Itoa(int(c.PID)) + ")"}, Fact{"File", c.File.Path}, Fact{"Signature", Signature(c.File)},
+					Fact{"Waits on", c.Protocol + " port " + strings.Join(ports[key], ", ")}, Fact{"The file says it is", Claim(c.File)}))
 			}
 			return
 		},

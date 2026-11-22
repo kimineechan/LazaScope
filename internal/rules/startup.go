@@ -23,16 +23,16 @@ func about(e model.Startup) []Fact {
 		add("Started through", e.Program.Path)
 	}
 	if works.Exists && works.Program {
-		add("Signature", signature(works))
-		add("The file says it is", claim(works))
+		add("Signature", Signature(works))
+		add("The file says it is", Claim(works))
 	}
 	add("Starts", e.Trigger)
 	add("Runs as", e.Account)
 	return facts
 }
 
-// signature says in a line who signed a file, or that nobody did.
-func signature(f model.File) string {
+// Signature says in a line who signed a file, or that nobody did.
+func Signature(f model.File) string {
 	switch f.Signature.Status {
 	case sigcheck.Signed:
 		text := "Signed by " + f.Signature.Maker()
@@ -52,8 +52,9 @@ func signature(f model.File) string {
 	return "Could not be checked. " + f.Signature.Problem
 }
 
-// claim joins what a file says of itself.
-func claim(f model.File) string {
+// Claim joins what a file says of itself. Anyone can write anything into
+// a file, so this is a claim and not proof.
+func Claim(f model.File) string {
 	var parts []string
 	for _, part := range []string{f.Description, f.Company} {
 		if part != "" {
