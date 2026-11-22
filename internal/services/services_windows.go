@@ -34,7 +34,7 @@ type State struct {
 
 // Account returns the account a service is set to run as.
 func Account(name string) string {
-	account, _ := reg.Text(reg.Machine, `SYSTEMCurrentControlSetServices`+name, reg.Native, "ObjectName")
+	account, _ := reg.Text(reg.Machine, `SYSTEM\CurrentControlSet\Services\`+name, reg.Native, "ObjectName")
 	return Plain(account)
 }
 
@@ -44,10 +44,9 @@ func Plain(account string) string {
 	switch strings.ToLower(account) {
 	case "", "localsystem":
 		return "SYSTEM"
-	case `nt authoritylocalservice`:
+	case `nt authority\localservice`:
 		return "LOCAL SERVICE"
-	case `nt authority
-etworkservice`:
+	case `nt authority\networkservice`:
 		return "NETWORK SERVICE"
 	}
 	return account
