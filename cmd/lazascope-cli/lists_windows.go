@@ -214,8 +214,13 @@ func good(a model.Answer) string {
 }
 
 // scanAll takes a full look at the PC and prints what is worth a look.
-func scanAll(details bool) error {
-	s := scan.Run(scan.Everything, progress)
+func scanAll(details, demo bool) error {
+	var s *model.Snapshot
+	if demo {
+		s = sample.PC()
+	} else {
+		s = scan.Run(scan.Everything, progress)
+	}
 	findings := rules.Check(s)
 	lights := rules.Lights(s, findings)
 	fmt.Printf("%s, %s, signed in as %s, administrator rights: %s\n", s.Computer, s.Windows, s.User, onOff(s.Elevated))
@@ -272,4 +277,22 @@ func saveReport(path string, demo bool) error {
 	}
 	fmt.Printf("Wrote %s (%d findings). %s\n", path, len(book.Findings), report.Careful)
 	return nil
+}
+
+// ruleList prints every rule: what it flags and why it exists. With
+// markdown set it prints the table that docs/RULES.md holds.
+func ruleList(markdown bool) {
+	all := rules.All()
+	if markdown {
+		fmt.Println("| Rule | Area | Usually | What it flags | Why it matters |")
+		fmt.Println("| --- | --- | --- | --- | --- |")
+		for _, rule := range all {
+			fmt.Printf("| `%s` | %s | %s | %s | %s |\n", rule.ID, rule.Area, rule.Severity, rule.Title, rule.Why)
+		}
+		return
+	}
+	fmt.Printf("LazaScope has %d rules.\n", len(all))
+	for _, rule := range all {
+		fmt.Printf("\n%s  (%s, usually: %s)\n    %s\n    %s\n", rule.ID, rule.Area, strings.ToLower(rule.Severity.String()), rule.Title, rule.Why)
+	}
 }
