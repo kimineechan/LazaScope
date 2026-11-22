@@ -65,7 +65,7 @@ func homeName(name string) bool {
 
 var protectionRules = []Rule{
 	{
-		ID: "antivirus-off", Area: model.Protection, Severity: High,
+		ID: "antivirus-off", Area: model.Protection, Severity: High, Topic: "antivirus",
 		Title: "Antivirus protection is off",
 		Why:   "Antivirus checks every file as it is opened. Malware often switches it off first, and a PC without it has no second line of defence against a bad download.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -95,7 +95,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "antivirus-out-of-date", Area: model.Protection, Severity: Medium,
+		ID: "antivirus-out-of-date", Area: model.Protection, Severity: Medium, Topic: "antivirus",
 		Title: "Antivirus is on but out of date",
 		Why:   "Antivirus recognises threats from a list that is renewed several times a day. With an old list it misses whatever is new.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -110,7 +110,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "defender-tamper-off", Area: model.Protection, Severity: Medium,
+		ID: "defender-tamper-off", Area: model.Protection, Severity: Medium, Topic: "tamper",
 		Title: "Defender's settings are not locked",
 		Why:   "Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings. Malware that gets in tries to do exactly that.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -123,7 +123,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "defender-exclusions", Area: model.Protection, Severity: Medium,
+		ID: "defender-exclusions", Area: model.Protection, Severity: Medium, Topic: "exclusions",
 		Title: "Microsoft Defender has been told to skip some places",
 		Why:   "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Developers and games sometimes need one. Malware adds its own folder to the list so that it is never scanned.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -153,7 +153,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "firewall-off", Area: model.Protection, Severity: High,
+		ID: "firewall-off", Area: model.Protection, Severity: High, Topic: "firewall",
 		Title: "The firewall is off",
 		Why:   "The firewall decides which programs on other devices may start a connection to this PC. With it off, every program that is waiting for connections can be reached by anything on the same network.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -188,7 +188,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "uac-off", Area: model.Protection, Severity: High,
+		ID: "uac-off", Area: model.Protection, Severity: High, Topic: "uac",
 		Title: "Windows does not ask before giving a program full rights",
 		Why:   "User Account Control is the prompt that asks \"Do you want to allow this app to make changes?\". It is the moment at which a person can say no. With it off or silenced, any program an administrator runs can take full control of the PC without anyone seeing it happen.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -209,7 +209,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "updates-old", Area: model.Protection, Severity: Medium,
+		ID: "updates-old", Area: model.Protection, Severity: Medium, Topic: "updates",
 		Title: "Windows has not installed an update for some time",
 		Why:   "Microsoft fixes security holes in Windows every month. Each month without updates leaves known holes open, and those are the ones attackers use most.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -233,7 +233,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "hosts-entries", Area: model.Protection, Severity: Medium,
+		ID: "hosts-entries", Area: model.Protection, Severity: Medium, Topic: "hosts",
 		Title: "The hosts file sends website names somewhere else",
 		Why:   "Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can silently send a name to any address, for instance a bank's name to a fake copy, or stop security sites from being reached at all.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -300,6 +300,7 @@ var protectionRules = []Rule{
 		Why:   "Encryption (BitLocker, or Device encryption) scrambles the disk so that it can only be read after signing in. Without it, anyone who takes the PC or the disk can read every file on it without knowing the password. It matters most for a laptop.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, volume := range s.Guard.Volumes {
+				r.at(DiskRef(volume.Drive))
 				if volume.Encrypted == model.No && s.Folders.Windows != "" && strings.EqualFold(volume.Drive, s.Folders.Windows[:2]) {
 					found = append(found, r.find("Drive "+volume.Drive,
 						"Drive "+volume.Drive+", which holds Windows and your files, is not encrypted ("+strings.ToLower(volume.State)+"). If the PC is lost or stolen, its files can be read without your password.",
@@ -311,7 +312,7 @@ var protectionRules = []Rule{
 		},
 	},
 	{
-		ID: "secure-boot-off", Area: model.Protection, Severity: Low,
+		ID: "secure-boot-off", Area: model.Protection, Severity: Low, Topic: "secureboot",
 		Title: "Secure Boot is off",
 		Why:   "Secure Boot lets the PC start only software its maker or Microsoft has signed, which blocks malware that loads before Windows does and so hides from it.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {

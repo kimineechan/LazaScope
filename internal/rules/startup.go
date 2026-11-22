@@ -86,7 +86,8 @@ var startupRules = []Rule{
 		Title: "Starts by itself and was changed after its maker signed it",
 		Why:   "A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker. Unwanted code that hides inside another program does that.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if works := e.Works(); e.Enabled && works.Exists && works.Signature.Changed() {
 					found = append(found, r.find(e.Shown(),
 						"This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
@@ -101,7 +102,8 @@ var startupRules = []Rule{
 		Title: "Named like a part of Windows, but not where Windows keeps it",
 		Why:   "Windows' own programs, such as svchost.exe, live in the Windows folder. A file with one of those names anywhere else is a classic disguise: it hopes to be passed over in a list.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				for _, file := range distinct(e.Program, e.Target) {
 					if !e.Enabled {
 						continue
@@ -125,7 +127,8 @@ var startupRules = []Rule{
 		Title: "Starts a scripting tool with a scrambled command",
 		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions from people and from antivirus by encoding them, breaking the words up, or fetching the real commands from the internet at the last moment.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if !e.Enabled || e.Command == "" {
 					continue
 				}
@@ -145,7 +148,8 @@ var startupRules = []Rule{
 		Title: "Windows' sign-in programs have been changed",
 		Why:   "Two settings name what Windows runs while a user signs in: the desktop (explorer.exe) and a helper (userinit.exe). Anything added there runs at every sign-in before the user sees the desktop, which makes these settings a favourite hiding place.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if e.Kind != model.LogonSetting {
 					continue
 				}
@@ -168,7 +172,8 @@ var startupRules = []Rule{
 		Title: "Another program is set to run in place of a normal one",
 		Why:   "Windows has a developer setting called a debugger: when the named program is opened, Windows starts the debugger in its place. It is a known trick for swapping one program for another, most famously to open a command window from the sign-in screen without a password.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if e.Kind != model.DebuggerSetting || !e.Enabled {
 					continue
 				}
@@ -191,7 +196,8 @@ var startupRules = []Rule{
 		Title: "A library is set to load into every program",
 		Why:   "An old Windows setting (AppInit_DLLs) loads the named libraries into every program that shows a window. Very little modern software uses it, and it gives whatever is named there a view into almost everything the user does.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if e.Kind != model.LoadedLibrary || !e.Enabled {
 					continue
 				}
@@ -211,7 +217,8 @@ var startupRules = []Rule{
 		Title: "Starts from a temporary or download folder",
 		Why:   "Installed software lives in Program Files. Temporary and download folders are where files land from the internet and where installers unpack, so something that starts from there at every boot was probably never properly installed. Malware often runs from these folders because any program may write to them.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if !e.Enabled {
 					continue
 				}
@@ -239,7 +246,8 @@ var startupRules = []Rule{
 		Title: "A task, service or driver runs from a user's folder",
 		Why:   "Services, drivers and most scheduled tasks belong to the whole PC and are installed into Program Files or Windows, where only an administrator can change them. One that runs a file from a user's own folder is unusual for real software, and the file can be swapped by any program that user runs.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				if !e.Enabled || (e.Kind != model.ScheduledTask && e.Kind != model.Service && e.Kind != model.Driver) {
 					continue
 				}
@@ -273,7 +281,8 @@ var startupRules = []Rule{
 		Title: "Starts by itself and is not signed by its maker",
 		Why:   "A digital signature is a maker's seal on a file. Nearly all commercial software is signed, so that Windows can show who made it and that nobody has changed it since. Something that starts by itself with no valid signature is not proof of harm, as small free tools are often unsigned, but it cannot be traced to anyone.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				works := e.Works()
 				if !e.Enabled || !works.Exists || !works.Program || works.Signature.Trusted() || works.Signature.Changed() || works.Signature.Status == sigcheck.Unknown {
 					continue
@@ -295,7 +304,8 @@ var startupRules = []Rule{
 		Title: "Points at a file that is no longer there",
 		Why:   "When a program is removed, the entry that started it is sometimes left behind. It does nothing, because there is nothing to start. It is worth tidying, and worth knowing about in case the file comes back.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
-			for _, e := range s.Startup {
+			for i, e := range s.Startup {
+				r.at(StartupRef(i))
 				works := e.Works()
 				if !e.Enabled || works.Path == "" || works.Exists || !winpath.Absolute(works.Path) {
 					continue

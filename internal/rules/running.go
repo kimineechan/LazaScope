@@ -46,6 +46,7 @@ var runningRules = []Rule{
 		Why:   "A digital signature breaks if a single byte of the file changes. A running program that no longer matches its signature has been altered since it left its maker.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
+				r.at(FileRef(p.File.Path))
 				if p.File.Exists && p.File.Signature.Changed() {
 					found = append(found, r.find(p.Name,
 						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
@@ -61,6 +62,7 @@ var runningRules = []Rule{
 		Why:   "Windows' own programs, such as svchost.exe, run from the Windows folder. A running program with one of those names from anywhere else is a classic disguise: in Task Manager it looks like one more piece of Windows.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
+				r.at(FileRef(p.File.Path))
 				if Disguised(p.File.Path, s.Folders) {
 					found = append(found, r.find(p.Name,
 						p.Name+" is the name of a part of Windows, and the real one runs from "+s.Folders.Windows+". This one is running from "+winpath.Dir(p.File.Path)+". A program that borrows a Windows name in another folder is usually trying not to be noticed."+stillMicrosoft(p.File),
@@ -80,6 +82,7 @@ var runningRules = []Rule{
 		Why:   "Installed software runs from Program Files. Temporary and download folders are where files land from the internet and where installers unpack. An installer or a portable tool you just opened runs from there for a while. Malware runs from there because any program may write to those folders.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
+				r.at(FileRef(p.File.Path))
 				kind, ok := Temporary(p.File.Path, s.Folders)
 				if !ok {
 					continue
@@ -102,6 +105,7 @@ var runningRules = []Rule{
 		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range s.Processes {
+				r.at(ProcessRef(p.PID))
 				if p.CommandHidden || p.Command == "" {
 					continue
 				}
@@ -171,6 +175,7 @@ var connectionRules = []Rule{
 			}
 			for _, key := range order {
 				c := first[key]
+				r.at(ListenRef(c.File.Path))
 				found = append(found, r.find(c.Process,
 					c.Process+" is waiting for other devices to connect to it on port "+list(ports[key], 6)+", and it is not signed by a known maker. Programs you build or run for development often look like this. So does a back door.",
 					"If this is a program you run on purpose, such as a game server or a development tool, nothing needs doing. If you do not recognise it, find it on the Running now page and look at what started it. Windows Firewall decides whether other devices can actually reach it.",

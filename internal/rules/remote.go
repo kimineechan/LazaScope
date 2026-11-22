@@ -146,7 +146,7 @@ func matches(names []string, name string) bool {
 
 var accountRules = []Rule{
 	{
-		ID: "remote-desktop-on", Area: model.Accounts, Severity: Medium,
+		ID: "remote-desktop-on", Area: model.Accounts, Severity: Medium, Topic: "rdp",
 		Title: "Remote Desktop is switched on",
 		Why:   "Remote Desktop lets someone sign in to this PC from another device and use it as if they sat in front of it. It is off by default. When it is on, anyone who can reach the PC and guess or steal a password gets the whole desktop, and it is one of the most attacked doors on the internet.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -187,6 +187,7 @@ var accountRules = []Rule{
 					}
 					facts = append(facts, Fact{label, value})
 				}
+				r.at(RemoteRef(tool.Name))
 				f := r.find(tool.Name,
 					tool.Name+" "+state+". It lets another person see or control this PC over the internet. That is fine if you installed it and know who can connect.",
 					"If you use it, check its settings for unattended access and set a strong password there. If you did not install it, or someone on the phone talked you into it, uninstall it under Settings > Apps and change your important passwords from another device.", facts...)
@@ -199,7 +200,7 @@ var accountRules = []Rule{
 		},
 	},
 	{
-		ID: "guest-on", Area: model.Accounts, Severity: Medium,
+		ID: "guest-on", Area: model.Accounts, Severity: Medium, Topic: "guest",
 		Title: "The Guest account is switched on",
 		Why:   "Guest is a built-in account with no password. Windows keeps it switched off. Switched on, it lets anyone at the keyboard, and in some set-ups anyone on the network, use the PC without proving who they are.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -212,7 +213,7 @@ var accountRules = []Rule{
 		},
 	},
 	{
-		ID: "auto-sign-in", Area: model.Accounts, Severity: Medium,
+		ID: "auto-sign-in", Area: model.Accounts, Severity: Medium, Topic: "autosignin",
 		Title: "Windows signs in by itself",
 		Why:   "Automatic sign-in skips the password when the PC starts. Anyone who switches the PC on gets the account and everything in it. The password is also kept on the PC where programs can read it.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
@@ -234,6 +235,7 @@ var accountRules = []Rule{
 		Why:   "Every PC has a hidden account called Administrator that Windows keeps switched off. It has full rights, its name is known to every attacker, and by default Windows does not ask it to confirm anything.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, account := range s.Guard.Admins {
+				r.at(AdminRef(account.Name))
 				if account.BuiltIn == "Administrator" && account.Disabled == model.No {
 					found = append(found, r.find(account.Name,
 						"The built-in Administrator account ("+account.Name+") is switched on. Windows normally keeps it off and lets people use their own accounts.",

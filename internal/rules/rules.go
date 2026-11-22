@@ -50,6 +50,7 @@ type Finding struct {
 	Reason   string // why it matters
 	Advice   string // what the user can do about it
 	Facts    []Fact // the evidence
+	Ref      string // which item of the snapshot it is about, so that a list can mark that item
 }
 
 // Rule is one written rule.
@@ -59,8 +60,13 @@ type Rule struct {
 	Severity Severity // the usual severity; a finding may be raised or lowered from it
 	Title    string
 	Why      string // why the rule exists, in one or two sentences
+	Topic    string // what its findings are about, when that is always the same setting
 	check    func(s *model.Snapshot, r *Rule) []Finding
+	ref      string // what the finding being made is about
 }
+
+// at notes which item the next findings are about.
+func (r *Rule) at(ref string) { r.ref = ref }
 
 // find starts a finding of this rule.
 func (r *Rule) find(subject, reason, advice string, facts ...Fact) Finding {
@@ -70,8 +76,37 @@ func (r *Rule) find(subject, reason, advice string, facts ...Fact) Finding {
 			kept = append(kept, fact)
 		}
 	}
-	return Finding{Rule: r.ID, Severity: r.Severity, Area: r.Area, Title: r.Title, Subject: subject, Reason: reason, Advice: advice, Facts: kept}
+	ref := r.ref
+	if ref == "" {
+		ref = r.Topic
+	}
+	return Finding{Rule: r.ID, Severity: r.Severity, Area: r.Area, Title: r.Title, Subject: subject, Reason: reason, Advice: advice, Facts: kept, Ref: ref}
 }
+
+// The references findings carry. A list that shows the snapshot builds the
+// same reference for each of its rows, and so finds the findings that
+// belong to a row.
+
+// StartupRef refers to a start-up entry by its place in the snapshot.
+func StartupRef(index int) string { return "startup:" + strconv.Itoa(index) }
+
+// ProcessRef refers to one running program by its number.
+func ProcessRef(pid uint32) string { return "process:" + strconv.Itoa(int(pid)) }
+
+// FileRef refers to every running copy of a program file.
+func FileRef(path string) string { return "file:" + strings.ToLower(path) }
+
+// ListenRef refers to the ports a program file waits on.
+func ListenRef(path string) string { return "listen:" + strings.ToLower(path) }
+
+// DiskRef refers to a drive.
+func DiskRef(drive string) string { return "disk:" + strings.ToUpper(drive) }
+
+// RemoteRef refers to a remote-control program by its name.
+func RemoteRef(name string) string { return "remote:" + name }
+
+// AdminRef refers to an account in the Administrators group.
+func AdminRef(name string) string { return "admin:" + strings.ToLower(name) }
 
 // All returns every rule, in the order of the five areas.
 func All() []Rule {

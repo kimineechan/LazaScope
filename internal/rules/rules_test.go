@@ -367,6 +367,9 @@ func checkWording(t *testing.T, name string, f Finding) {
 			t.Errorf("%s: a sentence of %s has a double space: %q", name, f.Rule, text)
 		}
 	}
+	if f.Ref == "" {
+		t.Errorf("%s: the finding %s does not say which item it is about", name, f.Rule)
+	}
 	for _, fact := range f.Facts {
 		if fact.Label == "" || fact.Value == "" {
 			t.Errorf("%s: the finding %s carries an empty fact: %+v", name, f.Rule, fact)
