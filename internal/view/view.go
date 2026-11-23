@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"lazascope/internal/model"
 	"lazascope/internal/rules"
@@ -83,6 +84,7 @@ type Row struct {
 	Windows bool   // it is a part of Windows itself
 	Off     bool   // it is switched off
 	Group   string // which of a page's groups it belongs to, for showing one group alone
+	Fresh   bool   // it is new, or came and went, since what the look was compared with
 }
 
 // Column is one column of a list.
@@ -124,7 +126,9 @@ type Glance struct {
 type Book struct {
 	Snapshot *model.Snapshot
 	Findings []rules.Finding
-	Summary  string // which PC, when, and with what rights
+	Summary  string   // which PC, when, and with what rights
+	Compared string   // what a comparison or a watch showed, in a sentence; "" when there was none
+	Changes  []string // what is gone and which settings differ, one line each
 	Glances  [model.Areas]Glance
 
 	Protection, Startup, Running, Connections, Accounts, Health, Worth Page
@@ -149,6 +153,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 		b.byRef[f.Ref] = append(b.byRef[f.Ref], f)
 	}
 	book := &Book{Snapshot: s, Findings: findings, Summary: summary(s)}
+	book.Compared, book.Changes = compared(s)
 	book.Protection = b.protection()
 	book.Startup = b.startup()
 	book.Running = b.running()
@@ -180,6 +185,86 @@ func summary(s *model.Snapshot) string {
 		text += " as " + s.User
 	}
 	return strings.TrimLeft(text+", "+rights+".", ", ")
+}
+
+// compared puts what a comparison or a watch showed into a sentence, and
+// lists what is gone and what has changed.
+func compared(s *model.Snapshot) (sentence string, changes []string) {
+	c := s.Compared
+	if c == nil {
+		return "", nil
+	}
+	var parts []string
+	add := func(n int, one, many string) {
+		if n > 0 {
+			parts = append(parts, count(n, one, many))
+		}
+	}
+	if c.Watched {
+		started := count(c.NewPrograms, "program started", "programs started")
+		if c.Ended > 0 {
+			started += " (" + count(c.Ended, "has ended again", "have ended again") + ")"
+		}
+		if c.NewPrograms > 0 {
+			parts = append(parts, started)
+		}
+		add(c.NewConnections, "connection was opened", "connections were opened")
+		add(c.NewDoors, "new port is being waited on", "new ports are being waited on")
+		sentence = "Compared with " + c.With + ": "
+		if len(parts) == 0 {
+			return sentence + "no program started and no connection was opened.", nil
+		}
+		return sentence + and(parts) + ".", nil
+	}
+	add(c.NewStartup, "new thing is set to start by itself", "new things are set to start by themselves")
+	add(c.NewPrograms, "program is running that was not then", "programs are running that were not then")
+	add(c.NewDoors, "new port is being waited on", "new ports are being waited on")
+	add(len(c.Gone), "thing is gone", "things are gone")
+	add(len(c.Changed), "setting or entry has changed", "settings or entries have changed")
+	sentence = "Compared with " + c.With + ": "
+	if len(parts) == 0 {
+		sentence += "nothing is new, nothing is gone and no setting has changed."
+	} else {
+		sentence += and(parts) + "."
+	}
+	return sentence, append(append([]string{}, c.Changed...), c.Gone...)
+}
+
+// fresh says in a line why a row is marked as new, or returns "".
+func (b *builder) fresh(isNew, ended bool, what string, left time.Time) string {
+	c := b.s.Compared
+	if c == nil || (!isNew && !ended) {
+		return ""
+	}
+	switch {
+	case c.Watched && isNew && ended && !left.IsZero():
+		return "This " + what + " started during the watch and has ended again. It was last seen at " + left.In(b.s.Taken.Location()).Format("15:04:05") + "."
+	case c.Watched && isNew && ended:
+		return "This " + what + " was opened during the watch and has closed again."
+	case c.Watched && isNew:
+		return "This " + what + " is new: it was not there when the watch began."
+	case c.Watched:
+		return "This " + what + " was there when the watch began and has ended since."
+	}
+	return "This " + what + " is new: it was not in " + c.With + "."
+}
+
+// mark returns what the first cell of a row says: the row's level when a
+// rule flagged it, and otherwise whether it is new, gone again, or off.
+func mark(level Level, isNew, ended, off bool) string {
+	switch {
+	case level != Plain:
+		return level.String()
+	case isNew && ended:
+		return "Came and went"
+	case isNew:
+		return "New"
+	case ended:
+		return "Ended"
+	case off:
+		return "Off"
+	}
+	return ""
 }
 
 // verdict puts a light into words with its counts.

@@ -269,6 +269,8 @@ type Startup struct {
 	Untraced    bool // the command could not be followed to a file
 
 	Extension *Extension // for a browser extension: what the browser records about it
+
+	New bool // it was not there in the report this look was compared with
 }
 
 // Works returns the file that does the entry's work.
@@ -301,6 +303,10 @@ type Process struct {
 	ParentGone    bool // the program that started it has closed since
 	CommandHidden bool // its command line can only be read with administrator rights
 	Self          bool // it is the program taking this look
+
+	New   bool      // it started during the watch, or was not running in the report this look was compared with
+	Ended bool      // it was seen during the watch and has ended since
+	Left  time.Time // when it was last seen, for one that ended
 }
 
 // Reach is how far away the other end of a connection is, or for a program
@@ -342,6 +348,10 @@ type Connection struct {
 	// Names are the names this PC looked up that led to the other end's
 	// address, as Windows remembers them. No lookup is made to fill this in.
 	Names []string
+
+	New   bool      // it was opened during the watch, or is a waiting port the compared report did not have
+	Ended bool      // it was opened during the watch and has closed again
+	Seen  time.Time // when it was first seen, for one opened during the watch
 }
 
 // SecurityProduct is an antivirus or firewall as Windows Security lists it.
@@ -522,6 +532,19 @@ type Condition struct {
 	Started   time.Time // when Windows last started
 }
 
+// Comparison says what a look was held against, and what that showed
+// beyond the marks on the lists themselves.
+type Comparison struct {
+	With    string    // what it was compared with, to finish "compared with ..."
+	When    time.Time // when that other look was taken
+	Watched bool      // the comparison is a watch: the look was kept up for a while
+
+	NewStartup, NewPrograms, NewDoors, NewConnections int
+	Ended                                             int      // programs that started during a watch and ended again
+	Gone                                              []string // what was there before and is not now, one line each
+	Changed                                           []string // settings that differ, one line each
+}
+
 // Gap is something that could not be read, so that the report can say so
 // plainly instead of leaving it out.
 type Gap struct {
@@ -580,6 +603,10 @@ type Snapshot struct {
 	Guard       Guard
 	Condition   Condition
 	Gaps        []Gap
+
+	// Compared is set when the look was held against an earlier report, or
+	// kept up for a while as a watch.
+	Compared *Comparison
 
 	// Fingerprints holds the SHA-256 fingerprint of the files that findings
 	// are about, by the file's path in small letters. A fingerprint is a

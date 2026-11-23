@@ -24,6 +24,8 @@ Usage:
   lazascope-cli network                     List the connections and the ports programs wait on
   lazascope-cli protection                  Show how the PC is protected and who can get into it
   lazascope-cli health                      Show hardware errors, crashes and disk trouble from Windows' own log
+  lazascope-cli compare <report.json>       Take a look and say what has changed since a report saved as data
+  lazascope-cli watch [seconds]             Keep looking for a while (60 seconds unless told) and list what came and went
   lazascope-cli sign <file>...              Say who signed each file and whether the signature holds
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
   lazascope-cli version
@@ -41,7 +43,7 @@ var commands = map[string]struct {
 }{
 	"scan": {options: []string{"--details", "--demo"}}, "report": {options: []string{"--demo"}, files: true},
 	"startup": {options: []string{"--details"}}, "running": {options: []string{"--details"}},
-	"network": {}, "protection": {}, "health": {}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
+	"network": {}, "protection": {}, "health": {}, "compare": {files: true}, "watch": {files: true}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
 }
 
 func main() {
@@ -103,6 +105,10 @@ func main() {
 		err = protectionList()
 	case "health":
 		err = healthList()
+	case "compare":
+		err = compareWith(strings.Join(args, " "))
+	case "watch":
+		err = watchFor(strings.Join(args, " "))
 	case "sign":
 		err = sign(args)
 	case "rules":

@@ -144,7 +144,19 @@ func HTML(b *view.Book, version string) []byte {
 	var w strings.Builder
 	e := html.EscapeString
 	fmt.Fprintf(&w, "<!doctype html>\n<html lang=\"en-GB\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>%s</title>\n<style>%s</style>\n</head>\n<body>\n<main>\n", e(title(b)), style)
-	fmt.Fprintf(&w, "<h1>LazaScope report</h1>\n<p>%s</p>\n<p class=\"careful\">%s</p>\n", e(b.Summary), e(Careful))
+	fmt.Fprintf(&w, "<h1>LazaScope report</h1>\n<p>%s</p>\n", e(b.Summary))
+	if b.Compared != "" {
+		// What a comparison or a watch showed.
+		fmt.Fprintf(&w, "<p>%s</p>\n", e(b.Compared))
+		if len(b.Changes) > 0 {
+			w.WriteString("<details><summary><span>What has changed or gone</span></summary><div class=\"detail\">")
+			for _, change := range b.Changes {
+				fmt.Fprintf(&w, "<p>%s</p>", e(change))
+			}
+			w.WriteString("</div></details>\n")
+		}
+	}
+	fmt.Fprintf(&w, "<p class=\"careful\">%s</p>\n", e(Careful))
 
 	w.WriteString("<h2>At a glance</h2>\n<ul class=\"lights\">\n")
 	for _, glance := range b.Glances {
@@ -261,6 +273,12 @@ func Text(b *view.Book, version string) string {
 	line(rule)
 	line("")
 	line("%s", b.Summary)
+	if b.Compared != "" {
+		line("%s", b.Compared)
+		for _, change := range b.Changes {
+			line("  %s", change)
+		}
+	}
 	line("%s", Careful)
 	line("")
 	line("AT A GLANCE")
@@ -351,23 +369,35 @@ type jsonLight struct {
 // such as "firewall" names a setting under protection.
 func JSON(b *view.Book, version string) []byte {
 	s := b.Snapshot
+	type jsonComparison struct {
+		With    string   `json:"with"`
+		When    string   `json:"when"`
+		Watched bool     `json:"watched"`
+		Summary string   `json:"summary"`
+		Changes []string `json:"changedOrGone"`
+	}
+	var comparison *jsonComparison
+	if c := s.Compared; c != nil {
+		comparison = &jsonComparison{c.With, stamp(c.When), c.Watched, b.Compared, append([]string{}, b.Changes...)}
+	}
 	document := struct {
-		Tool          string        `json:"tool"`
-		Generated     string        `json:"generated"`
-		TookMillis    int64         `json:"tookMilliseconds"`
-		Computer      string        `json:"computer"`
-		User          string        `json:"user"`
-		Windows       string        `json:"windows"`
-		Administrator bool          `json:"administratorRights"`
-		Summary       string        `json:"summary"`
-		Lights        []jsonLight   `json:"lights"`
-		Findings      []jsonFinding `json:"findings"`
-		CouldNotRead  []string      `json:"couldNotRead"`
-		Facts         jsonFacts     `json:"facts"`
+		Tool          string          `json:"tool"`
+		Generated     string          `json:"generated"`
+		TookMillis    int64           `json:"tookMilliseconds"`
+		Computer      string          `json:"computer"`
+		User          string          `json:"user"`
+		Windows       string          `json:"windows"`
+		Administrator bool            `json:"administratorRights"`
+		Summary       string          `json:"summary"`
+		Lights        []jsonLight     `json:"lights"`
+		Findings      []jsonFinding   `json:"findings"`
+		CouldNotRead  []string        `json:"couldNotRead"`
+		Comparison    *jsonComparison `json:"comparison,omitempty"`
+		Facts         jsonFacts       `json:"facts"`
 	}{
 		Tool: "LazaScope " + version, Generated: stamp(s.Taken), TookMillis: s.Took.Milliseconds(),
 		Computer: s.Computer, User: s.User, Windows: s.Windows, Administrator: s.Elevated, Summary: b.Summary,
-		Lights: []jsonLight{}, Findings: []jsonFinding{}, CouldNotRead: append([]string{}, b.Worth.Unseen...), Facts: facts(s),
+		Lights: []jsonLight{}, Findings: []jsonFinding{}, CouldNotRead: append([]string{}, b.Worth.Unseen...), Comparison: comparison, Facts: facts(s),
 	}
 	for _, glance := range b.Glances {
 		document.Lights = append(document.Lights, jsonLight{glance.Area.String(), lamp(glance.Light), glance.Verdict, glance.Facts})

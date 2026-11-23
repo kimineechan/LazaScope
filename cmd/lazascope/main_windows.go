@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"lazascope"
+	"lazascope/internal/compare"
 	"lazascope/internal/files"
 	"lazascope/internal/model"
 	"lazascope/internal/report"
@@ -303,11 +305,13 @@ func main() {
 		w.Button("Open", left+across-118, y+5, 104, 32, func() { w.ShowPage(page) })
 	}
 	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network, whether the protections are on and how the PC is holding up. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 526, across, 92)
-	again := w.Button("Look again", left, 628, 200, 38, nil)
-	raise := w.Button("Look again as administrator", left+212, 628, 264, 38, nil)
-	save := w.Button("Save report...", left+across-266, 628, 266, 38, nil)
+	again := w.Button("Look again", left, 628, 150, 38, nil)
+	raise := w.Button("Look again as administrator", left+162, 628, 264, 38, nil)
+	against := w.Button("Compare with a report...", left+438, 628, 226, 38, nil)
+	watch := w.Button("Watch for a minute", left+676, 628, 196, 38, nil)
+	save := w.Button("Save report...", left+across-212, 628, 212, 38, nil)
 	save.Lead(true)
-	jobs = append(jobs, again, raise, save)
+	jobs = append(jobs, again, raise, against, save)
 
 	// lookUp works out the fingerprint of the file a row is about and, on
 	// a yes, opens VirusTotal's page for that fingerprint in the user's own
@@ -420,18 +424,23 @@ func main() {
 	const (
 		allWindows = "Everything in this list is a part of Windows."
 		noneWorth  = "Nothing in this list was flagged by the rules."
+		whatIsNew  = "What is new"
+		nothingNew = "Nothing in this list is marked as new. A look on its own has nothing to compare with: on the Overview, use Watch for a minute or Compare with a report first."
 	)
+	isNew := func(row view.Row) bool { return row.Fresh }
 	addList(pageStartup, true, []filter{
 		{notWindowsName, notWindows, allWindows},
 		{"Everything", everything, ""},
 		{"Only what is worth a look", flagged, noneWorth},
 		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, "Everything in this list is switched off."},
 		{"Browser extensions", func(row view.Row) bool { return row.Group == "extension" }, "No extension was found in the browsers LazaScope knows: Chrome, Edge, Firefox, Brave, Vivaldi and Opera."},
+		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageRunning, true, []filter{
 		{"Everything, as a family tree", everything, ""},
 		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
+		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageConnections, true, []filter{
 		{"Everything", everything, ""},
@@ -439,6 +448,7 @@ func main() {
 		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, "No program is waiting for connections from the network."},
 		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
+		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageAccounts, false, nil)
 	addList(pageHealth, false, nil)
@@ -467,7 +477,11 @@ func main() {
 	// show puts a finished look on every page.
 	show := func(b *view.Book) {
 		book = b
-		summary.SetText(b.Summary)
+		if b.Compared != "" {
+			summary.SetText(b.Summary + "\r\n" + b.Compared)
+		} else {
+			summary.SetText(b.Summary)
+		}
 		for area, glance := range b.Glances {
 			tone, colour := winui.Off, winui.Grey
 			switch glance.Light {
@@ -557,6 +571,127 @@ func main() {
 		}()
 	}
 	again.Do(look)
+
+	// Compare with a report... holds the look on show against a report that
+	// was saved earlier as data, and marks what is new.
+	against.Do(func() {
+		const title = "Compare with a report"
+		if book == nil || busy {
+			return
+		}
+		if demo {
+			w.Info(title, "This is the made-up PC, which has no earlier report. On your own PC, save a report as data (.json) today, and compare with it another day to see what has changed.")
+			return
+		}
+		path, err := w.FileDialog("Choose a report that was saved as data", "LazaScope report saved as data (*.json)\x00*.json\x00\x00", "json", "", false)
+		if err != nil {
+			w.Alert(title, err.Error())
+			return
+		}
+		if path == "" {
+			return
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			w.Alert(title, "The report could not be opened: "+sentence(err))
+			return
+		}
+		then, err := report.Load(data)
+		if err != nil {
+			w.Alert(title, sentence(err)+" Only a report saved as data can be compared with: choose Data for other tools when you save one.")
+			return
+		}
+		s := book.Snapshot
+		for i := range s.Startup {
+			s.Startup[i].New = false
+		}
+		for i := range s.Processes {
+			s.Processes[i].New = false
+		}
+		for i := range s.Connections {
+			s.Connections[i].New = false
+		}
+		compare.Mark(s, then, "the report of "+then.Taken.Format("2 January 2006 at 15:04"))
+		b := view.Build(s, book.Findings)
+		show(b)
+		text := b.Compared
+		if then.Computer != "" && !strings.EqualFold(then.Computer, s.Computer) {
+			text += "\r\n\r\nThat report is of another PC, " + then.Computer + ", so much shows as new for that reason alone."
+		}
+		if len(b.Changes) > 0 {
+			text += "\r\n\r\nWhat has changed or gone:"
+			for i, line := range b.Changes {
+				if i == 12 {
+					text += fmt.Sprintf("\r\n\r\nAnd %d more. Save a report to read them all.", len(b.Changes)-i)
+					break
+				}
+				text += "\r\n\r\n" + line
+			}
+		}
+		status.SetText("Compared. In the lists, choose the view What is new to see what was not there before.")
+		w.Info(title, text+"\r\n\r\nWhat is new is marked New in the lists. Choose the view What is new above a list to see only that.")
+	})
+
+	// Watch for a minute keeps looking, so that a program which starts,
+	// sends something and is gone again is still seen. Pressed again, it
+	// stops the watch early.
+	var halt chan struct{}
+	watch.Do(func() {
+		if halt != nil {
+			close(halt)
+			halt = nil
+			watch.Enable(false) // until the watch has wound up
+			return
+		}
+		if busy {
+			return
+		}
+		if demo {
+			w.Info("Watch for a minute", "This is the made-up PC, where nothing runs. On your own PC this keeps looking for a minute and lists every program that started and every connection that was opened in that time, also the ones that are gone again by the end.")
+			return
+		}
+		busy = true
+		for _, c := range jobs {
+			c.Enable(false)
+		}
+		halt = make(chan struct{})
+		stop := halt
+		watch.SetText("Stop watching")
+		status.SetText("Watching this PC for a minute...")
+		go func() {
+			defer func() {
+				if fault := recover(); fault != nil {
+					w.Post(func() {
+						busy, halt = false, nil
+						for _, c := range jobs {
+							c.Enable(true)
+						}
+						watch.SetText("Watch for a minute")
+						watch.Enable(true)
+						status.SetText("The watch stopped on an error inside LazaScope. Nothing on this PC was changed.")
+						w.Alert("LazaScope", fmt.Sprintf("LazaScope ran into an error of its own while watching, and stopped.\r\n\r\n%v\r\n\r\nNothing on this PC was changed.", fault))
+					})
+				}
+			}()
+			s := scan.Watch(time.Minute, stop, func(stage string) { w.Post(func() { status.SetText(stage) }) })
+			findings := scan.Judge(s)
+			b := view.Build(s, findings)
+			w.Post(func() {
+				clear(prints)
+				for path, print := range s.Fingerprints {
+					prints[path] = print
+				}
+				busy, halt = false, nil
+				for _, c := range jobs {
+					c.Enable(true)
+				}
+				watch.SetText("Watch for a minute")
+				watch.Enable(true)
+				show(b)
+				status.SetText("Watched. Under 04 Running and 05 Connections, choose the view What is new to see what came and went. Nothing was changed.")
+			})
+		}()
+	})
 	raise.Do(func() {
 		self, err := os.Executable()
 		if err != nil {

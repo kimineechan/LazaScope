@@ -130,10 +130,9 @@ func (b *builder) startup() Page {
 		works := e.Works()
 		row := Row{Level: b.worst(ref), Path: place(works), Off: !e.Enabled}
 		row.Windows = windowsEntry(e, s.Folders)
-		check, maker := row.Level.String(), works.Maker()
-		if !e.Enabled && check == "" {
-			check = "Off"
-		}
+		check, maker := mark(row.Level, e.New, false, !e.Enabled), works.Maker()
+		row.Fresh = e.New
+		news := b.fresh(e.New, false, "entry", time.Time{})
 		if works.Path == "" {
 			maker = "No file named"
 		} else if works.Exists && !works.Program && rules.Script(works.Path) {
@@ -146,6 +145,7 @@ func (b *builder) startup() Page {
 			row.Group, row.Path = "extension", x.Folder
 			row.Cells[2], row.Cells[3], row.Cells[4] = x.Browser+" extension", x.Source.String(), x.Folder
 			lines := []Line{{Heading, x.Name}, {Text, e.Kind.Explain()}}
+			lines = fact(lines, "New", strings.TrimPrefix(news, "This entry is new: "))
 			if !x.Enabled {
 				lines = append(lines, Line{Text, "This extension is switched off in the browser, so it does not load."})
 			}
@@ -174,6 +174,9 @@ func (b *builder) startup() Page {
 		}
 
 		lines := []Line{{Heading, e.Shown()}, {Text, e.Kind.Explain()}}
+		if news != "" {
+			lines = append(lines, Line{Text, news})
+		}
 		if !e.Enabled {
 			lines = append(lines, Line{Text, "This entry is switched off, so it does not start."})
 		}
@@ -236,9 +239,13 @@ func (b *builder) running() Page {
 		if account == "" {
 			account = "Not known"
 		}
-		row.Cells = []string{row.Level.String(), strings.Repeat("    ", member.Depth) + p.Name, strconv.Itoa(int(p.PID)), account, maker}
+		row.Fresh = p.New || p.Ended
+		row.Cells = []string{mark(row.Level, p.New, p.Ended, false), strings.Repeat("    ", member.Depth) + p.Name, strconv.Itoa(int(p.PID)), account, maker}
 
 		lines := []Line{{Heading, p.Name}}
+		if news := b.fresh(p.New, p.Ended, "program", p.Left); news != "" {
+			lines = append(lines, Line{Text, news})
+		}
 		if p.Self {
 			lines = append(lines, Line{Text, "This is LazaScope itself, the program you are looking at. It is listed like any other program, but the rules do not judge it."})
 		}
@@ -344,7 +351,14 @@ func (b *builder) connections() Page {
 		default:
 			row.Group = "near"
 		}
-		row.Cells = []string{row.Level.String(), program, what, address, reach, c.File.Maker()}
+		row.Fresh = c.New
+		row.Cells = []string{mark(row.Level, c.New, c.Ended, false), program, what, address, reach, c.File.Maker()}
+		if news := b.fresh(c.New, c.Ended, map[bool]string{true: "waiting port", false: "connection"}[c.Listening], time.Time{}); news != "" {
+			lines = append(lines, Line{Text, news})
+			if !c.Seen.IsZero() {
+				lines = append(lines, Line{Aside, "First seen at " + c.Seen.In(s.Taken.Location()).Format("15:04:05") + "."})
+			}
+		}
 		if c.File.Path == "" {
 			row.Cells[5] = "Not known"
 			if c.PID == 4 {
