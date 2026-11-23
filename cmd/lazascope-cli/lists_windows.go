@@ -213,6 +213,29 @@ func protectionList() error {
 	for _, h := range g.Hosts {
 		line("  "+h.Address, strings.Join(h.Names, " "))
 	}
+	if g.NameServersRead {
+		line("Name servers (DNS)", len(g.NameServers))
+		for _, server := range g.NameServers {
+			how := "from the network"
+			if server.ByHand {
+				how = "typed in"
+			}
+			if owner := netconn.Resolver(server.Address); owner != "" {
+				how += ", " + owner
+			}
+			line("  "+server.Address, server.Connection+", "+how)
+		}
+	} else {
+		line("Name servers (DNS)", "not readable")
+	}
+	switch p := g.Proxy; {
+	case !p.Read:
+		line("Proxy", "not readable")
+	case p.Server == "" && p.Script == "":
+		line("Proxy", "none")
+	default:
+		line("Proxy", strings.TrimSpace(p.Server+" "+p.Script))
+	}
 	line("Installed programs", len(g.Programs))
 	fmt.Println()
 	for _, gap := range s.Gaps {

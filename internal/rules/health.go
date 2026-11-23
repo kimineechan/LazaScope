@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"lazascope/internal/model"
+	"lazascope/internal/netconn"
 )
 
 // Day writes a date the way the rest of LazaScope does, in the time zone
@@ -390,6 +391,87 @@ var historyRules = []Rule{
 			}
 			return []Finding{r.find("Real-time protection", reason+" While it was off, files were not checked as they were opened.",
 				"If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security.", facts...)}
+		},
+	},
+}
+
+// The rules about where this PC's questions and web traffic go.
+var networkRules = []Rule{
+	{
+		ID: "dns-set-by-hand", Area: model.Protection, Severity: Medium, Topic: "dns",
+		Title: "Website names are looked up through a server someone typed in",
+		Why:   "Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees every name that is looked up, and can answer with the address of a fake copy. A PC normally asks whatever its router tells it to. Some people set a public service such as Cloudflare or Quad9 by hand. Malware has been known to set a server of its own.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			var odd []string
+			var facts []Fact
+			for _, server := range s.Guard.NameServers {
+				// A server on the local network is the router or a filter someone
+				// set up at home. A well-known public service is a choice.
+				if !server.ByHand || netconn.Reach(server.Address) != model.Internet || netconn.Resolver(server.Address) != "" {
+					continue
+				}
+				odd = append(odd, server.Address)
+				facts = append(facts, Fact{"Name server", server.Address + ", typed in for the connection " + server.Connection})
+			}
+			if len(odd) == 0 {
+				return
+			}
+			return []Finding{r.find(list(odd, 4),
+				"This PC is set by hand to ask "+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
+				"If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back: open Settings > Network & Internet, open the connection's properties and set DNS server assignment to Automatic.", facts...)}
+		},
+	},
+	{
+		ID: "proxy-set", Area: model.Protection, Severity: Medium, Topic: "proxy",
+		Title: "Web traffic is sent through a go-between",
+		Why:   "A proxy is a go-between: the browser and other programs hand their web traffic to it, and it passes the traffic on. Workplaces and schools use one to filter, and some ad blockers and security programs run one on the PC itself. Whatever sits in that place can read what passes through it, and with a certificate of its own on the PC it can read secure pages too. Unwanted software sets a proxy for exactly that reason.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			p := s.Guard.Proxy
+			if p.Server == "" && p.Script == "" {
+				return
+			}
+			var facts []Fact
+			reason := ""
+			if p.Server != "" {
+				facts = append(facts, Fact{"Proxy", p.Server})
+				reason = "This account's web traffic is set to go through " + p.Server + "."
+				// A proxy on this PC itself is a program here. Say which, if it is waiting there.
+				server := p.Server
+				if cut := strings.Index(server, "="); cut >= 0 {
+					if parts := strings.FieldsFunc(server[cut+1:], func(r rune) bool { return r == ';' || r == ' ' }); len(parts) > 0 {
+						server = parts[0]
+					}
+				}
+				host, port := netconn.HostPort(server)
+				// Reach only calls an address "this PC": a name it cannot read
+				// as an address counts as somewhere else.
+				if strings.EqualFold(host, "localhost") || (host != "" && netconn.Reach(host) == model.ThisPC) {
+					reason += " That address is this PC itself, so the go-between is a program running here."
+					for _, c := range s.Connections {
+						if c.Listening && c.Protocol == "TCP" && strconv.Itoa(c.LocalPort) == port && c.Process != "" {
+							reason += " " + c.Process + " is waiting on that port."
+							facts = append(facts, Fact{"Waiting on that port", c.Process}, Fact{"File", c.File.Path})
+							break
+						}
+					}
+				}
+			}
+			if p.Script != "" {
+				facts = append(facts, Fact{"Set-up script", p.Script})
+				if reason != "" {
+					reason += " "
+				}
+				reason += "A script at " + p.Script + " decides which go-between is used for which site."
+			}
+			if p.AllUsers {
+				reason += " The setting is one for every account on this PC."
+			}
+			subject := p.Server
+			if subject == "" {
+				subject = p.Script
+			}
+			return []Finding{r.find(subject, reason+" Whatever sits there can see the web traffic that passes through it.",
+				"If your workplace or school set this, or you run a filter or a debugging tool that works this way, nothing needs doing. If not, switch it off: open Settings > Network & Internet > Proxy, and turn off Use a proxy server and Use setup script. Then find out which program set it, starting with what is listed under Worth a look.", facts...)}
 		},
 	},
 }

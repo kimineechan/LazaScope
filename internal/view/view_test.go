@@ -61,6 +61,7 @@ func pc() *model.Snapshot {
 			HostsPath: `C:\Windows\System32\drivers\etc\hosts`, HostsVisible: true,
 			Hosts:       []model.HostsEntry{{Address: "127.0.0.1", Names: []string{"localhost"}}},
 			HistoryRead: true, HistoryDays: 90,
+			NameServers: []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, NameServersRead: true, Proxy: model.Proxy{Read: true},
 		},
 		Condition: model.Condition{Read: true, Days: 90, Drives: []model.Drive{{Letter: "C:", Size: 500 << 30, Free: 200 << 30}}, Started: taken.Add(-26 * time.Hour)},
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"lazascope/internal/model"
+	"lazascope/internal/netconn"
 	"lazascope/internal/rules"
 	"lazascope/internal/sigcheck"
 )
@@ -86,6 +87,7 @@ type jsonConnection struct {
 	Process    string   `json:"process"`
 	Path       string   `json:"path,omitempty"`
 	Services   []string `json:"services,omitempty"`
+	Names      []string `json:"namesLookedUp,omitempty"` // the names this PC looked up that led to the remote address
 }
 
 type jsonProduct struct {
@@ -156,11 +158,24 @@ type jsonProtection struct {
 	HostsReadable         bool            `json:"hostsReadable"`
 	Installed             []jsonInstalled `json:"installedPrograms"`
 
+	NameServers     []jsonNameServer `json:"nameServers"`
+	NameServersRead bool             `json:"nameServersReadable"`
+	Proxy           string           `json:"proxy,omitempty"`
+	ProxyScript     string           `json:"proxySetupScript,omitempty"`
+	ProxyReadable   bool             `json:"proxyReadable"`
+
 	// From Microsoft Defender's own log.
 	DefenderLogReadable   bool                  `json:"defenderLogReadable"`
 	DefenderFound         []jsonDetection       `json:"defenderFound"`
 	DefenderLogExclusions []jsonLoggedExclusion `json:"defenderExclusionsInLog"`
 	DefenderSwitchedOff   []string              `json:"defenderRealTimeSwitchedOff"`
+}
+
+type jsonNameServer struct {
+	Address    string `json:"address"`
+	Connection string `json:"connection,omitempty"`
+	ByHand     bool   `json:"setByHand"`
+	Service    string `json:"publicService,omitempty"` // Cloudflare and the like, when it is one of the well-known few
 }
 
 type jsonFacts struct {
@@ -242,7 +257,7 @@ func facts(s *model.Snapshot) jsonFacts {
 	}
 	for _, c := range s.Connections {
 		out.Connections = append(out.Connections, jsonConnection{Protocol: c.Protocol, Listening: c.Listening, State: c.State, Local: c.Local, LocalPort: c.LocalPort,
-			Remote: c.Remote, RemotePort: c.RemotePort, Reach: c.Reach.String(), PID: c.PID, Process: c.Process, Path: c.File.Path, Services: c.Services})
+			Remote: c.Remote, RemotePort: c.RemotePort, Reach: c.Reach.String(), PID: c.PID, Process: c.Process, Path: c.File.Path, Services: c.Services, Names: c.Names})
 	}
 	g := s.Guard
 	p := jsonProtection{
@@ -274,6 +289,11 @@ func facts(s *model.Snapshot) jsonFacts {
 		p.Installed = append(p.Installed, jsonInstalled{program.Name, program.Publisher, program.Location})
 	}
 	history(g, &p)
+	p.NameServers, p.NameServersRead = []jsonNameServer{}, g.NameServersRead
+	for _, server := range g.NameServers {
+		p.NameServers = append(p.NameServers, jsonNameServer{server.Address, server.Connection, server.ByHand, netconn.Resolver(server.Address)})
+	}
+	p.Proxy, p.ProxyScript, p.ProxyReadable = g.Proxy.Server, g.Proxy.Script, g.Proxy.Read
 	out.Protection = p
 	out.Health = healthFacts(s.Condition)
 	return out

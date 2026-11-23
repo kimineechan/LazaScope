@@ -243,6 +243,8 @@ func PC() *model.Snapshot {
 	// ago, and its log shows the impostor's folder being added to the list
 	// of places it skips. The memory has begun to report errors, and
 	// Windows has stopped twice.
+	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
+	s.Guard.Proxy = model.Proxy{Read: true}
 	s.Guard.HistoryRead, s.Guard.HistoryDays = true, 90
 	s.Guard.Detections = []model.Detection{{When: now.AddDate(0, 0, -12).Add(-3 * time.Hour), Threat: "Trojan:Win32/Wacatac.B!ml", Severity: "Severe", Category: "Trojan",
 		Path: profile + `\Downloads\FreeVideoConverter_setup.exe`, Action: "Quarantine", Process: windowsFolder + `\explorer.exe`}}

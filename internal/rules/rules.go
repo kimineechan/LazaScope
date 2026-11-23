@@ -111,7 +111,7 @@ func AdminRef(name string) string { return "admin:" + strings.ToLower(name) }
 // All returns every rule, in the order of the six areas.
 func All() []Rule {
 	var all []Rule
-	for _, group := range [][]Rule{protectionRules, historyRules, startupRules, runningRules, connectionRules, accountRules, healthRules} {
+	for _, group := range [][]Rule{protectionRules, historyRules, networkRules, startupRules, runningRules, connectionRules, accountRules, healthRules} {
 		all = append(all, group...)
 	}
 	return all

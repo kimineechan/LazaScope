@@ -282,6 +282,10 @@ type Connection struct {
 	Process  string
 	File     File
 	Services []string
+
+	// Names are the names this PC looked up that led to the other end's
+	// address, as Windows remembers them. No lookup is made to fill this in.
+	Names []string
 }
 
 // SecurityProduct is an antivirus or firewall as Windows Security lists it.
@@ -344,6 +348,23 @@ type HostsEntry struct {
 	Names   []string
 }
 
+// NameServer is a server this PC asks for the addresses of websites (a
+// DNS server). Whoever runs it sees the names of the sites that are looked
+// up, and decides which address each name gets.
+type NameServer struct {
+	Address    string
+	Connection string // the network connection it is set for, such as Wi-Fi
+	ByHand     bool   // typed in on this PC, not handed out by the network
+}
+
+// Proxy is a go-between that this account's web traffic is sent through.
+type Proxy struct {
+	Read     bool   // the setting could be read
+	Server   string // the go-between in use, such as 10.0.0.1:8080; "" when none is switched on
+	Script   string // the address of a script that picks the go-between; "" when none is set
+	AllUsers bool   // the setting is one for the whole PC
+}
+
 // Installed is a program listed under Apps in Settings.
 type Installed struct {
 	Name      string
@@ -393,6 +414,10 @@ type Guard struct {
 	Hosts        []HostsEntry
 	HostsVisible bool
 	Programs     []Installed
+
+	NameServers     []NameServer
+	NameServersRead bool
+	Proxy           Proxy
 }
 
 // Fault is an error a piece of hardware reported about itself, or one

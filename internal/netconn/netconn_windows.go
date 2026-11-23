@@ -121,6 +121,14 @@ func Collect() ([]model.Connection, []model.Gap) {
 	}) {
 		ok++
 	}
+	// Give the far ends their names, where Windows remembers them.
+	if names := Names(); len(names) > 0 {
+		for i := range list {
+			if !list[i].Listening {
+				list[i].Names = names[list[i].Remote]
+			}
+		}
+	}
 	var gaps []model.Gap
 	if ok < 4 {
 		gaps = append(gaps, model.Gap{Area: model.Connections, What: "Part of the table of network connections could not be read."})

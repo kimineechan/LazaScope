@@ -123,6 +123,8 @@ func healthy() *model.Snapshot {
 		Programs: []model.Installed{{Name: "Notes"}, {Name: "Chat"}, {Name: "Radmin VPN"}, {Name: "LogMeIn Hamachi"}},
 		// Defender's own log was read and holds nothing of note.
 		HistoryRead: true, HistoryDays: 90,
+		// The router answers the PC's questions, and no go-between is set.
+		NameServers: []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, NameServersRead: true, Proxy: model.Proxy{Read: true},
 	}
 	// Windows' log was read. One sudden stop and a disk that had to be
 	// asked twice now and then are everyday life, not findings.

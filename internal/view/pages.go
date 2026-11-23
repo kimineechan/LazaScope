@@ -245,8 +245,8 @@ func (b *builder) connections() Page {
 	s := b.s
 	page := Page{
 		Name: "Connections", Title: "What is talking to the network",
-		Intro:   "Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. Addresses are shown as numbers, because looking their names up would mean going online.",
-		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 214}, {"Reach", 112}, {"Maker", 0}},
+		Intro:   "Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. An address is shown by name where Windows remembers the name that was looked up. LazaScope looks nothing up itself, so the rest stay numbers.",
+		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 290}, {"Reach", 112}, {"Maker", 0}},
 		Unseen:  b.unseen(model.Connections),
 	}
 	for _, c := range s.Connections {
@@ -263,6 +263,11 @@ func (b *builder) connections() Page {
 		what, address, reach := c.State+" to", netconn.Join(c.Remote, c.RemotePort), c.Reach.String()
 		use := netconn.Service(c.RemotePort)
 		lines := []Line{{Heading, c.Process + " is connected to " + address}}
+		if len(c.Names) > 0 && !c.Listening {
+			// The name the PC asked for says more than the number it got back.
+			lines[0].Text = c.Process + " is connected to " + c.Names[0] + " (" + address + ")"
+			address = c.Names[0] + ":" + strconv.Itoa(c.RemotePort)
+		}
 		if c.Listening {
 			what, address, use = "Waits for connections", c.Protocol+" port "+strconv.Itoa(c.LocalPort), netconn.Service(c.LocalPort)
 			if c.Protocol == "UDP" {
@@ -281,6 +286,9 @@ func (b *builder) connections() Page {
 				// short while, sometimes after the program itself has gone.
 				what = "Closing"
 				lines = []Line{{Heading, c.Process + " had a connection to " + address + ", which is closing"}}
+				if len(c.Names) > 0 {
+					lines[0].Text = c.Process + " had a connection to " + c.Names[0] + " (" + netconn.Join(c.Remote, c.RemotePort) + "), which is closing"
+				}
 			}
 			switch c.Reach {
 			case model.ThisPC:
@@ -318,6 +326,10 @@ func (b *builder) connections() Page {
 		lines = fact(lines, "This PC's end", netconn.Join(c.Local, c.LocalPort))
 		if !c.Listening {
 			lines = fact(lines, "The other end", netconn.Join(c.Remote, c.RemotePort))
+			if len(c.Names) > 0 {
+				lines = fact(lines, count(len(c.Names), "Name", "Names")+" looked up for that address", strings.Join(c.Names, ", "))
+				lines = append(lines, Line{Aside, "Windows remembers for a while which name a program asked for and which address came back. This is read from that note. LazaScope made no lookup of its own."})
+			}
 		}
 		lines = fact(lines, "Kind", c.Protocol)
 		if c.PID != 0 {
@@ -542,6 +554,52 @@ func (b *builder) protection() Page {
 		hosts = count(entries, "entry", "entries")
 	}
 	add(b.topic("Hosts file", hosts, readable, "Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can send a name to any address, or block it.", "hosts", more...))
+
+	// Where the PC's questions go.
+	const names = "Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees the names of the sites this PC looks up, and decides which address each name gets. It is normally the router, which passes the questions on to your internet provider."
+	switch {
+	case !g.NameServersRead:
+		add(b.topic("Name servers (DNS)", "Could not be read", model.NotKnown, names, "dns"))
+	case len(g.NameServers) == 0:
+		add(b.topic("Name servers (DNS)", "None: no network connection is up", model.Yes, names, "dns"))
+	default:
+		var shown []string
+		more = nil
+		for _, server := range g.NameServers {
+			whose := "on the internet"
+			switch owner := netconn.Resolver(server.Address); {
+			case owner != "":
+				whose = owner + ", a public service"
+			case netconn.Reach(server.Address) != model.Internet:
+				whose = "on your own network, usually the router"
+			}
+			how := "handed out by the network"
+			if server.ByHand {
+				how = "typed in on this PC"
+			}
+			shown = append(shown, server.Address)
+			more = append(more, Line{Text, server.Address + ": " + whose + ". It was " + how + ", for the connection " + server.Connection + "."})
+		}
+		add(b.topic("Name servers (DNS)", strings.Join(shown, ", "), model.Yes, names, "dns", more...))
+	}
+
+	// The go-between for web traffic.
+	const proxy = "A proxy is a go-between that web traffic is handed to and that passes it on. Workplaces use one to filter. Whatever sits in that place can see the traffic that passes through it."
+	switch p := g.Proxy; {
+	case !p.Read:
+		add(b.topic("Proxy", "Could not be read", model.NotKnown, proxy, "proxy"))
+	case p.Server == "" && p.Script == "":
+		add(b.topic("Proxy", "None", model.Yes, proxy, "proxy"))
+	default:
+		var parts []string
+		if p.Server != "" {
+			parts = append(parts, "Through "+p.Server)
+		}
+		if p.Script != "" {
+			parts = append(parts, "A set-up script at "+p.Script)
+		}
+		add(b.topic("Proxy", strings.Join(parts, ". "), model.Yes, proxy, "proxy"))
+	}
 	return page
 }
 

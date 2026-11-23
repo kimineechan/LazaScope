@@ -77,6 +77,7 @@ func Collect() (model.Guard, []model.Gap) {
 	c.remoteDesktop()
 	c.accounts()
 	c.hosts()
+	c.network()
 	c.programs()
 	return c.guard, c.gaps
 }
