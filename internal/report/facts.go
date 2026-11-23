@@ -56,6 +56,19 @@ type jsonStartup struct {
 	Account     string    `json:"account,omitempty"`
 	Trigger     string    `json:"trigger,omitempty"`
 	Description string    `json:"description,omitempty"`
+
+	Extension *jsonExtension `json:"extension,omitempty"` // for a browser extension
+}
+
+type jsonExtension struct {
+	Browser   string   `json:"browser"`
+	Profile   string   `json:"profile"`
+	ID        string   `json:"id"`
+	Version   string   `json:"version,omitempty"`
+	Source    string   `json:"cameFrom"`
+	EverySite bool     `json:"mayReadEverySite"`
+	May       []string `json:"mayAlso,omitempty"`
+	Folder    string   `json:"folder,omitempty"`
 }
 
 type jsonProcess struct {
@@ -248,6 +261,9 @@ func facts(s *model.Snapshot) jsonFacts {
 			Enabled: e.Enabled, Running: e.Running, Command: e.Command, File: file(e.Works(), s), Subject: e.Subject, Account: e.Account, Trigger: e.Trigger, Description: e.Description}
 		if e.Program.Path != "" && !strings.EqualFold(e.Program.Path, e.Works().Path) {
 			entry.Through = e.Program.Path
+		}
+		if x := e.Extension; x != nil {
+			entry.Extension = &jsonExtension{x.Browser, x.Profile, x.ID, x.Version, x.Source.String(), x.EverySite, x.May, x.Folder}
 		}
 		out.Startup = append(out.Startup, entry)
 	}

@@ -8,8 +8,45 @@ import (
 	"lazascope/internal/winpath"
 )
 
+// aboutExtension gathers the evidence that goes with a browser extension.
+func aboutExtension(e model.Startup) []Fact {
+	x := e.Extension
+	facts := []Fact{{"Extension", x.Name}, {"Browser", x.Browser + ", profile " + x.Profile}, {"Where it came from", x.Source.String()}}
+	add := func(label, value string) {
+		if value != "" {
+			facts = append(facts, Fact{label, value})
+		}
+	}
+	add("Version", x.Version)
+	add("What it may do", extensionMay(x))
+	add("Its number in the browser", x.ID)
+	add("Folder", x.Folder)
+	return facts
+}
+
+// extensionMay puts an extension's rights into one sentence.
+func extensionMay(x *model.Extension) string {
+	may := append([]string{}, x.May...)
+	if x.EverySite {
+		may = append([]string{"read and change the pages of every website you visit"}, may...)
+	}
+	if len(may) == 0 {
+		return ""
+	}
+	text := list(may, 8)
+	return strings.ToUpper(text[:1]) + text[1:]
+}
+
+// removeExtension says how to switch an extension off in its browser.
+func removeExtension(x *model.Extension) string {
+	return "To switch it off, open " + x.Browser + ", open its menu and choose Extensions (in Firefox: Add-ons and themes), find it and turn its switch off or choose Remove."
+}
+
 // about gathers the evidence that goes with a start-up entry.
 func about(e model.Startup) []Fact {
+	if e.Extension != nil {
+		return aboutExtension(e)
+	}
 	works := e.Works()
 	facts := []Fact{{"Entry", e.Shown()}, {"Kind", e.Kind.String()}, {"Recorded in", e.Where}}
 	add := func(label, value string) {
@@ -364,6 +401,66 @@ var startupRules = []Rule{
 				f := r.find(e.Shown(), reason, advice+stop(e.Kind), about(e)...)
 				f.Severity = severity
 				found = append(found, f)
+			}
+			return
+		},
+	},
+	{
+		ID: "extension-not-from-store", Area: model.StartsWithWindows, Severity: Medium,
+		Title: "A browser extension did not come from the browser's store",
+		Why:   "An extension loads whenever its browser is open, and many may read and change every page you visit, including what you type into them. The browsers' stores check what they hand out, and browsers make it awkward on purpose to add an extension any other way. One that got in from a file, from a folder or through another program skipped that check. Developers load their own this way. So does software that wants to change your searches or read your pages.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			for i, e := range s.Startup {
+				x := e.Extension
+				if x == nil || !x.Enabled {
+					continue
+				}
+				how := ""
+				switch x.Source {
+				case model.FromFile:
+					how = "It was added by hand from a file, not through the browser's store."
+				case model.Unpacked:
+					how = "It is loaded from a folder on this PC, which needs the browser's developer mode. Whoever can change that folder can change what the extension does."
+				case model.FromOutside:
+					how = "Another program on this PC put it into the browser. Honest software does that now and then, for example an antivirus adding its web shield. It is also how unwanted toolbars arrive."
+				case model.CommandLine:
+					how = "It is loaded by a switch on the line that starts the browser. That is not how extensions are installed: something changed the browser's shortcut or the way it is started."
+				case model.SourceUnknown:
+					how = "The browser's record does not say where it came from."
+				default:
+					continue
+				}
+				r.at(StartupRef(i))
+				reason := x.Name + " is switched on in " + x.Browser + " (profile " + x.Profile + "). " + how
+				if may := extensionMay(x); may != "" {
+					reason += " It may " + strings.ToLower(may[:1]) + may[1:] + "."
+				}
+				f := r.find(x.Name, reason, "If you added it yourself, or it belongs to a program you use, nothing needs doing. If you do not recognise it, switch it off. "+removeExtension(x), about(e)...)
+				if x.Source == model.CommandLine {
+					f.Severity = High
+				}
+				found = append(found, f)
+			}
+			return
+		},
+	},
+	{
+		ID: "extension-forced", Area: model.StartsWithWindows, Severity: Medium,
+		Title: "A browser extension is forced on by a policy",
+		Why:   "A policy is a setting that overrides the user's own choices. Workplaces and schools use one to put an extension on every PC they manage, and such an extension cannot be removed from inside the browser. On a PC nobody manages, a forced extension is a known trick of unwanted software: it uses the policy to make itself hard to remove.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			for i, e := range s.Startup {
+				x := e.Extension
+				if x == nil || !x.Enabled || x.Source != model.ByPolicy {
+					continue
+				}
+				r.at(StartupRef(i))
+				reason := x.Name + " is forced on in " + x.Browser + " (profile " + x.Profile + ") by a policy, so the browser will not let you remove it."
+				if may := extensionMay(x); may != "" {
+					reason += " It may " + strings.ToLower(may[:1]) + may[1:] + "."
+				}
+				found = append(found, r.find(x.Name, reason,
+					"If this PC is managed by your workplace or school, this is their doing and nothing needs doing. If it is your own PC and you never set a policy, ask someone who knows Windows well: the policy has to be removed before the extension can be.", about(e)...))
 			}
 			return
 		},

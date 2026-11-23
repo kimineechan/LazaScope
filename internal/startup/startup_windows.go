@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"lazascope/internal/browsers"
 	"lazascope/internal/cmdline"
 	"lazascope/internal/com"
 	"lazascope/internal/model"
@@ -44,6 +45,7 @@ func Collect(world cmdline.World) ([]model.Startup, []model.Gap) {
 	}
 	c.services()
 	c.settings()
+	c.extensions()
 	return c.entries, c.gaps
 }
 
@@ -608,6 +610,20 @@ func (c *collector) services() {
 		} else {
 			c.gap(what + " are protected and can only be read with administrator rights.")
 		}
+	}
+}
+
+// extensions reads the extensions added to this account's web browsers.
+// The browsers keep them in plain files, which are opened for reading.
+func (c *collector) extensions() {
+	found, unread := browsers.List(browsers.Folders{Local: os.Getenv("LOCALAPPDATA"), Roaming: os.Getenv("APPDATA")})
+	for _, note := range unread {
+		c.gap(note)
+	}
+	for i := range found {
+		extension := found[i]
+		c.entries = append(c.entries, model.Startup{Kind: model.BrowserExtension, Name: extension.Name, Where: extension.Browser + ", profile " + extension.Profile,
+			Enabled: extension.Enabled, Trigger: "Whenever " + extension.Browser + " is open", Description: extension.About, Extension: &extension})
 	}
 }
 

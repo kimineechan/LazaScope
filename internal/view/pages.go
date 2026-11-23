@@ -121,7 +121,7 @@ func (b *builder) startup() Page {
 	s := b.s
 	page := Page{
 		Name: "Start-up", Title: "What starts by itself",
-		Intro:   "Every program, task, service and driver that Windows starts without being asked. Most of them belong to Windows or to software you installed.",
+		Intro:   "Every program, task, service and driver that Windows starts without being asked, and the extensions that load with each web browser. Most of them belong to Windows or to software you installed.",
 		Columns: []Column{{"Check", 124}, {"Name", 250}, {"Kind", 128}, {"Maker", 200}, {"File", 0}},
 		Unseen:  b.unseen(model.StartsWithWindows),
 	}
@@ -140,6 +140,38 @@ func (b *builder) startup() Page {
 			maker = "Script file"
 		}
 		row.Cells = []string{check, e.Shown(), e.Kind.String(), maker, works.Path}
+		if x := e.Extension; x != nil {
+			// An extension is not a program on disk with a maker's seal. What
+			// can be said of it is which browser it is in and how it got there.
+			row.Group, row.Path = "extension", x.Folder
+			row.Cells[2], row.Cells[3], row.Cells[4] = x.Browser+" extension", x.Source.String(), x.Folder
+			lines := []Line{{Heading, x.Name}, {Text, e.Kind.Explain()}}
+			if !x.Enabled {
+				lines = append(lines, Line{Text, "This extension is switched off in the browser, so it does not load."})
+			}
+			lines = b.said(lines, ref)
+			lines = append(lines, Line{Heading, "Details"})
+			lines = fact(lines, "Browser", x.Browser+", profile "+x.Profile)
+			lines = fact(lines, "Where it came from", x.Source.String())
+			lines = fact(lines, "Version", x.Version)
+			lines = fact(lines, "What it says it is for", x.About)
+			switch {
+			case x.EverySite:
+				lines = append(lines, Line{Text, "It may read and change the pages of every website you visit. Many honest extensions need that, such as ad blockers and password managers. It is also all that a dishonest one needs."})
+			default:
+				lines = append(lines, Line{Text, "It is not allowed to read every website: only the sites it names, or none."})
+			}
+			if len(x.May) > 0 {
+				lines = fact(lines, "It may also", strings.Join(x.May, "; "))
+			}
+			lines = fact(lines, "Its number in the browser", x.ID)
+			if x.Folder != "" {
+				lines = append(lines, Line{Text, "Folder:"}, Line{Command, x.Folder})
+			}
+			row.Detail = lines
+			page.Rows = append(page.Rows, row)
+			continue
+		}
 
 		lines := []Line{{Heading, e.Shown()}, {Text, e.Kind.Explain()}}
 		if !e.Enabled {
@@ -760,8 +792,15 @@ func (b *builder) facts(area model.Area) string {
 		if len(s.Startup) == 0 {
 			return ""
 		}
-		other, off := 0, 0
+		// Extensions load with their browser, not with Windows, so they are
+		// counted apart.
+		all, other, off, extensions := 0, 0, 0, 0
 		for _, e := range s.Startup {
+			if e.Extension != nil {
+				extensions++
+				continue
+			}
+			all++
 			if !windowsEntry(e, s.Folders) {
 				other++
 			}
@@ -769,11 +808,15 @@ func (b *builder) facts(area model.Area) string {
 				off++
 			}
 		}
-		text := count(len(s.Startup), "thing is set to start by itself", "things are set to start by themselves")
+		text := count(all, "thing is set to start by itself", "things are set to start by themselves")
 		if off > 0 {
 			text += ", " + strconv.Itoa(off) + " of them switched off"
 		}
-		return text + ". " + count(other, "is", "are") + " not part of Windows."
+		text += ". " + count(other, "is", "are") + " not part of Windows."
+		if extensions > 0 {
+			text += " " + count(extensions, "browser extension", "browser extensions") + "."
+		}
+		return text
 	case model.RunningNow:
 		if len(s.Processes) == 0 {
 			return ""

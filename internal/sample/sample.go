@@ -243,6 +243,16 @@ func PC() *model.Snapshot {
 	// ago, and its log shows the impostor's folder being added to the list
 	// of places it skips. The memory has begun to report errors, and
 	// Windows has stopped twice.
+	s.Startup = append(s.Startup,
+		model.Startup{Kind: model.BrowserExtension, Name: "uBlock Origin", Where: "Firefox, profile default-release", Enabled: true, Trigger: "Whenever Firefox is open",
+			Description: "Finally, an efficient blocker. Easy on CPU and memory.",
+			Extension: &model.Extension{Browser: "Firefox", Profile: "default-release", ID: "uBlock0@raymondhill.net", Name: "uBlock Origin", Version: "1.62.0", Enabled: true,
+				Source: model.FromStore, EverySite: true, May: []string{"watch web traffic as it passes", "see the addresses of the pages you have open"}}},
+		model.Startup{Kind: model.BrowserExtension, Name: "Shopping Helper Pro", Where: "Microsoft Edge, profile Default", Enabled: true, Trigger: "Whenever Microsoft Edge is open",
+			Description: "Finds you the best deals while you browse.",
+			Extension: &model.Extension{Browser: "Microsoft Edge", Profile: "Default", ID: "kjdnpgcaeoblhikmnpiklmnopqrstuvw", Name: "Shopping Helper Pro", Version: "3.4.1", Enabled: true,
+				Source: model.FromOutside, EverySite: true, May: []string{"read the cookies that keep you signed in", "see the addresses of the pages you have open"},
+				Folder: profile + "\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Extensions\\kjdnpgcaeoblhikmnpiklmnopqrstuvw\\3.4.1_0"}})
 	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
 	s.Guard.Proxy = model.Proxy{Read: true}
 	s.Guard.HistoryRead, s.Guard.HistoryDays = true, 90

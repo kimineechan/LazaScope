@@ -27,6 +27,7 @@ func TestTheMadeUpPC(t *testing.T) {
 		`defender-exclusions-logged (look first): 1 exclusion in Defender's log`,
 		`defender-found-something (worth a look): Trojan:Win32/Wacatac.B!ml`,
 		`disk-not-encrypted (good to know): Drive C:`,
+		`extension-not-from-store (worth a look): Shopping Helper Pro`,
 		`hardware-errors (worth a look): 4 hardware errors`,
 		`hosts-entries (good to know): 2 sites blocked`,
 		`remote-tool (worth a look): AnyDesk`,

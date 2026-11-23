@@ -42,7 +42,7 @@ func startupList(details bool) error {
 		counts[entry.Kind]++
 	}
 	fmt.Printf("Starts with Windows: %d entries, read in %d ms\n", len(s.Startup), s.Took.Milliseconds())
-	for kind := model.RunKey; kind <= model.LoadedLibrary; kind++ {
+	for kind := model.RunKey; kind <= model.BrowserExtension; kind++ {
 		if counts[kind] > 0 {
 			fmt.Printf("  %-18s %d\n", kind, counts[kind])
 		}
@@ -52,6 +52,25 @@ func startupList(details bool) error {
 	fmt.Printf("%-17s %-44s %-3s %-36s %s\n", "KIND", "NAME", "ON", "MAKER", "FILE")
 	for _, entry := range s.Startup {
 		works := entry.Works()
+		if x := entry.Extension; x != nil {
+			// For an extension the two last columns say where it came from and
+			// which browser it is in.
+			fmt.Printf("%-17s %-44s %-3s %-36s %s, profile %s\n", entry.Kind, cut(entry.Shown(), 44), onOff(entry.Enabled), cut(x.Source.String(), 36), x.Browser, x.Profile)
+			if details {
+				everySite := "no"
+				if x.EverySite {
+					everySite = "yes"
+				}
+				fmt.Printf("    number:  %s\n    version: %s\n    may read every site: %s\n", x.ID, x.Version, everySite)
+				if len(x.May) > 0 {
+					fmt.Printf("    may also: %s\n", strings.Join(x.May, "; "))
+				}
+				if x.Folder != "" {
+					fmt.Printf("    folder:  %s\n", x.Folder)
+				}
+			}
+			continue
+		}
 		fmt.Printf("%-17s %-44s %-3s %-36s %s\n", entry.Kind, cut(entry.Shown(), 44), onOff(entry.Enabled), cut(works.Maker(), 36), works.Path)
 		if details {
 			fmt.Printf("    where:   %s\n    command: %s\n", entry.Where, entry.Command)

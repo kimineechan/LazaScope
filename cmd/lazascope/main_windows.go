@@ -426,6 +426,7 @@ func main() {
 		{"Everything", everything, ""},
 		{"Only what is worth a look", flagged, noneWorth},
 		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, "Everything in this list is switched off."},
+		{"Browser extensions", func(row view.Row) bool { return row.Group == "extension" }, "No extension was found in the browsers LazaScope knows: Chrome, Edge, Firefox, Brave, Vivaldi and Opera."},
 	})
 	addList(pageRunning, true, []filter{
 		{"Everything, as a family tree", everything, ""},

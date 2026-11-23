@@ -128,16 +128,17 @@ func (f File) Maker() string {
 type StartupKind int
 
 const (
-	RunKey          StartupKind = iota // a line in the registry's Run list
-	RunOnceKey                         // the same, used once and then removed
-	StartupFolder                      // a file or shortcut in a Startup folder
-	StoreApp                           // an app from the Microsoft Store that asked to start at sign-in
-	ScheduledTask                      // a task in Task Scheduler
-	Service                            // a background program Windows starts and keeps running
-	Driver                             // a part that runs inside Windows itself, usually for hardware
-	LogonSetting                       // what Windows runs as a user signs in
-	DebuggerSetting                    // a program set to run in place of another
-	LoadedLibrary                      // a library pushed into every program that shows a window
+	RunKey           StartupKind = iota // a line in the registry's Run list
+	RunOnceKey                          // the same, used once and then removed
+	StartupFolder                       // a file or shortcut in a Startup folder
+	StoreApp                            // an app from the Microsoft Store that asked to start at sign-in
+	ScheduledTask                       // a task in Task Scheduler
+	Service                             // a background program Windows starts and keeps running
+	Driver                              // a part that runs inside Windows itself, usually for hardware
+	LogonSetting                        // what Windows runs as a user signs in
+	DebuggerSetting                     // a program set to run in place of another
+	LoadedLibrary                       // a library pushed into every program that shows a window
+	BrowserExtension                    // a small program added to a web browser, which loads whenever the browser is open
 )
 
 func (k StartupKind) String() string {
@@ -162,6 +163,8 @@ func (k StartupKind) String() string {
 		return "Debugger setting"
 	case LoadedLibrary:
 		return "Loaded library"
+	case BrowserExtension:
+		return "Browser extension"
 	}
 	return ""
 }
@@ -189,8 +192,59 @@ func (k StartupKind) Explain() string {
 		return "A setting that makes Windows start a different program whenever a named program is opened. It exists for developers."
 	case LoadedLibrary:
 		return "A setting that makes Windows load a library into every program that shows a window."
+	case BrowserExtension:
+		return "A small program added to a web browser. It loads whenever that browser is open, and can be allowed to read and change the pages you visit."
 	}
 	return ""
+}
+
+// ExtensionSource is where a browser extension came from.
+type ExtensionSource int
+
+const (
+	SourceUnknown ExtensionSource = iota
+	FromStore                     // added by the user from the browser's own store
+	WithBrowser                   // offered by the browser's maker and installed with it
+	FromFile                      // added by hand from a file, not through a store
+	Unpacked                      // loaded from a folder, with the browser's developer mode on
+	FromOutside                   // put there by another program on the PC
+	ByPolicy                      // forced by a policy, as a workplace does
+	CommandLine                   // loaded by a switch on the line that starts the browser
+)
+
+func (s ExtensionSource) String() string {
+	switch s {
+	case FromStore:
+		return "From the browser's store"
+	case WithBrowser:
+		return "Came with the browser"
+	case FromFile:
+		return "Added from a file"
+	case Unpacked:
+		return "Loaded from a folder"
+	case FromOutside:
+		return "Added by another program"
+	case ByPolicy:
+		return "Forced by a policy"
+	case CommandLine:
+		return "Loaded by the browser's shortcut"
+	}
+	return "Not known"
+}
+
+// Extension is a small program added to a web browser.
+type Extension struct {
+	Browser   string // such as Google Chrome
+	Profile   string // which of the browser's profiles it is in
+	ID        string // the extension's own number in the browser
+	Name      string
+	Version   string
+	About     string // what it says of itself
+	Enabled   bool
+	Source    ExtensionSource
+	EverySite bool     // it may read and change the pages of every website
+	May       []string // what else it is allowed to do, in plain words
+	Folder    string   // where its files are, when the browser says
 }
 
 // Startup is one thing set to start by itself.
@@ -213,6 +267,8 @@ type Startup struct {
 	Trigger     string // when a task starts
 	Description string
 	Untraced    bool // the command could not be followed to a file
+
+	Extension *Extension // for a browser extension: what the browser records about it
 }
 
 // Works returns the file that does the entry's work.
