@@ -79,7 +79,10 @@ func kept(shown []view.Row, all int, name string) string {
 	return text + fmt.Sprintf(" %d are flagged parts of Windows.", parts)
 }
 
-const notWindowsName = "Not part of Windows"
+const (
+	notWindowsName = "Not part of Windows"
+	whatIsNew      = "What is new"
+)
 
 func everything(view.Row) bool { return true }
 func flagged(row view.Row) bool {
@@ -207,6 +210,10 @@ func (l *list) fill() {
 		if none == "" {
 			none = "Nothing in this list matches the view chosen above."
 		}
+		if name == whatIsNew && l.page.Compared {
+			// Something was compared, and it showed nothing new here.
+			none = "Nothing in this list is new, or came and went, in what was compared."
+		}
 		lines[1].Text = none + " Choose another view above to see the rest of the list."
 	}
 	if len(l.page.Unseen) > 0 {
@@ -249,6 +256,13 @@ func main() {
 	// "--demo" shows a made-up PC in place of this one.
 	demo, reportTo := false, ""
 	for i := 1; i < len(os.Args); i++ {
+		// A copy started with administrator rights is handed the place the
+		// first one was told to open at. Windows does not pass settings of
+		// this kind on by itself.
+		if place, ok := strings.CutPrefix(os.Args[i], "--place="); ok {
+			os.Setenv("LAZASCOPE_PLACE", place)
+			continue
+		}
 		switch os.Args[i] {
 		case "--demo":
 			demo = true
@@ -424,7 +438,6 @@ func main() {
 	const (
 		allWindows = "Everything in this list is a part of Windows."
 		noneWorth  = "Nothing in this list was flagged by the rules."
-		whatIsNew  = "What is new"
 		nothingNew = "Nothing in this list is marked as new. A look on its own has nothing to compare with: on the Overview, use Watch for a minute or Compare with a report first."
 	)
 	isNew := func(row view.Row) bool { return row.Fresh }
@@ -700,7 +713,11 @@ func main() {
 		}
 		// Windows asks before giving the rights. On a no, this window stays
 		// and says what happened.
-		if w.Elevated(self, "") {
+		arguments := ""
+		if place := os.Getenv("LAZASCOPE_PLACE"); place != "" && !strings.ContainsAny(place, " \"") {
+			arguments = "--place=" + place
+		}
+		if w.Elevated(self, arguments) {
 			w.Close()
 		} else {
 			status.SetText("Windows did not start LazaScope as administrator. Nothing has changed, and this look is still the one shown.")

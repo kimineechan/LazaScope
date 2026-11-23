@@ -23,6 +23,7 @@ const (
 	Machine = syscall.HKEY_LOCAL_MACHINE // settings for the whole PC
 	User    = syscall.HKEY_CURRENT_USER  // settings for the account in use
 	Classes = syscall.HKEY_CLASSES_ROOT  // what Windows knows about file types and program parts
+	Users   = syscall.HKEY_USERS         // the settings of every account that is signed in or running services
 )
 
 // View chooses between the two sets of settings 64-bit Windows keeps side

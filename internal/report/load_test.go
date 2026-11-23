@@ -79,3 +79,42 @@ func TestLoadAndCompare(t *testing.T) {
 		t.Errorf("a report with a mark at its start: %v", err)
 	}
 }
+
+// The saved reports hold every page the window shows, and the fingerprint
+// of each flagged file.
+func TestReportsAreWhole(t *testing.T) {
+	b := book(func(s *model.Snapshot) {
+		s.Fingerprints = map[string]string{strings.ToLower(s.Startup[len(s.Startup)-3].Works().Path): "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}
+	})
+	flagged := false
+	for _, f := range b.Findings {
+		for _, fact := range f.Facts {
+			flagged = flagged || (fact.Label == "File" && b.Snapshot.Fingerprint(fact.Value) != "")
+		}
+	}
+	web, text, data := string(HTML(b, "1.0.0")), Text(b, "1.0.0"), string(JSON(b, "1.0.0"))
+	for _, page := range b.Pages() {
+		if page.Name == "Worth a look" {
+			continue
+		}
+		if !strings.Contains(web, page.Title) {
+			t.Errorf("the web page lacks the page %q", page.Title)
+		}
+		if !strings.Contains(text, strings.ToUpper(page.Title)) {
+			t.Errorf("the text report lacks the page %q", page.Title)
+		}
+	}
+	for _, want := range []string{"Hardware errors", "Blue-screen crashes", "Name servers (DNS)", "What Defender found lately"} {
+		if !strings.Contains(web, want) || !strings.Contains(text, want) {
+			t.Errorf("a saved report lacks the row %q", want)
+		}
+	}
+	if !flagged {
+		t.Skip("no flagged file was given a fingerprint, so the rest proves nothing")
+	}
+	for name, content := range map[string]string{"web page": web, "text": text, "data": data} {
+		if !strings.Contains(content, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") {
+			t.Errorf("the %s report lacks the fingerprint of a flagged file", name)
+		}
+	}
+}

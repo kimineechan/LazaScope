@@ -36,6 +36,7 @@ func Collect(world cmdline.World) ([]model.Startup, []model.Gap) {
 	leave, err := com.Enter()
 	defer leave()
 	c.runLists()
+	c.otherAccounts()
 	c.folders(err == nil)
 	c.storeApps()
 	if err == nil {
@@ -139,6 +140,73 @@ func (c *collector) runLists() {
 			}
 			c.add(entry, c.world.Read(command))
 		}
+	}
+}
+
+// otherAccounts reads the Run and RunOnce lists of the other accounts whose
+// settings Windows has loaded: the accounts services run as, and anyone
+// else who is signed in. Windows' own list of start-up commands includes
+// them, and so must this one. An account that is not signed in keeps its
+// list in a file that is not opened here.
+func (c *collector) otherAccounts() {
+	all, err := reg.Open(reg.Users, "", reg.Native)
+	if err != nil {
+		return
+	}
+	defer all.Close()
+	mine := ""
+	if token, err := syscall.OpenCurrentProcessToken(); err == nil {
+		if user, err := token.GetTokenUser(); err == nil {
+			mine, _ = user.User.Sid.String()
+		}
+		token.Close()
+	}
+	refused := 0
+	for _, account := range all.Subkeys() {
+		// The account in use has been read already. "_Classes" keys hold file
+		// types, and S-1-5-18 is a second name for .DEFAULT, the SYSTEM account.
+		if strings.EqualFold(account, mine) || strings.HasSuffix(strings.ToLower(account), "_classes") || account == "S-1-5-18" {
+			continue
+		}
+		whose := pcinfo.AccountName(account)
+		if account == ".DEFAULT" {
+			whose = "SYSTEM"
+		}
+		opened := false
+		for _, list := range []struct {
+			name string
+			kind model.StartupKind
+		}{{"Run", model.RunKey}, {"RunOnce", model.RunOnceKey}} {
+			key, err := reg.Open(reg.Users, account+`\`+currentVersion+list.name, reg.Native)
+			if err != nil {
+				if reg.Refused(err) && !opened {
+					refused++
+					opened = true // counted once for the account
+				}
+				continue
+			}
+			opened = true
+			for _, value := range key.Values() {
+				if (value.Kind != reg.KindText && value.Kind != reg.KindExpandable) || strings.TrimSpace(value.Text) == "" {
+					continue
+				}
+				name := value.Name
+				if name == "" {
+					name = "(Default)"
+				}
+				entry := model.Startup{Kind: list.kind, Name: name, Where: `HKU\` + account + `\` + currentVersion + list.name, Command: value.Text, Enabled: true, Account: whose,
+					Trigger: "When the account " + whose + " is signed in"}
+				c.add(entry, c.world.Read(value.Text))
+			}
+			key.Close()
+		}
+	}
+	if refused > 0 {
+		what := fmt.Sprintf("The start-up lists of %d other accounts", refused)
+		if refused == 1 {
+			what = "The start-up list of 1 other account"
+		}
+		c.gap(what + " " + model.Withheld(pcinfo.Elevated(), refused != 1) + ".")
 	}
 }
 

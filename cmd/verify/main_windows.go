@@ -95,11 +95,44 @@ func main() {
 		}
 		return
 	}
+	// "verify --clean" plants nothing. It only takes away what an earlier
+	// run left behind, which happens when an antivirus stops the check half
+	// way: planting start-up entries is exactly what an antivirus watches for.
+	if len(os.Args) > 1 && os.Args[1] == "--clean" {
+		p, err := where()
+		if err == nil {
+			err = remove(p)
+		}
+		if err != nil {
+			fmt.Println("FAILED:", err)
+			os.Exit(1)
+		}
+		if left := present(p); len(left) > 0 {
+			fmt.Println("FAILED: still there after cleaning:", strings.Join(left, ", "))
+			os.Exit(1)
+		}
+		fmt.Println("Nothing planted is left on this PC.")
+		return
+	}
 	if err := run(self); err != nil {
 		fmt.Println()
 		fmt.Println("FAILED:", err)
 		os.Exit(1)
 	}
+}
+
+// where says which of this account's own places the check plants in.
+func where() (places, error) {
+	p := places{
+		temp:      filepath.Join(os.TempDir(), mark),
+		downloads: filepath.Join(pcinfo.KnownFolder(pcinfo.Downloads), mark),
+		startup:   pcinfo.KnownFolder(pcinfo.UserStartup),
+		system:    sysdll.Folder(),
+	}
+	if p.startup == "" || !filepath.IsAbs(p.downloads) || !filepath.IsAbs(p.temp) {
+		return p, errors.New("this account's Downloads or Startup folder could not be found")
+	}
+	return p, nil
 }
 
 func run(self string) error {
@@ -108,14 +141,9 @@ func run(self string) error {
 	if err := signatures(self); err != nil {
 		return err
 	}
-	p := places{
-		temp:      filepath.Join(os.TempDir(), mark),
-		downloads: filepath.Join(pcinfo.KnownFolder(pcinfo.Downloads), mark),
-		startup:   pcinfo.KnownFolder(pcinfo.UserStartup),
-		system:    sysdll.Folder(),
-	}
-	if p.startup == "" || !filepath.IsAbs(p.downloads) || !filepath.IsAbs(p.temp) {
-		return errors.New("this account's Downloads or Startup folder could not be found")
+	p, err := where()
+	if err != nil {
+		return err
 	}
 	// Anything an earlier run left behind goes first.
 	if err := remove(p); err != nil {

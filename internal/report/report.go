@@ -13,6 +13,7 @@ import (
 	"html"
 	"strings"
 
+	"lazascope/internal/model"
 	"lazascope/internal/rules"
 	"lazascope/internal/view"
 	"lazascope/internal/winpath"
@@ -173,7 +174,7 @@ func HTML(b *view.Book, version string) []byte {
 			class(severity(f.Severity)), e(f.Severity.String()), e(f.Title), e(f.Area.String()), e(f.Subject), e(f.Reason), e(f.Advice))
 		if len(f.Facts) > 0 {
 			w.WriteString("<dl>")
-			for _, fact := range f.Facts {
+			for _, fact := range withPrints(b.Snapshot, f.Facts) {
 				fmt.Fprintf(&w, "<dt>%s</dt><dd>%s</dd>", e(fact.Label), e(fact.Value))
 			}
 			w.WriteString("</dl>\n")
@@ -189,7 +190,7 @@ func HTML(b *view.Book, version string) []byte {
 	}
 
 	w.WriteString("<h2 class=\"part\">The facts</h2>\n<p class=\"quiet\">Everything LazaScope read, whether or not a rule flagged it. Select a row to open what is known about it.</p>\n")
-	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Startup, &b.Running, &b.Connections} {
+	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Health, &b.Startup, &b.Running, &b.Connections} {
 		fmt.Fprintf(&w, "<h2 id=\"%s\">%s</h2>\n<p class=\"quiet\">%s %s.</p>\n", e(strings.ToLower(page.Name)), e(page.Title), e(page.Intro), count(len(page.Rows), "row", "rows"))
 		fmt.Fprintf(&w, "<div class=\"list\" style=\"--columns:%s\">\n<div class=\"head\">", columns(page.Columns))
 		for _, column := range page.Columns {
@@ -300,7 +301,7 @@ func Text(b *view.Book, version string) string {
 		line("    %s: %s", f.Area, f.Subject)
 		line("    Why: %s", f.Reason)
 		line("    What you can do: %s", f.Advice)
-		for _, fact := range f.Facts {
+		for _, fact := range withPrints(b.Snapshot, f.Facts) {
 			line("    %s: %s", fact.Label, fact.Value)
 		}
 		line("    Rule: %s", f.Rule)
@@ -314,7 +315,7 @@ func Text(b *view.Book, version string) string {
 		}
 		line("")
 	}
-	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Startup, &b.Running, &b.Connections} {
+	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Health, &b.Startup, &b.Running, &b.Connections} {
 		line("%s (%d)", strings.ToUpper(page.Title), len(page.Rows))
 		line(rule)
 		var titles []string
@@ -404,7 +405,7 @@ func JSON(b *view.Book, version string) []byte {
 	}
 	for _, f := range b.Findings {
 		finding := jsonFinding{f.Rule, strings.ToLower(f.Severity.String()), f.Area.String(), f.Title, f.Subject, f.Reason, f.Advice, f.Ref, map[string]string{}}
-		for _, fact := range f.Facts {
+		for _, fact := range withPrints(b.Snapshot, f.Facts) {
 			if have, ok := finding.Evidence[fact.Label]; ok {
 				finding.Evidence[fact.Label] = have + "; " + fact.Value
 			} else {
@@ -415,4 +416,22 @@ func JSON(b *view.Book, version string) []byte {
 	}
 	out, _ := json.MarshalIndent(document, "", "  ")
 	return append(out, '\n')
+}
+
+// printLabel is the label under which a file's fingerprint is given.
+const printLabel = "Fingerprint of that file (SHA-256)"
+
+// withPrints returns a finding's facts with the fingerprint of each file
+// set after the file, where the look worked one out.
+func withPrints(s *model.Snapshot, facts []rules.Fact) []rules.Fact {
+	out := make([]rules.Fact, 0, len(facts)+1)
+	for _, fact := range facts {
+		out = append(out, fact)
+		if fact.Label == "File" || fact.Label == "Started through" {
+			if print := s.Fingerprint(fact.Value); print != "" {
+				out = append(out, rules.Fact{Label: printLabel, Value: print})
+			}
+		}
+	}
+	return out
 }

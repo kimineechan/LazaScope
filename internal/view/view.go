@@ -101,6 +101,8 @@ type Page struct {
 	Columns []Column
 	Rows    []Row
 	Unseen  []string // what could not be read
+
+	Compared bool // the look was held against an earlier one, or kept up as a watch
 }
 
 // Count returns how many rows of a page are worth a look or more.
@@ -161,6 +163,9 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Accounts = b.accounts()
 	book.Health = b.health()
 	book.Worth = b.worth()
+	for _, page := range book.Pages() {
+		page.Compared = s.Compared != nil
+	}
 	lights := rules.Lights(s, findings)
 	for area := model.Protection; area < model.Areas; area++ {
 		book.Glances[area] = Glance{Area: area, Light: lights[area], Verdict: verdict(lights[area], findings, area), Facts: b.facts(area)}

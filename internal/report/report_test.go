@@ -47,7 +47,7 @@ func TestHTML(t *testing.T) {
 		}
 	}
 	// Every row of every list is there, and what is opened is closed.
-	rows := len(b.Protection.Rows) + len(b.Accounts.Rows) + len(b.Startup.Rows) + len(b.Running.Rows) + len(b.Connections.Rows)
+	rows := len(b.Protection.Rows) + len(b.Accounts.Rows) + len(b.Health.Rows) + len(b.Startup.Rows) + len(b.Running.Rows) + len(b.Connections.Rows)
 	if got := strings.Count(page, "<details>"); got != rows {
 		t.Errorf("%d rows in the web page, want %d", got, rows)
 	}
