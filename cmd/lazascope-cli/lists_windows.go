@@ -241,6 +241,9 @@ func scanAll(details, demo bool) error {
 		s = scan.Run(scan.Everything, progress)
 	}
 	findings := rules.Check(s)
+	if !demo {
+		findings = scan.Judge(s)
+	}
 	lights := rules.Lights(s, findings)
 	fmt.Printf("%s, %s, signed in as %s, administrator rights: %s\n", s.Computer, s.Windows, s.User, onOff(s.Elevated))
 	fmt.Printf("%d start-up entries, %d running programs, %d connections and waiting ports, read in %d ms\n\n", len(s.Startup), len(s.Processes), len(s.Connections), s.Took.Milliseconds())
@@ -255,6 +258,9 @@ func scanAll(details, demo bool) error {
 		if details {
 			for _, fact := range f.Facts {
 				fmt.Printf("      %-22s %s\n", fact.Label+":", fact.Value)
+				if print := s.Fingerprint(fact.Value); print != "" && (fact.Label == "File" || fact.Label == "Started through") {
+					fmt.Printf("      %-22s %s\n", "  SHA-256:", print)
+				}
 			}
 		}
 	}
@@ -283,7 +289,11 @@ func saveReport(path string, demo bool) error {
 	} else {
 		s = scan.Run(scan.Everything, progress)
 	}
-	book := view.Build(s, rules.Check(s))
+	findings := rules.Check(s)
+	if !demo {
+		findings = scan.Judge(s)
+	}
+	book := view.Build(s, findings)
 	content, err := report.Render(book, lazascope.Version(), path)
 	if err != nil {
 		return err

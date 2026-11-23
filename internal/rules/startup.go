@@ -28,6 +28,9 @@ func about(e model.Startup) []Fact {
 	}
 	add("Starts", e.Trigger)
 	add("Runs as", e.Account)
+	if works.Script != nil && len(works.Script.Signs) > 0 {
+		add("Going by the script's text", strings.Join(works.Script.Signs, " "))
+	}
 	return facts
 }
 

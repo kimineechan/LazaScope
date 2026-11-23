@@ -48,11 +48,14 @@ func place(f model.File) string {
 }
 
 // file adds what is known about a file to the lines of detail.
-func file(lines []Line, f model.File) []Line {
+func (b *builder) file(lines []Line, f model.File) []Line {
 	if f.Path == "" {
 		return lines
 	}
 	lines = append(lines, Line{Text, "File:"}, Line{Command, f.Path})
+	if print := b.s.Fingerprint(f.Path); print != "" {
+		lines = append(lines, Line{Text, "Fingerprint (SHA-256):"}, Line{Command, print})
+	}
 	switch {
 	case !f.Exists && f.Signature.Problem != "" && f.Signature.Problem != "The file does not exist.":
 		return append(lines, Line{Text, f.Signature.Problem})
@@ -60,13 +63,43 @@ func file(lines []Line, f model.File) []Line {
 		return append(lines, Line{Text, "There is no file at that place."})
 	case !f.Program:
 		if rules.Script(f.Path) {
-			return append(lines, Line{Text, "This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one."})
+			lines = append(lines, Line{Text, "This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one."})
+			return script(lines, f)
 		}
 		return append(lines, Line{Text, "This is not a program file, so there is no maker's signature to check."})
 	}
 	lines = fact(lines, "Signature", rules.Signature(f))
 	lines = fact(lines, "The file says it is", rules.Claim(f))
 	return fact(lines, "Version", f.Version)
+}
+
+// script adds what a script's own text shows: what it can be seen to do,
+// and how it begins.
+func script(lines []Line, f model.File) []Line {
+	switch {
+	case rules.EncodedScript(f.Path):
+		return append(lines, Line{Text, "It is saved in a scrambled form, so LazaScope could not read what it says."})
+	case f.Script == nil:
+		return append(lines, Line{Aside, "LazaScope did not read this script: it is very large, or it is not plain text."})
+	}
+	lines = append(lines, Line{Heading, "What the script does, going by its text"})
+	if len(f.Script.Signs) == 0 {
+		lines = append(lines, Line{Text, "LazaScope read it and saw none of the things it looks for: reaching the internet, changing what starts with Windows, touching the antivirus or the firewall, and the like."})
+	}
+	for _, sign := range f.Script.Signs {
+		lines = append(lines, Line{Text, sign})
+	}
+	lines = append(lines, Line{Aside, "This is a reading of the text, not a test: nothing was run. A harmless script can do any of these things, and a script can hide what it does."})
+	if len(f.Script.Lines) > 0 {
+		lines = append(lines, Line{Heading, "How it begins"})
+		for _, line := range f.Script.Lines {
+			lines = append(lines, Line{Excerpt, line})
+		}
+		if f.Script.More {
+			lines = append(lines, Line{Aside, "The script goes on. Open Notepad and drag the file into its window to read all of it. Do not double-click the file, because that runs it."})
+		}
+	}
+	return lines
 }
 
 // and joins words the way a sentence does: a, b and c.
@@ -128,7 +161,7 @@ func (b *builder) startup() Page {
 		if e.Command != "" {
 			lines = append(lines, Line{Text, "Command:"}, Line{Command, e.Command})
 		}
-		lines = file(lines, works)
+		lines = b.file(lines, works)
 		if e.Program.Path != "" && !winpath.Same(e.Program.Path, works.Path) {
 			lines = append(lines, Line{Text, "Started through:"}, Line{Command, e.Program.Path})
 		}
@@ -198,7 +231,7 @@ func (b *builder) running() Page {
 		case p.CommandHidden && p.File.Path != "":
 			lines = append(lines, Line{Aside, "The command that started this program " + model.Withheld(b.s.Elevated, false) + "."})
 		}
-		lines = file(lines, p.File)
+		lines = b.file(lines, p.File)
 		if p.File.Path == "" {
 			lines = append(lines, Line{Aside, "This is a part of Windows that runs without a program file of its own."})
 		}
@@ -291,7 +324,7 @@ func (b *builder) connections() Page {
 			lines = fact(lines, "Process number", strconv.Itoa(int(c.PID)))
 		}
 		lines = fact(lines, "Services inside the program", strings.Join(c.Services, ", "))
-		row.Detail = file(lines, c.File)
+		row.Detail = b.file(lines, c.File)
 		page.Rows = append(page.Rows, row)
 	}
 	byLevel(page.Rows)
@@ -611,6 +644,10 @@ func (b *builder) worth() Page {
 				lines = append(lines, Line{Text, fact.Label + ":"}, Line{Command, fact.Value})
 				if fact.Label == "File" && row.Path == "" {
 					row.Path = fact.Value
+				}
+				if print := b.s.Fingerprint(fact.Value); print != "" {
+					lines = append(lines, Line{Text, "Fingerprint of that file (SHA-256):"}, Line{Command, print},
+						Line{Aside, "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
 				}
 			default:
 				lines = append(lines, Line{Text, fact.Label + ": " + fact.Value})

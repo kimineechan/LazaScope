@@ -109,6 +109,9 @@ func PC() *model.Snapshot {
 	// and harmless. It shows that worth a look does not mean something is wrong.
 	own := entry(model.StartupFolder, "Open study apps.cmd", startupFolder, startupFolder+`\Open study apps.cmd`, model.File{Path: startupFolder + `\Open study apps.cmd`, Exists: true, Size: 212})
 	own.AllUsers = false
+	// What the batch file says, as LazaScope would read it from the disk.
+	own.Target.Script = &model.Script{Lines: []string{`@echo off`, `rem Opens what I need for studying, so I do not have to each morning.`, `start "" "C:\Program Files\Brightline\Notes\notes.exe"`, `start "" https://library.example.ac.uk/`, `del /q "%TEMP%\study-*.tmp"`}, Signs: []string{"It deletes files or folders."}}
+	own.Program = own.Target
 
 	s.Startup = []model.Startup{
 		entry(model.RunKey, "SecurityHealth", runMachine, `%windir%\system32\SecurityHealthSystray.exe`, part(system+"SecurityHealthSystray.exe", "Windows Security notification icon")),

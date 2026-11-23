@@ -63,6 +63,40 @@ func TestHTML(t *testing.T) {
 
 // Whatever a program calls itself goes into the report as text. A name
 // written to look like part of a web page must stay text.
+// A saved report is made to be sent, so the lines LazaScope copies out of
+// a script stay out of it. What the script does is still said.
+func TestReportLeavesScriptLinesOut(t *testing.T) {
+	b := book(nil)
+	const secret = "Opens what I need for studying"
+	shown := false
+	for _, row := range b.Startup.Rows {
+		for _, line := range row.Detail {
+			shown = shown || strings.Contains(line.Text, secret)
+		}
+	}
+	if !shown {
+		t.Fatal("the window would not show the script's lines, so this test proves nothing")
+	}
+	page := string(HTML(b, "1.0.0"))
+	if strings.Contains(page, secret) || strings.Contains(page, "library.example.ac.uk") {
+		t.Error("the web page holds lines copied out of a script")
+	}
+	if strings.Count(page, "They are left out of this report, in case they hold a password.") != 1 {
+		t.Error("the web page does not say, once, that the script's lines were left out")
+	}
+	if !strings.Contains(page, "It deletes files or folders.") {
+		t.Error("the web page does not say what the script does")
+	}
+	for name, content := range map[string][]byte{"text": []byte(Text(b, "1.0.0")), "data": JSON(b, "1.0.0")} {
+		if strings.Contains(string(content), secret) {
+			t.Errorf("the %s report holds lines copied out of a script", name)
+		}
+	}
+	if !strings.Contains(string(JSON(b, "1.0.0")), "\"scriptDoes\": [") {
+		t.Error("the data does not say what the script does")
+	}
+}
+
 func TestHTMLKeepsNamesAsText(t *testing.T) {
 	const nasty = `<script>alert("x")</script><img src=x onerror=alert(1)>&"'`
 	b := book(func(s *model.Snapshot) {

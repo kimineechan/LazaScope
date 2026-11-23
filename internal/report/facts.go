@@ -30,6 +30,13 @@ type jsonFile struct {
 	Original    string `json:"originalName,omitempty"`
 	Size        int64  `json:"size,omitempty"`
 	Modified    string `json:"modified,omitempty"`
+
+	// For a script that could be read: what its text shows it doing. The
+	// script's own lines are not copied into the report.
+	ScriptRead bool     `json:"scriptRead,omitempty"`
+	ScriptDoes []string `json:"scriptDoes,omitempty"`
+
+	SHA256 string `json:"sha256,omitempty"` // worked out for the files that findings are about
 }
 
 type jsonStartup struct {
@@ -182,13 +189,17 @@ func stamp(t time.Time) string {
 }
 
 // file writes a file's facts, or nothing when no file is named.
-func file(f model.File) *jsonFile {
+func file(f model.File, s *model.Snapshot) *jsonFile {
 	if f.Path == "" {
 		return nil
 	}
 	out := &jsonFile{Path: f.Path, Exists: f.Exists, Program: f.Program, Signature: "unknown",
 		SignedBy: f.Signature.Signer, Catalogue: f.Signature.Catalogue, Problem: f.Signature.Problem,
 		Company: f.Company, Description: f.Description, Version: f.Version, Original: f.Original, Size: f.Size, Modified: stamp(f.Modified)}
+	if f.Script != nil {
+		out.ScriptRead, out.ScriptDoes = true, f.Script.Signs
+	}
+	out.SHA256 = s.Fingerprint(f.Path)
 	switch f.Signature.Status {
 	case sigcheck.Signed:
 		out.Signature = "signed"
@@ -219,14 +230,14 @@ func facts(s *model.Snapshot) jsonFacts {
 	out := jsonFacts{Startup: []jsonStartup{}, Processes: []jsonProcess{}, Connections: []jsonConnection{}}
 	for i, e := range s.Startup {
 		entry := jsonStartup{Ref: rules.StartupRef(i), Kind: e.Kind.String(), Name: e.Name, Title: e.Title, RecordedIn: e.Where, AllUsers: e.AllUsers,
-			Enabled: e.Enabled, Running: e.Running, Command: e.Command, File: file(e.Works()), Subject: e.Subject, Account: e.Account, Trigger: e.Trigger, Description: e.Description}
+			Enabled: e.Enabled, Running: e.Running, Command: e.Command, File: file(e.Works(), s), Subject: e.Subject, Account: e.Account, Trigger: e.Trigger, Description: e.Description}
 		if e.Program.Path != "" && !strings.EqualFold(e.Program.Path, e.Works().Path) {
 			entry.Through = e.Program.Path
 		}
 		out.Startup = append(out.Startup, entry)
 	}
 	for _, p := range s.Processes {
-		out.Processes = append(out.Processes, jsonProcess{Ref: rules.ProcessRef(p.PID), PID: p.PID, Parent: p.Parent, ParentGone: p.ParentGone, Name: p.Name, File: file(p.File),
+		out.Processes = append(out.Processes, jsonProcess{Ref: rules.ProcessRef(p.PID), PID: p.PID, Parent: p.Parent, ParentGone: p.ParentGone, Name: p.Name, File: file(p.File, s),
 			Command: p.Command, CommandHidden: p.CommandHidden, User: p.User, Session: p.Session, Started: stamp(p.Started), Services: p.Services, Self: p.Self})
 	}
 	for _, c := range s.Connections {

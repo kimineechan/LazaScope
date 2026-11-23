@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"lazascope/internal/model"
+	"lazascope/internal/scripts"
 	"lazascope/internal/winpath"
 )
 
@@ -192,30 +193,14 @@ var helperTools = map[string]bool{"rundll32": true, "regsvr32": true, "certutil"
 // ScriptHost reports whether a program is one of Windows' scripting tools.
 func ScriptHost(path string) bool { return scriptHosts[winpath.Stem(path)] }
 
-// The endings of script files: text files of commands that a scripting tool
-// carries out. The first row is for the tools Windows comes with, the
-// second for tools that are often added.
-var scriptEndings = map[string]bool{}
-
-func init() {
-	for _, ending := range strings.Fields(`
-		.bat .cmd .vbs .vbe .js .jse .wsf .wsh .ps1 .hta
-		.py .pyw .mjs .cjs .ahk .au3`) {
-		scriptEndings[ending] = true
-	}
-}
-
 // Script reports whether a file is a script, going by the ending of its
 // name: a batch file, a PowerShell or VBScript file, and the like.
-func Script(path string) bool { return scriptEndings[winpath.Ext(path)] }
+func Script(path string) bool { return scripts.Is(path) }
 
 // EncodedScript reports whether a file is a script saved in the scrambled
 // form Windows offers for VBScript and JScript (.vbe and .jse), which
 // cannot be read in Notepad.
-func EncodedScript(path string) bool {
-	ending := winpath.Ext(path)
-	return ending == ".vbe" || ending == ".jse"
-}
+func EncodedScript(path string) bool { return scripts.Encoded(path) }
 
 // Protected reports whether a file is where only an administrator can put
 // or change files: the Windows folder and Program Files.

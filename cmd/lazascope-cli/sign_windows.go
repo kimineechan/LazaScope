@@ -4,19 +4,20 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/files"
 	"time"
 
 	"lazascope/internal/sigcheck"
 )
 
 // sign prints the signature of each file named.
-func sign(files []string) error {
-	if len(files) == 0 {
+func sign(paths []string) error {
+	if len(paths) == 0 {
 		return fmt.Errorf("name at least one file to check")
 	}
 	checker := sigcheck.New()
 	defer checker.Close()
-	for _, path := range files {
+	for _, path := range paths {
 		start := time.Now()
 		r := checker.Check(path)
 		fmt.Printf("%s\n    %s", path, r.Status)
@@ -36,6 +37,10 @@ func sign(files []string) error {
 				fmt.Printf(" (0x%08X)", r.Code)
 			}
 			fmt.Println()
+		}
+		// The fingerprint tells this file from every other, whatever it is called.
+		if print, err := files.Fingerprint(path); err == nil {
+			fmt.Printf("    SHA-256 %s\n", print)
 		}
 	}
 	return nil

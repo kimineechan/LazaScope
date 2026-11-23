@@ -194,8 +194,16 @@ func HTML(b *view.Book, version string) []byte {
 				}
 			}
 			w.WriteString("</summary><div class=\"detail\">")
+			excerpted := false
 			for _, line := range row.Detail {
 				switch line.Style {
+				case view.Excerpt:
+					// Lines copied out of a file may hold a password or a key.
+					// The report is made to be sent, so they stay out of it.
+					if !excerpted {
+						w.WriteString("<p class=\"aside\">LazaScope's own window shows the script's first lines here. They are left out of this report, in case they hold a password.</p>")
+						excerpted = true
+					}
 				case view.Heading:
 					fmt.Fprintf(&w, "<h4>%s</h4>", e(line.Text))
 				case view.Command:

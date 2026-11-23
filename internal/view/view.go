@@ -65,6 +65,7 @@ const (
 	Heading              // a small heading
 	Aside                // a note, smaller and quieter
 	Command              // a command or a path, in letters of one width
+	Excerpt              // a line copied out of a file on the PC: shown in the window, left out of a saved report
 )
 
 // Line is one line of what is said about a row.

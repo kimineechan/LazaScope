@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"lazascope/internal/pcinfo"
 	"lazascope/internal/procs"
 	"lazascope/internal/protect"
+	"lazascope/internal/rules"
 	"lazascope/internal/services"
 	"lazascope/internal/startup"
 )
@@ -185,4 +187,33 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	}
 	s.Took = time.Since(began)
 	return s
+}
+
+// Judge runs the rules over a look and works out the fingerprint of every
+// file a finding is about, so that the file can be told apart from any
+// other and looked up by that number. The files are only read.
+func Judge(s *model.Snapshot) []rules.Finding {
+	findings := rules.Check(s)
+	if s.Fingerprints == nil {
+		s.Fingerprints = map[string]string{}
+	}
+	for _, finding := range findings {
+		for _, fact := range finding.Facts {
+			if fact.Label != "File" && fact.Label != "Started through" {
+				continue
+			}
+			key := strings.ToLower(fact.Value)
+			if _, done := s.Fingerprints[key]; done {
+				continue
+			}
+			info, err := os.Stat(fact.Value)
+			if err != nil || info.IsDir() || info.Size() > files.FingerprintLimit {
+				continue
+			}
+			if print, err := files.Fingerprint(fact.Value); err == nil {
+				s.Fingerprints[key] = print
+			}
+		}
+	}
+	return findings
 }

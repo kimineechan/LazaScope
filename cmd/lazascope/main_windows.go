@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"lazascope"
+	"lazascope/internal/files"
 	"lazascope/internal/model"
 	"lazascope/internal/report"
 	"lazascope/internal/rules"
@@ -99,6 +100,25 @@ type list struct {
 	shown   []view.Row // the rows in the table, after the filter
 	picked  int        // the chosen row of shown, or -1
 	waiting bool       // the first look has not come back yet
+
+	// prints holds the fingerprints worked out so far, by path in small
+	// letters. Every list shares the one map.
+	prints map[string]string
+}
+
+// lookupAddress returns the page on VirusTotal for a file's fingerprint.
+// Anything that is not a SHA-256 fingerprint gives no address, so that
+// nothing but a fingerprint can ever be put into the address.
+func lookupAddress(print string) (string, bool) {
+	if len(print) != 64 {
+		return "", false
+	}
+	for _, r := range print {
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+			return "", false
+		}
+	}
+	return "https://www.virustotal.com/gui/file/" + print, true
 }
 
 // tint is the colour of the first cell of a row.
@@ -123,7 +143,7 @@ func tint(row view.Row) winui.Colour {
 func paragraphs(lines []view.Line) []winui.Paragraph {
 	out := make([]winui.Paragraph, len(lines))
 	for i, line := range lines {
-		out[i] = winui.Paragraph{Text: line.Text, Style: map[view.Style]winui.Style{view.Text: winui.Body, view.Heading: winui.Head, view.Aside: winui.Fine, view.Command: winui.Code}[line.Style]}
+		out[i] = winui.Paragraph{Text: line.Text, Style: map[view.Style]winui.Style{view.Text: winui.Body, view.Heading: winui.Head, view.Aside: winui.Fine, view.Command: winui.Code, view.Excerpt: winui.Code}[line.Style]}
 	}
 	return out
 }
@@ -200,8 +220,25 @@ func (l *list) fill() {
 func (l *list) pick(row int) {
 	if row >= 0 && row < len(l.shown) {
 		l.picked = row
-		l.detail.Read(paragraphs(l.shown[row].Detail)...)
+		l.detail.Read(paragraphs(l.withPrint(l.shown[row]))...)
 	}
+}
+
+// withPrint returns a row's lines of detail, with the fingerprint of its
+// file added when that was worked out after the look.
+func (l *list) withPrint(row view.Row) []view.Line {
+	print := l.prints[strings.ToLower(row.Path)]
+	if row.Path == "" || print == "" {
+		return row.Detail
+	}
+	for _, line := range row.Detail {
+		if line.Text == print {
+			return row.Detail // the look had worked it out already
+		}
+	}
+	return append(append([]view.Line{}, row.Detail...),
+		view.Line{Style: view.Heading, Text: "Fingerprint of the file (SHA-256)"}, view.Line{Style: view.Command, Text: print},
+		view.Line{Style: view.Aside, Text: "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
 }
 
 func main() {
@@ -272,11 +309,74 @@ func main() {
 	save.Lead(true)
 	jobs = append(jobs, again, raise, save)
 
+	// lookUp works out the fingerprint of the file a row is about and, on
+	// a yes, opens VirusTotal's page for that fingerprint in the user's own
+	// browser. This is the one thing in LazaScope that reaches the internet,
+	// and it is the browser that does it, with the fingerprint and nothing else.
+	prints := map[string]string{}
+	working := false
+	lookUp := func(l *list) {
+		const title = "Look up file"
+		switch {
+		case l.picked < 0 || l.picked >= len(l.shown):
+			w.Info(title, "Select a row first.")
+			return
+		case l.shown[l.picked].Path == "":
+			w.Info(title, "This row is not about a file on disk, so there is nothing to look up.")
+			return
+		case demo:
+			w.Info(title, "This is the made-up PC, so the file is not there to be read. On your own PC this button works out the file's fingerprint and offers to open VirusTotal's page for it in your browser.")
+			return
+		case working:
+			return
+		}
+		path := l.shown[l.picked].Path
+		ask := func(print string) {
+			address, ok := lookupAddress(print)
+			if !ok {
+				return
+			}
+			if !w.Ask(title, "Look this file up on VirusTotal?\r\n\r\n"+path+"\r\n\r\nVirusTotal is a website, owned by Google, that shows what about 70 antivirus products say about a file. Your web browser will open its page for this file's fingerprint:\r\n\r\n"+print+
+				"\r\n\r\nOnly the fingerprint is sent, and it is your browser that sends it. The file itself stays on this PC. If VirusTotal has never seen the file, it says so. That is common for new and home-made programs, and is not a bad sign in itself.\r\n\r\nOpen the page now?") {
+				status.SetText("Nothing was sent. The fingerprint is shown with the file's details, and Copy details copies it.")
+				return
+			}
+			if w.Browse(address) {
+				status.SetText("Opened VirusTotal's page for the file in your browser. Only the file's fingerprint was sent.")
+			} else {
+				w.Alert(title, "Windows could not open your browser. You can type this address into it yourself:\r\n\r\n"+address)
+			}
+		}
+		if print := prints[strings.ToLower(path)]; print != "" {
+			ask(print)
+			return
+		}
+		working = true
+		status.SetText("Working out the fingerprint of " + path + "...")
+		go func() {
+			print, err := files.Fingerprint(path)
+			w.Post(func() {
+				working = false
+				if err != nil {
+					status.SetText("The fingerprint could not be worked out. Nothing was sent.")
+					w.Alert(title, "The file could not be read, so its fingerprint could not be worked out: "+sentence(err))
+					return
+				}
+				prints[strings.ToLower(path)] = print
+				status.SetText("Worked out the fingerprint of " + path + ".")
+				if l.picked >= 0 && l.picked < len(l.shown) && l.shown[l.picked].Path == path {
+					l.pick(l.picked)
+				}
+				ask(print)
+			})
+		}()
+	}
+
 	// The seven lists.
 	lists := map[int]*list{}
 	addList := func(page int, files bool, filters []filter) {
 		w.Page(page)
-		l := &list{filters: filters, picked: -1}
+		l := &list{filters: filters, picked: -1, prints: prints}
 		lists[page] = l
 		heading := w.Heading("", left, 166, across, 30)
 		intro := w.Label("", left, 200, across, 42)
@@ -286,11 +386,12 @@ func main() {
 			for i, f := range filters {
 				names[i] = f.name
 			}
-			l.choice = w.Choice(names, left, 250, 330, 34, func() { l.fill() })
-			x += 342
+			l.choice = w.Choice(names, left, 250, 300, 34, func() { l.fill() })
+			x += 312
 		}
-		l.count = w.Caption("", x, 250, 360, 34)
+		l.count = w.Caption("", x, 250, 350, 34)
 		if files {
+			w.Button("Look up file...", left+across-430, 250, 150, 34, func() { lookUp(l) })
 			w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
 				if l.picked < 0 || l.picked >= len(l.shown) {
 					w.Info("Show in folder", "Select a row first.")
@@ -425,13 +526,22 @@ func main() {
 				}
 			}()
 			var s *model.Snapshot
+			var findings []rules.Finding
 			if demo {
 				s = sample.PC()
+				findings = rules.Check(s)
 			} else {
 				s = scan.Run(scan.Everything, func(stage string) { w.Post(func() { status.SetText(stage) }) })
+				findings = scan.Judge(s)
 			}
-			b := view.Build(s, rules.Check(s))
+			b := view.Build(s, findings)
 			w.Post(func() {
+				// A new look starts with the fingerprints it worked out itself:
+				// a file may have changed since the last one.
+				clear(prints)
+				for path, print := range s.Fingerprints {
+					prints[path] = print
+				}
 				busy = false
 				for _, c := range jobs {
 					c.Enable(true)
@@ -510,12 +620,15 @@ func headless(path string, demo bool) (code int) {
 		return 2
 	}
 	var s *model.Snapshot
+	var findings []rules.Finding
 	if demo {
 		s = sample.PC()
+		findings = rules.Check(s)
 	} else {
 		s = scan.Run(scan.Everything, nil)
+		findings = scan.Judge(s)
 	}
-	b := view.Build(s, rules.Check(s))
+	b := view.Build(s, findings)
 	content, err := report.Render(b, lazascope.Version(), path)
 	if err == nil {
 		err = os.WriteFile(path, content, 0600)

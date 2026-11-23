@@ -8,6 +8,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"lazascope/internal/sigcheck"
@@ -89,6 +90,16 @@ type File struct {
 
 	Size     int64
 	Modified time.Time
+
+	Script *Script // for a script that could be read: what its text shows
+}
+
+// Script is what the text of a script file shows. It is a reading of the
+// text and not a test: nothing was run.
+type Script struct {
+	Lines []string // how it begins: its first lines that are not empty
+	More  bool     // it goes on after those lines
+	Signs []string // what it does, each as a sentence
 }
 
 // Maker names who made the file as well as can be said: the name on a
@@ -451,6 +462,14 @@ func Withheld(elevated, several bool) string {
 	return "is protected by Windows and cannot be read even with administrator rights"
 }
 
+// Fingerprint returns the fingerprint of a file, if the look worked it out.
+func (s *Snapshot) Fingerprint(path string) string {
+	if s == nil || path == "" {
+		return ""
+	}
+	return s.Fingerprints[strings.ToLower(path)]
+}
+
 // Folders are the places on this PC that the rules need to know by name.
 type Folders struct {
 	Windows         string // C:\Windows
@@ -480,4 +499,10 @@ type Snapshot struct {
 	Guard       Guard
 	Condition   Condition
 	Gaps        []Gap
+
+	// Fingerprints holds the SHA-256 fingerprint of the files that findings
+	// are about, by the file's path in small letters. A fingerprint is a
+	// number worked out from every byte of a file: two files with the same
+	// fingerprint are the same file.
+	Fingerprints map[string]string
 }

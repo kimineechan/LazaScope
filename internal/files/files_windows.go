@@ -6,8 +6,11 @@
 package files
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -15,6 +18,7 @@ import (
 	"unsafe"
 
 	"lazascope/internal/model"
+	"lazascope/internal/scripts"
 	"lazascope/internal/sigcheck"
 	"lazascope/internal/sysdll"
 )
@@ -90,7 +94,16 @@ func (l *Library) look(path string) (file model.File) {
 	file.Program = program(path)
 	if !file.Program {
 		// A script or a document has no maker's seal worth reporting, and
-		// asking Windows to check one says "not signed" for nearly all.
+		// asking Windows to check one says "not signed" for nearly all. A
+		// script can be read instead.
+		if scripts.Is(path) && !scripts.Encoded(path) && info.Size() <= scripts.Limit {
+			if data, err := os.ReadFile(path); err == nil {
+				if text, readable := scripts.Text(data); readable {
+					reading := scripts.Read(text, 12)
+					file.Script = &model.Script{Lines: reading.Lines, More: reading.More, Signs: reading.Signs}
+				}
+			}
+		}
 		return file
 	}
 	file.Signature = l.checker.Check(path)
@@ -174,4 +187,24 @@ func Describe(path string) (company, description, product, number, original stri
 		return ""
 	}
 	return read("CompanyName"), read("FileDescription"), read("ProductName"), read("FileVersion"), read("OriginalFilename")
+}
+
+// FingerprintLimit is the largest file whose fingerprint is worked out
+// without being asked: reading a file of several gigabytes takes a while.
+const FingerprintLimit = 512 << 20
+
+// Fingerprint works out the SHA-256 fingerprint of a file: a number made
+// from every byte of it, written as 64 letters and digits. The file is
+// opened for reading and nothing about it is changed.
+func Fingerprint(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	sum := sha256.New()
+	if _, err := io.Copy(sum, file); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(sum.Sum(nil)), nil
 }

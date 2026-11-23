@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"lazascope/internal/view"
@@ -88,5 +89,41 @@ func TestTint(t *testing.T) {
 	}
 	if tint(view.Row{Off: true}) == 0 {
 		t.Error("a row that is switched off is not greyed")
+	}
+}
+
+func TestLookupAddress(t *testing.T) {
+	const print = "da5807bb0997cc6b5132950ec87eda2b33b1ac4533cf1f7a22a6f3b576ed7c5b"
+	address, ok := lookupAddress(print)
+	if !ok || address != "https://www.virustotal.com/gui/file/"+print {
+		t.Errorf("got %q, %v", address, ok)
+	}
+	// Nothing but a fingerprint can become part of the address.
+	for _, bad := range []string{"", "abc", strings.ToUpper(print), print + "0", print[:63] + "g", print[:60] + "/../", print[:62] + "?x", strings.Repeat(" ", 64)} {
+		if address, ok := lookupAddress(bad); ok || address != "" {
+			t.Errorf("%q was made into the address %q", bad, address)
+		}
+	}
+}
+
+// A fingerprint worked out after the look is added to the details of the
+// row it belongs to, once, and to no other row.
+func TestWithPrint(t *testing.T) {
+	const print = "da5807bb0997cc6b5132950ec87eda2b33b1ac4533cf1f7a22a6f3b576ed7c5b"
+	l := &list{prints: map[string]string{`c:\tools\thing.exe`: print}}
+	row := view.Row{Path: `C:\Tools\Thing.exe`, Detail: []view.Line{{Style: view.Heading, Text: "Thing"}}}
+	got := l.withPrint(row)
+	if len(got) != 4 || got[2].Text != print || got[2].Style != view.Command || len(row.Detail) != 1 {
+		t.Errorf("the details became %+v, and the row's own are now %d lines", got, len(row.Detail))
+	}
+	// The look had it already: it is not said twice.
+	row.Detail = append(row.Detail, view.Line{Style: view.Command, Text: print})
+	if got := l.withPrint(row); len(got) != 2 {
+		t.Errorf("a fingerprint already shown was added again: %d lines", len(got))
+	}
+	for _, other := range []view.Row{{Path: `C:\Tools\other.exe`, Detail: row.Detail[:1]}, {Detail: row.Detail[:1]}} {
+		if got := l.withPrint(other); len(got) != 1 {
+			t.Errorf("the row for %q was given a fingerprint", other.Path)
+		}
 	}
 }

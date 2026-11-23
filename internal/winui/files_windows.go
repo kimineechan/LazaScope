@@ -42,6 +42,30 @@ func (w *Window) Alert(title, text string) {
 	user32.NewProc("MessageBoxW").Call(w.Handle, uintptr(unsafe.Pointer(ptr(text))), uintptr(unsafe.Pointer(ptr(title))), 0x10)
 }
 
+// Ask shows a question with Yes and No in a box from Windows, and reports
+// whether the answer was yes. No is the button that Enter presses.
+func (w *Window) Ask(title, text string) bool {
+	const yesNo, question, secondButton, yes = 0x4, 0x20, 0x100, 6
+	answer, _, _ := user32.NewProc("MessageBoxW").Call(w.Handle, uintptr(unsafe.Pointer(ptr(text))), uintptr(unsafe.Pointer(ptr(title))), yesNo|question|secondButton)
+	return answer == yes
+}
+
+// Browse opens a web address in the user's own browser, and reports whether
+// Windows took it. Only an https address is opened, so that nothing else
+// can be started by this door.
+func (w *Window) Browse(address string) bool {
+	if len(address) < 9 || address[:8] != "https://" {
+		return false
+	}
+	for _, r := range address {
+		if r <= ' ' || r == '"' || r > '~' {
+			return false
+		}
+	}
+	r, _, _ := shell32.NewProc("ShellExecuteW").Call(w.Handle, uintptr(unsafe.Pointer(ptr("open"))), uintptr(unsafe.Pointer(ptr(address))), 0, 0, 1)
+	return r > 32
+}
+
 // Info shows a message that is good news, in a box from Windows.
 func (w *Window) Info(title, text string) {
 	user32.NewProc("MessageBoxW").Call(w.Handle, uintptr(unsafe.Pointer(ptr(text))), uintptr(unsafe.Pointer(ptr(title))), 0x40)
