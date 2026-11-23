@@ -74,9 +74,9 @@ func kept(shown []view.Row, all int, name string) string {
 	case 0:
 		return text
 	case 1:
-		return text + " 1 is a flagged part of Windows."
+		return text + " 1 flagged part of Windows."
 	}
-	return text + fmt.Sprintf(" %d are flagged parts of Windows.", parts)
+	return text + fmt.Sprintf(" %d flagged parts of Windows.", parts)
 }
 
 const (
@@ -404,12 +404,12 @@ func main() {
 			for i, f := range filters {
 				names[i] = f.name
 			}
-			l.choice = w.Choice(names, left, 250, 300, 34, func() { l.fill() })
-			x += 312
+			l.choice = w.Choice(names, left, 250, 270, 34, func() { l.fill() })
+			x += 282
 		}
-		l.count = w.Caption("", x, 250, 350, 34)
+		l.count = w.Caption("", x, 250, 384, 34)
 		if files {
-			w.Button("Look up file...", left+across-430, 250, 150, 34, func() { lookUp(l) })
+			w.Button("Look up file...", left+across-422, 250, 142, 34, func() { lookUp(l) })
 			w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
 				if l.picked < 0 || l.picked >= len(l.shown) {
 					w.Info("Show in folder", "Select a row first.")

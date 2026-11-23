@@ -33,6 +33,7 @@ $files = @(
     @('docs/screenshots/overview.png'),
     @('docs/screenshots/worth.png'),
     @('docs/screenshots/startup.png'),
+    @('docs/screenshots/health.png'),
     @('assets/logo.svg')
 )
 foreach ($file in $files) {

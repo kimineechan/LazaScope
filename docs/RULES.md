@@ -76,11 +76,19 @@ This table is printed by `lazascope-cli rules --markdown`, and a test fails if i
 - **Start-up entries that are switched off** in Task Manager or Task Scheduler. They are listed, marked Off, and not judged, because they do not start.
 - **Windows' own tasks and drivers for features that are not installed.** Windows ships entries for parts that not every edition has. Those are not leftovers.
 - **Ports that only this PC can reach.** A program waiting on `127.0.0.1` is no door for anyone else.
+- **A browser extension from the browser's own store**, however much it may do. Ad blockers and password managers need to read every page, and so the right to do so is shown and not judged. Extensions that came with the browser are left alone too.
+- **A name server on the local network, or one of the well-known public ones** (Cloudflare, Google, Quad9, OpenDNS, AdGuard), also when typed in by hand. The first is a router or a home filter, the second a choice.
+- **A disk that had to be asked twice.** A loose cable and a USB drive pulled out too early do that. It is counted on the Health page and not flagged.
+- **One or two stops without a shutdown.** Holding the power button down now and then is everyday life.
+- **A drive other than the Windows one that is full.** People fill data disks on purpose.
+- **Real-time protection switched off more than a month ago.** It is history, and it is on again.
+- **An exclusion in Defender's log when the list itself can be read.** The list is the truth, and the rule for the list speaks. The log only adds the date.
+- **Short-lived ports in a comparison.** A program opens them for a single exchange, a different one each time.
 - **LazaScope itself.** It is unsigned and is often started straight from the Downloads folder. It lists itself like any other program and does not judge itself.
 
 ## How the rules are tested
 
-Each rule is a plain function over the collected facts. It reads nothing from the PC itself, so it is tested with made-up PCs: a healthy one that must produce no findings at all, then about ninety single changes to it, each of which must produce exactly the findings it should and no others. Many of those changes are things that look odd and are fine, and must stay quiet.
+Each rule is a plain function over the collected facts. It reads nothing from the PC itself, so it is tested with made-up PCs: a healthy one that must produce no findings at all, then about a hundred and fifty single changes to it, each of which must produce exactly the findings it should and no others. Many of those changes are things that look odd and are fine, and must stay quiet.
 
 On a real PC, `cmd/verify` plants eleven harmless items in the current account: ten that look suspicious and one that does not. It checks that each of the ten is flagged for the right reason and that the eleventh is listed and left alone, then removes them all again. See [VALIDATION.md](../VALIDATION.md).
 

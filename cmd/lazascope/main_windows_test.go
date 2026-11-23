@@ -55,8 +55,8 @@ func TestViewsOfAList(t *testing.T) {
 		name  string
 		want  string
 	}{
-		{other, notWindowsName, "6 of 7 shown. 1 is a flagged part of Windows."},
-		{append(append([]view.Row{}, other...), rows[0]), notWindowsName, "7 of 7 shown. 2 are flagged parts of Windows."},
+		{other, notWindowsName, "6 of 7 shown. 1 flagged part of Windows."},
+		{append(append([]view.Row{}, other...), rows[0]), notWindowsName, "7 of 7 shown. 2 flagged parts of Windows."},
 		{other[1:], notWindowsName, "5 of 7 shown."},
 		{other, "Only what is worth a look", "6 of 7 shown."}, // any other view counts and no more
 		{nil, notWindowsName, "0 of 7 shown."},

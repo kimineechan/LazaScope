@@ -4,16 +4,25 @@
 
 First version.
 
-- An overview page with five lights: Protection, Starts with Windows, Running now, Internet connections, Accounts and remote access.
+- An overview page with six lights: Protection, Starts with Windows, Running now, Internet connections, Accounts and remote access, PC health.
 - List everything set to start by itself: the registry's Run and RunOnce lists for the PC and the account in both the 64-bit and the 32-bit view, the Startup folders, the start-up tasks of Store apps, scheduled tasks, automatic services and drivers, the sign-in settings, debugger settings and AppInit_DLLs, with Task Manager's on and off switches.
 - Follow each start-up command to the file that does the work: the library behind `rundll32` and `svchost`, the script behind PowerShell and `wscript`, the program behind `cmd /c start`.
 - List the running programs as a family tree, with path, command line, account, start time and the services inside each.
 - List the network connections and the ports programs wait on, each with its program and how far its other end is.
 - Read the protection of the PC: antivirus and firewall as Windows Security reports them, Microsoft Defender's settings and exclusions, User Account Control, the last installed update, disk encryption, Secure Boot, Remote Desktop, the Administrators group, the hosts file and remote-control software.
 - Say who signed every file, looking both inside the file and in Windows' catalogues and the catalogues of Store apps, with a memory so that hundreds of files take seconds.
-- Flag what is worth a look with thirty-one written rules, each with its reason and what to do.
+- List the extensions added to Chrome, Edge, Firefox, Brave, Vivaldi and Opera: where each came from and what it may do.
+- Read a script that starts by itself as text: what it can be seen to do, and how it begins. The script's own lines stay out of saved reports.
+- Read Windows' own logs: errors the hardware reported about itself, blue screens with their stop codes, stops without a shutdown, disk faults, cleared logs, and from Microsoft Defender's log what it found, when its real-time protection was switched off, and the exclusions the log shows being added. None of this needs administrator rights.
+- Show the far end of a connection by name where Windows remembers the lookup, without making a lookup.
+- Show the name servers (DNS) the PC asks and whether each was typed in, and the proxy setting.
+- Give every flagged file a SHA-256 fingerprint, and offer to open VirusTotal's page for any listed file's fingerprint in the user's own browser, on a yes.
+- Compare a look with a report saved earlier as data: what is new, what is gone and which of fifteen protection settings have changed.
+- Watch for a minute, reading the programs and connections once a second, so that what starts and ends again within seconds is still seen.
+- Read the start-up lists of the other accounts whose settings are loaded, and say plainly that Windows hides some scheduled tasks from accounts without administrator rights.
+- Flag what is worth a look with forty-four written rules, each with its reason and what to do.
 - Save a report as one self-contained web page, as plain text, or as JSON that carries every fact as it was read, with a reference from each finding to the fact it is about.
 - Say so in words when something could not be read, when a view of a list matches nothing, and when a fault inside LazaScope stopped one part of a look. The rest of the look carries on.
 - Show a made-up PC with `--demo`.
 - Include a command-line tool, a check that plants eleven harmless items and confirms that ten are flagged and one is left alone, Windows build and release automation, and tests.
-- Read only, with no network client, and without needing administrator rights.
+- Read only, with no network client, and without needing administrator rights. The one thing that reaches the internet is the user's browser, when the user asks for a file to be looked up and says yes.

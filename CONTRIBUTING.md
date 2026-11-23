@@ -34,7 +34,11 @@ Format Go changes with `gofmt`. On Windows, run `build.cmd` before submitting a 
 | Path | Contents |
 | --- | --- |
 | `internal/model` | The plain facts about a PC that everything else passes around. No calls to Windows |
-| `internal/startup`, `procs`, `netconn`, `protect` | The collectors: one for each kind of fact. They only read |
+| `internal/startup`, `procs`, `netconn`, `protect`, `health` | The collectors: one for each kind of fact. They only read |
+| `internal/eventlog` | Reads Windows' own logs |
+| `internal/browsers` | Reads the extensions out of the browsers' own record files |
+| `internal/scripts` | Reads a script as text and says what it can be seen to do. No calls to Windows |
+| `internal/compare` | Holds one look against another, for a saved report and for a watch. No calls to Windows |
 | `internal/cmdline` | Follows a command line to the file that does the work |
 | `internal/sigcheck` | Who signed a file, in the file or in a catalogue, with a memory of the answers |
 | `internal/files` | Looks each file up once: whether it exists, what it says of itself, who signed it |
@@ -49,7 +53,16 @@ Format Go changes with `gofmt`. On Windows, run `build.cmd` before submitting a 
 | `cmd/lazascope-cli`, `cmd/verify` | The command-line tool and the planted-items check |
 | `tools/mkres` | Draws the icon and builds the Windows resource object |
 
-`internal/sigcheck` and `internal/rules` must not depend on the window or on each other's insides. They are meant to be used by other programs.
+`internal/sigcheck`, `internal/rules`, `internal/scripts` and `internal/compare` must not depend on the window or on each other's insides. They are meant to be used by other programs.
+
+Three tests read the PC they run on and print what they find, to compare by eye with Windows' own tools. They run only when asked for:
+
+```powershell
+$env:LAZASCOPE_LIVE = '1'
+go test ./internal/eventlog ./internal/netconn -run TestLive -v
+```
+
+An antivirus may stop `cmd/verify`, because planting start-up entries is what an antivirus watches for. `go run ./cmd/verify --clean` plants nothing and removes whatever an interrupted run left.
 
 ### Rules for a rule
 

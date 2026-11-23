@@ -1,6 +1,90 @@
 # Validation
 
+## Checks completed on 23 November 2026
+
+A third round, on the same PC: Windows 10 Pro 22H2 (build 19045), this time **both without and with administrator rights**. It added a sixth light and thirteen rules, and it began with the one check the second round had left open.
+
+### With administrator rights
+
+The look was taken with administrator rights and compared, entry for entry, with Windows' own lists taken with the same rights at the same moment.
+
+| What | LazaScope | Windows | Difference |
+| --- | --- | --- | --- |
+| Running programs | 354 | 353 (`Get-CimInstance Win32_Process`) | 352 in both. The rest are the comparison's own tools and the idle process |
+| Command lines | 348 | 333 | The same for all 333 that Windows gave. LazaScope read 15 more, of protected programs. Different for none |
+| Accounts | 352 | 334 (`Get-Process -IncludeUserName`) | The same for all 334. LazaScope knew 18 more. Different for none |
+| Program files | 347 | 333 | The same for 331. For 2, Windows writes the same path with `\\?\` in front |
+| Connections | 255 | 255 (`netstat -ano`, taken before and after) | Every line of LazaScope's is in netstat's. None missing either way |
+| Scheduled tasks | 230 | 230 (`Get-ScheduledTask`) | The same names. On and off the same for all |
+| Automatic services | 82 | 82 | The same |
+| Drivers that start by themselves | 101 | 101 | The same |
+| Start-up commands | 20 | 18 (`Win32_StartupCommand`) | All 18 of Windows' are in LazaScope's. The other two are lines for 32-bit programs |
+| Name servers | 2 | 2 (`Get-DnsClientServerAddress`) | The same |
+
+Defender's exclusions, the hardware errors and the blue screens were compared the same way and matched. Their numbers are left out of this public record, as they describe a PC in daily use.
+
+The same comparison without administrator rights: programs 351 in both, command lines the same for 202 and different for none, connections 226 of 226, scheduled tasks 164 of 164, services and drivers the same, hardware errors and blue screens the same.
+
+**The button** was pressed: **Look again as administrator** in a window without the rights started a second copy, which a helper with administrator rights confirmed to have them, and the first window closed. The window with the rights was looked at page by page.
+
+### What the first look with administrator rights showed
+
+It found six faults, which are fixed.
+
+1. **66 scheduled tasks were missing, and nothing said so.** Windows shows some tasks to administrators only: 232 with the rights against 166 without. Two of the hidden ones were not Windows' own. A program without the rights cannot count what it is not shown, so the look now says plainly that such tasks exist and are missing.
+2. **A task that reads a named script and runs it was called a scrambled command**, at "Look first". Nothing was hidden: the script's file was named on the line. Such a line is now followed to the script, and judged as a script.
+3. **With the rights, a thing that still could not be read was said to "need administrator rights".** It now says that Windows protects it from everyone.
+4. **A shell that only passes a scrambled command on was flagged beside the tool that runs it**, so one thing was reported twice. The messenger is now left out.
+5. **Two start-up lines were missing**: Windows' own list held two for the accounts that services run as. The start-up lists of the other accounts whose settings are loaded are now read.
+6. **The saved web page and text report lacked the Health page** and the fingerprints, which the window showed. A test now holds the reports to every page the window has.
+
+### What was added, and how each part was checked
+
+- **A reader for Windows' own logs**, tested on made-up records of each kind and then on this PC: what it found is what `Get-WinEvent` lists, the same number on the same days.
+- **PC health.** Six rules, each tested with made-up PCs for when it must fire and when it must stay quiet.
+- **What Microsoft Defender's own log holds.** Read without administrator rights, it agreed with what `Get-MpPreference` gives with them.
+- **Scripts read as text.** Twenty-three made-up scripts, in PowerShell, batch, JavaScript, Python and VBScript, each with the signs it must and must not show. A test checks that the script's own lines never reach a saved report.
+- **Fingerprints.** Checked against the two values published with SHA-256 itself, and on this PC against `certutil -hashfile` for Notepad.
+- **Look up file...** was pressed twice, on a flagged file and on one that was not, and answered No both times: the box showed the right file and fingerprint, and nothing was opened. A test holds the address to a fingerprint and nothing else. The address was not opened from LazaScope, so that the browser in use was left alone.
+- **Names for addresses.** LazaScope's list was the same as `ipconfig /displaydns`, 12 addresses of 12, at the same moment. A test asks for a name that cannot have been looked up before, with the same switches, and checks that the answer comes at once, is empty, and leaves no trace in Windows' note of lookups. That is the evidence that the question sends nothing.
+- **Name servers and proxy.** The same as `Get-DnsClientServerAddress` and the registry on this PC. The two rules were tested with made-up data, because changing either setting to test a rule would change how the PC reaches the internet.
+- **Browser extensions.** The extensions LazaScope lists are the ones in the browsers' own records, read a second time by a separate script. The reader is tested on made-up records of every origin a browser distinguishes, and on folders laid out like a PC's.
+- **Compare with a report.** A report was saved, one harmless line was put in this account's `Run` list, and the comparison named exactly that line as new. The line was removed and checked to be gone, and the comparison then showed nothing new among what starts.
+- **Watch.** During a nine-second watch a harmless program was started that opened one connection and ended. The watch listed the program as started and ended again, with its connection.
+
+### Faults found while building this round
+
+1. A scheduled task that does two things is two entries under one name. The comparison took the second for a change of the first. Everything of one name is now gathered before comparing.
+2. Short-lived UDP ports, a different one each time, were counted as new and as gone. They are now left out of a comparison.
+3. Asking for remembered names the documented way left out names that Windows learnt over another network connection, so `ipconfig /displaydns` showed 9 addresses where LazaScope showed 3. It now asks the way that tool does, and the two agree.
+4. A detection that Defender wrote down twice within moments was listed twice.
+5. "Today" was used for something that happened the evening before. Days are now counted on the calendar.
+6. At the smallest window size, the count beside the views was cut off by the new button. The views and the count were given more room.
+
+### Planted items
+
+The check ran once more with all forty-four rules: all eleven items came out as they should, were removed, and were checked to be gone. The check now has a way to only clean up (`--clean`), because Microsoft Defender stopped it once on 22 November 2026, as "Behavior:Win32/Persistence.A!ml". Planting start-up entries is what an antivirus watches for. Nothing was left behind that time either.
+
+### What LazaScope flags on this PC now
+
+Nine findings without administrator rights, twelve with them. Each was checked by hand against Windows' own tools, and all are true. What they are is left out of this public record, as they describe a PC in daily use.
+
+### Automated tests, both programs, twice
+
+`go vet` and every test pass. Both programs were built twice, the second time from nothing, and the two builds are byte for byte the same.
+
+### Where the third round stops
+
+- Still one PC, with Windows 10 in English and Microsoft Defender.
+- **Look up file...** was never answered Yes, and **Copy details** was never pressed, for the reasons given above and below.
+- The rules for a proxy, a typed-in name server, a cleared log, a disk fault, a nearly full disk, sudden stops, and an extension that did not come from a store were tested with made-up data only. This PC has none of those.
+- The watch was run for seconds, not for its full ten minutes, and not against anything that tries to hide from it.
+- An account that is not signed in keeps its start-up list in a file that LazaScope does not open.
+- Whether a scheduled task that Windows hides from administrators as well can be found was not tried.
+
 ## Checks completed on 22 November 2026
+
+This is the record of the second round, as it stood that day: five lights and thirty-one rules, without administrator rights.
 
 Both programs were compiled with Go 1.27.3 for `windows/amd64`, with CGO disabled, and run on Windows 10 Pro 22H2 (build 19045) without administrator rights.
 
