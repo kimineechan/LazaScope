@@ -112,7 +112,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		}
 	}
 	if ownerless > 0 && parts.Processes {
-		s.Gaps = append(s.Gaps, model.Gap{Area: model.RunningNow, What: fmt.Sprintf("The account behind %d running programs can only be read with administrator rights.", ownerless)})
+		what := fmt.Sprintf("The accounts behind %d running programs", ownerless)
+		if ownerless == 1 {
+			what = "The account behind 1 running program"
+		}
+		s.Gaps = append(s.Gaps, model.Gap{Area: model.RunningNow, What: what + " " + model.Withheld(s.Elevated, ownerless != 1) + "."})
 	}
 	for i := range s.Connections {
 		c := &s.Connections[i]

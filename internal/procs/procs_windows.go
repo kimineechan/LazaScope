@@ -155,7 +155,19 @@ func Collect() ([]model.Process, []model.Gap) {
 		gaps = append(gaps, gap(fmt.Sprintf("Windows would not say where %d running programs are on disk.", pathless))...)
 	}
 	if commandless > 0 {
-		gaps = append(gaps, gap(fmt.Sprintf("The command lines of %d programs that run as other accounts can only be read with administrator rights.", commandless))...)
+		elevated := pcinfo.Elevated()
+		what := fmt.Sprintf("The command lines of %d programs", commandless)
+		if commandless == 1 {
+			what = "The command line of 1 program"
+		}
+		if !elevated {
+			if commandless == 1 {
+				what += " that runs as another account"
+			} else {
+				what += " that run as other accounts"
+			}
+		}
+		gaps = append(gaps, gap(what+" "+model.Withheld(elevated, commandless != 1)+".")...)
 	}
 	return list, gaps
 }

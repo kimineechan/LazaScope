@@ -12,6 +12,7 @@
 package cmdline
 
 import (
+	"regexp"
 	"strings"
 
 	"lazascope/internal/winpath"
@@ -236,6 +237,13 @@ func (w World) follow(c *Command, depth int) {
 	case "powershell", "pwsh", "powershell_ise":
 		c.Carrier = Script
 		script, inline := powershellScript(words)
+		if inline {
+			// Commands on the line that do nothing but run one named script
+			// are that script, and nothing is hidden.
+			if file, ok := Loads(powershellCommand(words)); ok {
+				script, inline = file, false
+			}
+		}
 		c.Target, c.Inline = w.Tidy(script), inline
 	case "cmd":
 		c.Carrier = Script
@@ -382,6 +390,86 @@ func powershellScript(words []string) (script string, inline bool) {
 		case short(name, "command", 1), short(name, "encodedcommand", 1), name == "ec",
 			short(name, "encodedarguments", 8), name == "ea":
 			return "", true
+		}
+	}
+	return "", false
+}
+
+// powershellCommand returns the commands PowerShell is given on the line
+// itself: what follows -Command, or everything from the first word that is
+// not a switch. It is empty when the commands are encoded or there are none.
+func powershellCommand(words []string) string {
+	for i := 0; i < len(words); i++ {
+		name, isOption := option(words[i])
+		if !isOption {
+			return strings.Join(words[i:], " ")
+		}
+		switch {
+		case short(name, "file", 1):
+			return ""
+		case short(name, "executionpolicy", 2), name == "ep",
+			short(name, "windowstyle", 1), short(name, "inputformat", 1), short(name, "outputformat", 1),
+			short(name, "configurationname", 3), short(name, "version", 1), short(name, "psconsolefile", 1),
+			short(name, "workingdirectory", 2), name == "wd", short(name, "settingsfile", 3), short(name, "custompipename", 3):
+			i++
+		case short(name, "encodedcommand", 1), name == "ec", short(name, "encodedarguments", 8), name == "ea":
+			return ""
+		case short(name, "command", 1):
+			return strings.Join(words[i+1:], " ")
+		}
+	}
+	return ""
+}
+
+// PowerShellCommand returns the commands a whole PowerShell command line
+// gives on the line itself, or "" when there are none to read.
+func PowerShellCommand(line string) string {
+	words := Words(line)
+	if len(words) < 2 {
+		return ""
+	}
+	switch winpath.Stem(words[0]) {
+	case "powershell", "pwsh", "powershell_ise":
+		return powershellCommand(words[1:])
+	}
+	return ""
+}
+
+// The ways a line of PowerShell runs one script file and does nothing else.
+var loaders = []*regexp.Regexp{
+	// iex([IO.File]::ReadAllText('C:\thing.ps1'))
+	regexp.MustCompile(`(?i)^(?:iex|invoke-expression)\s*\(?\s*\[(?:system\.)?io\.file\]::readalltext\(\s*['"]?([^'"()|;]+?)['"]?\s*\)\s*\)?$`),
+	// Get-Content 'C:\thing.ps1' -Raw | iex
+	regexp.MustCompile(`(?i)^(?:get-content|gc|cat|type)\s+(?:-(?:literal)?path\s+)?['"]?([^'"()|;]+?)['"]?(?:\s+-raw)?\s*\|\s*(?:iex|invoke-expression)$`),
+	// iex (Get-Content 'C:\thing.ps1' -Raw)
+	regexp.MustCompile(`(?i)^(?:iex|invoke-expression)\s*\(\s*(?:get-content|gc|cat|type)\s+(?:-(?:literal)?path\s+)?['"]?([^'"()|;]+?)['"]?(?:\s+-raw)?\s*\)$`),
+	// & 'C:\thing.ps1' and . 'C:\thing.ps1', with or without something handed to it
+	regexp.MustCompile(`(?i)^[&.]\s*'([^'()|;]+\.ps1)'(?:\s+[^|;&` + "`" + `$()]*)?$`),
+	regexp.MustCompile(`(?i)^[&.]\s+([^\s'"()|;]+\.ps1)(?:\s+[^|;&` + "`" + `$()]*)?$`),
+	// C:\thing.ps1 alone
+	regexp.MustCompile(`(?i)^'?([^\s'"()|;]+\.ps1)'?$`),
+}
+
+// Loads reports whether commands given to PowerShell on the line do nothing
+// but run one script file, and names that file. Such a line hides nothing:
+// what it does is whatever the file says, and the file can be read.
+func Loads(commands string) (file string, ok bool) {
+	text := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(commands), ";"))
+	// One pair of braces or brackets around everything changes nothing.
+	for len(text) > 2 && ((text[0] == '{' && text[len(text)-1] == '}') || (text[0] == '(' && text[len(text)-1] == ')' && strings.Count(text, "(") == 1)) {
+		text = strings.TrimSpace(text[1 : len(text)-1])
+	}
+	if strings.HasPrefix(text, "&") && len(text) > 3 && text[len(text)-1] == '}' {
+		// & { ... }
+		if rest := strings.TrimSpace(text[1:]); strings.HasPrefix(rest, "{") {
+			text = strings.TrimSpace(rest[1 : len(rest)-1])
+		}
+	}
+	for _, loader := range loaders {
+		if found := loader.FindStringSubmatch(text); found != nil {
+			if file = strings.TrimSpace(found[1]); file != "" && !strings.ContainsAny(file, "$*?<>") {
+				return file, true
+			}
 		}
 	}
 	return "", false

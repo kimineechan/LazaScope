@@ -10,7 +10,7 @@ import (
 )
 
 // aboutProcess gathers the evidence that goes with a running program.
-func aboutProcess(p model.Process) []Fact {
+func aboutProcess(s *model.Snapshot, p model.Process) []Fact {
 	facts := []Fact{{"Program", p.Name + " (process " + strconv.Itoa(int(p.PID)) + ")"}}
 	add := func(label, value string) {
 		if value != "" {
@@ -23,7 +23,7 @@ func aboutProcess(p model.Process) []Fact {
 		add("The file says it is", Claim(p.File))
 	}
 	if p.CommandHidden {
-		add("Command", "Can only be read with administrator rights")
+		add("Command", strings.ToUpper(model.Withheld(s.Elevated, false)[:1])+model.Withheld(s.Elevated, false)[1:])
 	} else {
 		add("Command", p.Command)
 	}
@@ -50,7 +50,7 @@ var runningRules = []Rule{
 				if p.File.Exists && p.File.Signature.Changed() {
 					found = append(found, r.find(p.Name,
 						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
-						"Reinstall the program from its maker's website and scan the PC with your antivirus.", aboutProcess(p)...))
+						"Reinstall the program from its maker's website and scan the PC with your antivirus.", aboutProcess(s, p)...))
 				}
 			}
 			return
@@ -66,11 +66,11 @@ var runningRules = []Rule{
 				if Disguised(p.File.Path, s.Folders) {
 					found = append(found, r.find(p.Name,
 						p.Name+" is the name of a part of Windows, and the real one runs from "+s.Folders.Windows+". This one is running from "+winpath.Dir(p.File.Path)+". A program that borrows a Windows name in another folder is usually trying not to be noticed."+stillMicrosoft(p.File),
-						seeRunning+"Unless you started it yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(p)...))
+						seeRunning+"Unless you started it yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(s, p)...))
 				} else if of, ok := Lookalike(p.File.Path); ok {
 					found = append(found, r.find(p.Name,
 						p.Name+" is spelt almost like "+of+", a part of Windows, but it is not that file. Names one letter away from a Windows name are chosen to be misread.",
-						seeRunning+"Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(p)...))
+						seeRunning+"Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(s, p)...))
 				}
 			}
 			return
@@ -89,7 +89,7 @@ var runningRules = []Rule{
 				}
 				f := r.find(p.Name,
 					"It is running from "+kind+": "+p.File.Path+". An installer or a portable tool you opened a moment ago looks like this. So does something that was downloaded and started without being installed.",
-					seeRunning+"If you just ran an installer or a downloaded tool, this is it and nothing needs doing. If you do not recognise it, scan the file with your antivirus.", aboutProcess(p)...)
+					seeRunning+"If you just ran an installer or a downloaded tool, this is it and nothing needs doing. If you do not recognise it, scan the file with your antivirus.", aboutProcess(s, p)...)
 				if p.File.Exists && p.File.Program && !p.File.Signature.Trusted() {
 					f.Severity = High
 					f.Reason += " The file is also not signed by a known maker."
@@ -104,18 +104,30 @@ var runningRules = []Rule{
 		Title: "A scripting tool is running a scrambled command",
 		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			// A shell that only passes a scrambled command on to the tool it
+			// starts shows the same text twice. The tool that carries it out
+			// is the one to flag, so the messenger is left out.
+			carried := map[uint32][]string{} // by parent: what its flagged children were told
+			for _, p := range s.Processes {
+				if p.CommandHidden || p.Command == "" || p.Self || len(Scrambled(p.File.Path, p.Command)) == 0 {
+					continue
+				}
+				if told := told(p.Command); told != "" {
+					carried[p.Parent] = append(carried[p.Parent], told)
+				}
+			}
 			for _, p := range s.Processes {
 				r.at(ProcessRef(p.PID))
 				if p.CommandHidden || p.Command == "" || p.Self {
 					continue
 				}
 				signs := Scrambled(p.File.Path, p.Command)
-				if len(signs) == 0 {
+				if len(signs) == 0 || relays(p.Command, carried[p.PID]) {
 					continue
 				}
 				f := r.find(p.Name,
 					p.Name+" carries out whatever commands it is given, and the commands it is running now are hidden. "+strings.Join(signs, " ")+" Some developer tools and management software do this for ordinary reasons.",
-					"Look at what started it: the Running now page shows each program under the one that launched it. If it belongs to a tool you use, nothing needs doing. If nothing explains it, show it to someone who knows Windows well.", aboutProcess(p)...)
+					"Look at what started it: the Running now page shows each program under the one that launched it. If it belongs to a tool you use, nothing needs doing. If nothing explains it, show it to someone who knows Windows well.", aboutProcess(s, p)...)
 				if Hidden(p.File.Path, p.Command) {
 					f.Reason += " It was also told to work without showing a window."
 				}
@@ -124,6 +136,34 @@ var runningRules = []Rule{
 			return
 		},
 	},
+}
+
+// told returns what a command line tells its program, without the program
+// itself, with every run of spaces made one.
+func told(command string) string {
+	text := strings.TrimSpace(command)
+	if strings.HasPrefix(text, `"`) {
+		if end := strings.IndexByte(text[1:], '"'); end >= 0 {
+			text = text[end+2:]
+		}
+	} else if cut := strings.IndexAny(text, " \t"); cut >= 0 {
+		text = text[cut:]
+	} else {
+		text = ""
+	}
+	return strings.Join(strings.Fields(text), " ")
+}
+
+// relays reports whether a command line holds, word for word, everything
+// one of the programs it started was told. Such a program is a messenger.
+func relays(command string, children []string) bool {
+	whole := strings.Join(strings.Fields(command), " ")
+	for _, child := range children {
+		if len(child) >= 24 && strings.Contains(whole, child) {
+			return true
+		}
+	}
+	return false
 }
 
 // once returns the running programs with each program file kept one time,

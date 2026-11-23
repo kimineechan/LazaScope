@@ -195,7 +195,7 @@ func (b *builder) running() Page {
 		case p.Command != "":
 			lines = append(lines, Line{Text, "Command:"}, Line{Command, p.Command})
 		case p.CommandHidden && p.File.Path != "":
-			lines = append(lines, Line{Aside, "The command that started this program can only be read with administrator rights."})
+			lines = append(lines, Line{Aside, "The command that started this program " + model.Withheld(b.s.Elevated, false) + "."})
 		}
 		lines = file(lines, p.File)
 		if p.File.Path == "" {
@@ -367,7 +367,11 @@ func (b *builder) protection() Page {
 	// What Defender skips.
 	switch {
 	case !g.ExclusionsVisible:
-		add(b.topic("Places Defender skips", "Can only be read with administrator rights", model.NotKnown, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe.", "exclusions"))
+		unread := "Can only be read with administrator rights"
+		if b.s.Elevated {
+			unread = "Could not be read"
+		}
+		add(b.topic("Places Defender skips", unread, model.NotKnown, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe.", "exclusions"))
 	case len(g.Exclusions) == 0:
 		add(b.topic("Places Defender skips", "None", model.Yes, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program.", "exclusions"))
 	default:

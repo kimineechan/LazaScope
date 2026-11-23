@@ -369,7 +369,17 @@ func (c *collector) tasks() {
 	unreadable := 0
 	c.taskFolder(com.Wrap(folder), 0, &unreadable)
 	if unreadable > 0 {
-		c.gap(fmt.Sprintf("%d scheduled tasks are listed but their details can only be read with administrator rights.", unreadable))
+		what := fmt.Sprintf("%d scheduled tasks are listed, but their details", unreadable)
+		if unreadable == 1 {
+			what = "1 scheduled task is listed, but its details"
+		}
+		c.gap(what + " " + model.Withheld(pcinfo.Elevated(), true) + ".")
+	}
+	if !pcinfo.Elevated() {
+		// Task Scheduler leaves these out without a word, so nothing here
+		// can count them. Saying nothing would pass a short list off as the
+		// whole one.
+		c.gap("Windows shows some scheduled tasks to administrators only, so they are missing from this list. There are usually a few dozen. Most are parts of Windows and of software updaters, but not always all. Look again as administrator to see them.")
 	}
 }
 
@@ -587,7 +597,17 @@ func (c *collector) services() {
 		c.add(entry, read)
 	}
 	if refused > 0 {
-		c.gap(fmt.Sprintf("%d services or drivers are protected and can only be read with administrator rights.", refused))
+		what := fmt.Sprintf("%d services or drivers", refused)
+		if refused == 1 {
+			what = "1 service or driver"
+		}
+		if elevated := pcinfo.Elevated(); elevated {
+			c.gap(what + " " + model.Withheld(true, refused != 1) + ".")
+		} else if refused == 1 {
+			c.gap(what + " is protected and can only be read with administrator rights.")
+		} else {
+			c.gap(what + " are protected and can only be read with administrator rights.")
+		}
 	}
 }
 

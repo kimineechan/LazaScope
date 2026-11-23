@@ -362,6 +362,20 @@ type Gap struct {
 	What string
 }
 
+// Withheld ends a sentence about something the look could not read. Without
+// administrator rights that is the reason. With them, Windows itself keeps
+// the thing from everyone, and saying "needs administrator rights" would
+// send the reader after rights they already have.
+func Withheld(elevated, several bool) string {
+	switch {
+	case !elevated:
+		return "can only be read with administrator rights"
+	case several:
+		return "are protected by Windows and cannot be read even with administrator rights"
+	}
+	return "is protected by Windows and cannot be read even with administrator rights"
+}
+
 // Folders are the places on this PC that the rules need to know by name.
 type Folders struct {
 	Windows         string // C:\Windows

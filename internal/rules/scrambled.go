@@ -39,7 +39,10 @@ func Scrambled(program, command string) []string {
 		strings.Count(joined, "[char]") >= 3 {
 		add("It unpacks or decodes hidden text before running it.")
 	}
-	if has("invoke-expression", "iex ", "iex(", "|iex", "| iex", "iex\"", "iex'") {
+	// A line that only reads one named script file and runs it hides nothing:
+	// the commands are in that file, which the rule for scripts speaks of.
+	_, loads := cmdline.Loads(cmdline.PowerShellCommand(command))
+	if !loads && has("invoke-expression", "iex ", "iex(", "|iex", "| iex", "iex\"", "iex'") {
 		add("It runs a piece of text as commands, so the real commands are not on the line.")
 	}
 	web := strings.Contains(joined, "http://") || strings.Contains(joined, "https://") || strings.Contains(joined, "ftp://")
