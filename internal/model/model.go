@@ -13,7 +13,7 @@ import (
 	"lazascope/internal/sigcheck"
 )
 
-// Area is one of the five things the overview page gives a light to.
+// Area is one of the six things the overview page gives a light to.
 type Area int
 
 const (
@@ -22,6 +22,7 @@ const (
 	RunningNow
 	Connections
 	Accounts
+	Health
 	Areas // how many there are
 )
 
@@ -37,6 +38,8 @@ func (a Area) String() string {
 		return "Internet connections"
 	case Accounts:
 		return "Accounts and remote access"
+	case Health:
+		return "PC health"
 	}
 	return ""
 }
@@ -290,6 +293,24 @@ type Exclusion struct {
 	Value string
 }
 
+// Detection is something Microsoft Defender found and wrote in its log.
+type Detection struct {
+	When     time.Time
+	Threat   string // Defender's name for it, such as Trojan:Win32/Example.A
+	Severity string // Defender's own word: Low, Moderate, High or Severe
+	Category string // such as Trojan, or Suspicious Behaviour
+	Path     string // the file or other thing it was found in
+	Action   string // what Defender did, such as Quarantine; "" when the log does not say
+	Process  string // the program that was touching it
+}
+
+// LoggedExclusion is an exclusion that Defender's own log shows being
+// added, and not removed since.
+type LoggedExclusion struct {
+	When time.Time
+	Exclusion
+}
+
 // Volume is a drive and whether it is encrypted.
 type Volume struct {
 	Drive     string
@@ -333,6 +354,14 @@ type Guard struct {
 	Exclusions        []Exclusion
 	ExclusionsVisible bool // the list of exclusions could be read
 
+	// What Defender's own log says. The log can be read without
+	// administrator rights, and reaches back as far as Windows has kept it.
+	HistoryRead      bool
+	HistoryDays      int               // how many days back the look went
+	Detections       []Detection       // newest first
+	LoggedExclusions []LoggedExclusion // oldest first
+	SwitchedOff      []time.Time       // when real-time protection was switched off, newest first
+
 	UAC         Answer // Windows asks before a program gets administrator rights
 	UACSilent   Answer // ... but lets administrators through without asking
 	Build       string // the version of Windows, such as 22H2 (19045.5247)
@@ -353,6 +382,52 @@ type Guard struct {
 	Hosts        []HostsEntry
 	HostsVisible bool
 	Programs     []Installed
+}
+
+// Fault is an error a piece of hardware reported about itself, or one
+// Windows met while using a disk.
+type Fault struct {
+	When  time.Time
+	Fatal bool   // Windows could not put it right
+	Part  string // which part reported it, in plain words: "the processor", "the memory"
+	Where string // which one of that part, when the record says: a processor's number, a disk
+	Words string // the record in Windows' own words, on one line
+	ID    int    // the number Windows gives this kind of record
+}
+
+// Crash is one time Windows stopped with a blue screen.
+type Crash struct {
+	When time.Time
+	Code uint32 // the stop code, such as 0x50
+	Name string // its name, such as PAGE_FAULT_IN_NONPAGED_AREA, when known
+}
+
+// Wipe is one time a Windows log was cleared.
+type Wipe struct {
+	When time.Time
+	Log  string // which log
+	By   string // the account that did it
+}
+
+// Drive is a fixed disk drive and how full it is.
+type Drive struct {
+	Letter     string // such as C:
+	Size, Free uint64 // in bytes
+}
+
+// Condition is what Windows' own logs say about the PC's hardware and
+// about Windows stopping, and how full the disks are.
+type Condition struct {
+	Read      bool        // the log could be read
+	Days      int         // how many days back the look went
+	Hardware  []Fault     // newest first
+	Crashes   []Crash     // newest first
+	PowerCuts []time.Time // times the PC went off without shutting down and without a blue screen
+	Disk      []Fault     // faults on a disk itself
+	Retries   int         // times a disk had to be asked twice, which also happens when a USB drive is pulled out
+	Wiped     []Wipe
+	Drives    []Drive
+	Started   time.Time // when Windows last started
 }
 
 // Gap is something that could not be read, so that the report can say so
@@ -403,5 +478,6 @@ type Snapshot struct {
 	Processes   []Process
 	Connections []Connection
 	Guard       Guard
+	Condition   Condition
 	Gaps        []Gap
 }

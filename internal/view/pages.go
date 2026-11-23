@@ -3,6 +3,7 @@ package view
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
@@ -361,7 +362,7 @@ func (b *builder) protection() Page {
 		anyOn = g.AntivirusHealth
 	}
 	add(b.topic("Antivirus", antivirus, anyOn, "Antivirus checks each file as it is opened or downloaded and stops the ones it knows to be harmful. Windows comes with one, Microsoft Defender.", "antivirus", more...))
-	add(b.topic("Defender real-time protection", state(g.RealTime, "On", "Off"), g.RealTime, "Real-time protection is the part of Microsoft Defender that checks files the moment they are opened. With another antivirus installed, Defender steps aside and this is off.", ""))
+	add(b.topic("Defender real-time protection", state(g.RealTime, "On", "Off"), g.RealTime, "Real-time protection is the part of Microsoft Defender that checks files the moment they are opened. With another antivirus installed, Defender steps aside and this is off.", "realtime"))
 	add(b.topic("Defender tamper protection", state(g.Tamper, "On", "Off"), g.Tamper, "Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings.", "tamper"))
 
 	// What Defender skips.
@@ -371,15 +372,57 @@ func (b *builder) protection() Page {
 		if b.s.Elevated {
 			unread = "Could not be read"
 		}
-		add(b.topic("Places Defender skips", unread, model.NotKnown, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe.", "exclusions"))
+		var lines []Line
+		if len(g.LoggedExclusions) > 0 {
+			unread = "Hidden without administrator rights, but Defender's own log shows " + strconv.Itoa(len(g.LoggedExclusions))
+			lines = append(lines, Line{Heading, "What Defender's log shows being added"})
+			for _, e := range g.LoggedExclusions {
+				lines = append(lines, Line{Text, e.Kind + ", added on " + rules.Moment(s, e.When) + ":"}, Line{Command, e.Value})
+			}
+		}
+		add(b.topic("Places Defender skips", unread, model.NotKnown, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe.", "exclusions", lines...))
 	case len(g.Exclusions) == 0:
 		add(b.topic("Places Defender skips", "None", model.Yes, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program.", "exclusions"))
 	default:
 		var lines []Line
 		for _, e := range g.Exclusions {
 			lines = append(lines, Line{Text, e.Kind + ":"}, Line{Command, e.Value})
+			for _, logged := range g.LoggedExclusions {
+				if logged.Kind == e.Kind && strings.EqualFold(logged.Value, e.Value) {
+					lines = append(lines, Line{Aside, "Added on " + rules.Moment(s, logged.When) + ", according to Defender's own log."})
+				}
+			}
 		}
 		add(b.topic("Places Defender skips", count(len(g.Exclusions), "exclusion", "exclusions"), model.Yes, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program.", "exclusions", lines...))
+	}
+
+	// What Defender's own log says it found.
+	if g.HistoryRead {
+		const about = "Microsoft Defender writes down everything it finds and what it did about it. This is that record for the last 90 days. Windows Security shows the same under Protection history."
+		if len(g.Detections) == 0 {
+			add(b.topic("What Defender found lately", "Nothing in the last 90 days", model.Yes, about, "detections"))
+		} else {
+			var lines []Line
+			for i, d := range g.Detections {
+				if i >= 40 {
+					lines = append(lines, Line{Aside, "And " + count(len(g.Detections)-i, "more", "more") + "."})
+					break
+				}
+				text := rules.Moment(s, d.When) + ": " + d.Threat
+				if d.Severity != "" {
+					text += " (" + d.Severity + ")"
+				}
+				if d.Action != "" {
+					text += ". Defender's action: " + d.Action
+				}
+				lines = append(lines, Line{Text, text + "."})
+				if d.Path != "" {
+					lines = append(lines, Line{Command, d.Path})
+				}
+			}
+			latest := g.Detections[0]
+			add(b.topic("What Defender found lately", count(len(g.Detections), "detection", "detections")+" in the last 90 days, the latest on "+rules.Day(s, latest.When), model.Yes, about, "detections", lines...))
+		}
 	}
 
 	// Firewall.
@@ -684,6 +727,143 @@ func (b *builder) facts(area model.Area) string {
 			return ""
 		}
 		return strings.Join(parts, ". ") + "."
+	case model.Health:
+		c := s.Condition
+		var parts []string
+		if c.Read {
+			switch {
+			case len(c.Hardware) == 0 && len(c.Crashes) == 0:
+				parts = append(parts, "No hardware errors and no blue screens in the last 90 days")
+			case len(c.Hardware) == 0:
+				parts = append(parts, count(len(c.Crashes), "blue screen", "blue screens")+" in the last 90 days, and no hardware errors")
+			case len(c.Crashes) == 0:
+				parts = append(parts, count(len(c.Hardware), "hardware error", "hardware errors")+" in the last 90 days, and no blue screens")
+			default:
+				parts = append(parts, count(len(c.Hardware), "hardware error", "hardware errors")+" and "+count(len(c.Crashes), "blue screen", "blue screens")+" in the last 90 days")
+			}
+		}
+		for _, drive := range c.Drives {
+			if strings.HasPrefix(strings.ToUpper(s.Folders.Windows), strings.ToUpper(drive.Letter)) {
+				parts = append(parts, drive.Letter+" has "+rules.Size(drive.Free)+" free")
+			}
+		}
+		if len(parts) == 0 {
+			return ""
+		}
+		return strings.Join(parts, ". ") + "."
 	}
 	return ""
+}
+
+// health lays out what Windows' own log says about the PC's hardware and
+// about Windows stopping, and how full the disks are.
+func (b *builder) health() Page {
+	s, c := b.s, b.s.Condition
+	page := Page{
+		Name: "Health", Title: "How this PC is holding up",
+		Intro:   "What Windows wrote in its own log over the last 90 days about failing hardware and about stopping unexpectedly, and how full the disks are. A PC that crashes for no clear reason more often has a worn part than unwanted software.",
+		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
+		Unseen:  b.unseen(model.Health),
+	}
+	add := func(row Row) { page.Rows = append(page.Rows, row) }
+	const (
+		hardware = "Processors, memory and other parts check themselves as they work. Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none."
+		crashes  = "A blue screen is Windows stopping itself because carrying on could damage data. Windows notes the stop code of each one, which says in what way it went wrong."
+		stops    = "Each time the PC goes off without shutting down, and without a blue screen, Windows notes it at the next start: a power cut, an empty battery, a freeze ended with the power button, or overheating."
+		disk     = "A disk that can no longer read part of itself, or whose filing system is damaged, reports it here before it fails outright."
+		wiped    = "The logs are where Windows writes down what happened on the PC. This row says whether one of them was cleared, which also removes whatever LazaScope would have read from it."
+		room     = "Windows needs free room on its own disk for updates and for its working files."
+	)
+	if !c.Read {
+		for _, row := range []struct{ what, about, ref string }{{"Hardware errors", hardware, "hardware"}, {"Blue-screen crashes", crashes, "crashes"}, {"Disk faults", disk, "disk"}, {"Windows logs", wiped, "wiped"}} {
+			add(b.topic(row.what, "Could not be read", model.NotKnown, row.about, row.ref))
+		}
+	} else {
+		none := "None in the last 90 days"
+		latest := func(n int, one, many string, when time.Time) string {
+			return count(n, one, many) + " in the last 90 days, the latest on " + rules.Day(s, when)
+		}
+		// Hardware errors.
+		if len(c.Hardware) == 0 {
+			add(b.topic("Hardware errors", none, model.Yes, hardware, "hardware"))
+		} else {
+			var lines []Line
+			for i, fault := range c.Hardware {
+				if i >= 60 {
+					lines = append(lines, Line{Aside, "And " + strconv.Itoa(len(c.Hardware)-i) + " more."})
+					break
+				}
+				lines = append(lines, Line{Text, rules.Moment(s, fault.When) + ": " + fault.Words})
+			}
+			add(b.topic("Hardware errors", latest(len(c.Hardware), "error", "errors", c.Hardware[0].When), model.Yes, hardware, "hardware", lines...))
+		}
+		// Blue screens.
+		if len(c.Crashes) == 0 {
+			add(b.topic("Blue-screen crashes", none, model.Yes, crashes, "crashes"))
+		} else {
+			var lines []Line
+			for i, crash := range c.Crashes {
+				if i >= 60 {
+					lines = append(lines, Line{Aside, "And " + strconv.Itoa(len(c.Crashes)-i) + " more."})
+					break
+				}
+				text := rules.Moment(s, crash.When) + ": stop code 0x" + strings.ToUpper(strconv.FormatUint(uint64(crash.Code), 16))
+				if crash.Name != "" {
+					text += ", " + crash.Name
+				}
+				lines = append(lines, Line{Text, text + "."})
+			}
+			add(b.topic("Blue-screen crashes", latest(len(c.Crashes), "crash", "crashes", c.Crashes[0].When), model.Yes, crashes, "crashes", lines...))
+		}
+		// Going off without a shutdown.
+		if len(c.PowerCuts) == 0 {
+			add(b.topic("Stops without a shutdown", none, model.Yes, stops, "stops"))
+		} else {
+			var lines []Line
+			for i, when := range c.PowerCuts {
+				if i >= 60 {
+					break
+				}
+				lines = append(lines, Line{Text, "Noticed when Windows started on " + rules.Moment(s, when) + "."})
+			}
+			add(b.topic("Stops without a shutdown", latest(len(c.PowerCuts), "stop", "stops", c.PowerCuts[0]), model.Yes, stops, "stops", lines...))
+		}
+		// Disks.
+		var lines []Line
+		for i, fault := range c.Disk {
+			if i < 60 {
+				lines = append(lines, Line{Text, rules.Moment(s, fault.When) + ": " + fault.Words})
+			}
+		}
+		if c.Retries > 0 {
+			lines = append(lines, Line{Aside, count(c.Retries, "time", "times") + " in the same period Windows had to ask a disk twice before it answered. A loose cable does that, and so does a USB drive pulled out too early. It is not counted as a fault."})
+		}
+		if len(c.Disk) == 0 {
+			add(b.topic("Disk faults", none, model.Yes, disk, "disk", lines...))
+		} else {
+			add(b.topic("Disk faults", latest(len(c.Disk), "fault", "faults", c.Disk[0].When), model.Yes, disk, "disk", lines...))
+		}
+		// Cleared logs.
+		if len(c.Wiped) == 0 {
+			add(b.topic("Windows logs", "None was cleared in the last 90 days", model.Yes, wiped, "wiped"))
+		} else {
+			var lines []Line
+			for _, wipe := range c.Wiped {
+				text := rules.Moment(s, wipe.When) + ": the " + wipe.Log + " log was cleared"
+				if wipe.By != "" {
+					text += " by the account " + wipe.By
+				}
+				lines = append(lines, Line{Text, text + "."})
+			}
+			add(b.topic("Windows logs", count(len(c.Wiped), "log was cleared", "logs were cleared")+" in the last 90 days", model.Yes, wiped, "wiped", lines...))
+		}
+	}
+	for _, drive := range c.Drives {
+		how := rules.Size(drive.Free) + " free of " + rules.Size(drive.Size)
+		add(b.topic("Room on drive "+drive.Letter, how, model.Yes, room, rules.SpaceRef(drive.Letter)))
+	}
+	if !c.Started.IsZero() && len(page.Rows) > 0 {
+		page.Intro += " Windows has been running since " + rules.Moment(s, c.Started) + "."
+	}
+	return page
 }

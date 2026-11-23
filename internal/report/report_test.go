@@ -89,7 +89,7 @@ func TestText(t *testing.T) {
 	b := book(nil)
 	text := Text(b, "1.0.0")
 	for _, want := range []string{
-		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (11)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
+		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (15)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
 		"    Why: ", "    What you can do: ", "    Rule: startup-system-name\r\n", "WHAT COULD NOT BE READ\r\n", "WHAT STARTS BY ITSELF (", "Check | Name | Kind | Maker | File\r\n",
 		"Look first | Windows Host Service | Registry Run | Not signed | C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n", "LazaScope is not an antivirus",
 	} {
@@ -176,7 +176,7 @@ func TestJSON(t *testing.T) {
 	if len(document.Lights) != int(model.Areas) || document.Lights[1].Light != "red" || document.Lights[3].Light != "green" {
 		t.Errorf("lights: %+v", document.Lights)
 	}
-	if len(document.Findings) != len(b.Findings) || len(document.CouldNotRead) != 2 {
+	if len(document.Findings) != len(b.Findings) || len(document.CouldNotRead) != 3 {
 		t.Fatalf("%d findings and %d notes", len(document.Findings), len(document.CouldNotRead))
 	}
 	// Every fact that was read is there, one record each.
@@ -185,7 +185,12 @@ func TestJSON(t *testing.T) {
 		t.Fatalf("%d start-up entries, %d programs and %d connections in the data", len(facts.Startup), len(facts.Processes), len(facts.Connections))
 	}
 	// A finding points at the fact it is about.
-	first := document.Findings[0]
+	// The most serious come first, and among those the areas in their order:
+	// what Defender's log shows, then the program with a borrowed name.
+	if top := document.Findings[0]; top.Severity != "look first" || top.Rule != "defender-exclusions-logged" || top.Ref != "exclusions" {
+		t.Fatalf("the first finding: %+v", top)
+	}
+	first := document.Findings[1]
 	if first.Severity != "look first" || first.Rule != "startup-system-name" || first.Evidence["File"] == "" || !strings.HasPrefix(first.Ref, "startup:") {
 		t.Fatalf("the first finding: %+v", first)
 	}

@@ -108,10 +108,10 @@ func RemoteRef(name string) string { return "remote:" + name }
 // AdminRef refers to an account in the Administrators group.
 func AdminRef(name string) string { return "admin:" + strings.ToLower(name) }
 
-// All returns every rule, in the order of the five areas.
+// All returns every rule, in the order of the six areas.
 func All() []Rule {
 	var all []Rule
-	for _, group := range [][]Rule{protectionRules, startupRules, runningRules, connectionRules, accountRules} {
+	for _, group := range [][]Rule{protectionRules, historyRules, startupRules, runningRules, connectionRules, accountRules, healthRules} {
 		all = append(all, group...)
 	}
 	return all
@@ -138,7 +138,7 @@ func Check(s *model.Snapshot) []Finding {
 	return findings
 }
 
-// Light is the colour of one of the five lights on the overview page.
+// Light is the colour of one of the six lights on the overview page.
 type Light int
 
 const (
@@ -171,6 +171,7 @@ func Lights(s *model.Snapshot, findings []Finding) [model.Areas]Light {
 		model.RunningNow:        len(s.Processes) > 0,
 		model.Connections:       len(s.Connections) > 0,
 		model.Accounts:          s.Guard.Build != "" || s.Guard.AdminsVisible,
+		model.Health:            s.Condition.Read || len(s.Condition.Drives) > 0,
 	}
 	for area := range lights {
 		if read[area] {

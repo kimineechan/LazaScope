@@ -3,6 +3,7 @@
 package protect
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -12,6 +13,7 @@ import (
 	"unsafe"
 
 	"lazascope/internal/com"
+	"lazascope/internal/eventlog"
 	"lazascope/internal/model"
 	"lazascope/internal/pcinfo"
 	"lazascope/internal/reg"
@@ -67,6 +69,7 @@ func Collect() (model.Guard, []model.Gap) {
 	defer leave()
 	c.securityCentre(err == nil)
 	c.defender()
+	c.history()
 	c.firewall()
 	c.accountControl()
 	c.updates()
@@ -197,6 +200,36 @@ func (c *collector) defender() {
 		c.gap(model.Protection, "The list of folders and programs that Microsoft Defender skips can only be read with administrator rights.")
 	} else if !refused && !c.guard.ExclusionsVisible {
 		c.guard.ExclusionsVisible = true // nothing to refuse: there is no list on this PC
+	}
+}
+
+// history reads Microsoft Defender's own log: what it found lately, and
+// which exclusions the log shows being added.
+func (c *collector) history() {
+	c.guard.HistoryDays = HistoryDays
+	finds, err := eventlog.Read(HistoryLog, eventlog.Where(eventlog.Numbered(foundByScan, foundBehaviour, found, acted), eventlog.Since(HistoryDays)), 400)
+	switch {
+	case errors.Is(err, eventlog.ErrMissing):
+		return // no Microsoft Defender on this PC, so no log of it
+	case errors.Is(err, eventlog.ErrDenied):
+		c.gap(model.Protection, "Windows does not let this account read Microsoft Defender's log of what it found.")
+		return
+	case err != nil:
+		c.gap(model.Protection, "Microsoft Defender's log of what it found could not be read: "+err.Error()+".")
+		return
+	}
+	c.guard.HistoryRead = true
+	c.guard.Detections = Detections(finds)
+	// Every change of a setting, as far back as the log goes. Most are of no
+	// interest here: the exclusions are picked out of them.
+	if changes, err := eventlog.ReadPlain(HistoryLog, eventlog.Where(eventlog.Numbered(realTimeOff, settingChanged)), 6000); err == nil || len(changes) > 0 {
+		c.guard.LoggedExclusions = LoggedExclusions(changes)
+		limit := time.Now().AddDate(0, 0, -HistoryDays)
+		for _, when := range SwitchedOff(changes) {
+			if when.After(limit) {
+				c.guard.SwitchedOff = append(c.guard.SwitchedOff, when)
+			}
+		}
 	}
 }
 

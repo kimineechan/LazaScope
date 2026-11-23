@@ -59,8 +59,10 @@ func pc() *model.Snapshot {
 			RemoteDesktop: model.No, Guest: model.No, AutoSignIn: model.No, AdminsVisible: true,
 			Admins:    []model.Account{{Name: "Administrator", BuiltIn: "Administrator", Disabled: model.Yes}, {Name: "sam", Disabled: model.No}},
 			HostsPath: `C:\Windows\System32\drivers\etc\hosts`, HostsVisible: true,
-			Hosts: []model.HostsEntry{{Address: "127.0.0.1", Names: []string{"localhost"}}},
+			Hosts:       []model.HostsEntry{{Address: "127.0.0.1", Names: []string{"localhost"}}},
+			HistoryRead: true, HistoryDays: 90,
 		},
+		Condition: model.Condition{Read: true, Days: 90, Drives: []model.Drive{{Letter: "C:", Size: 500 << 30, Free: 200 << 30}}, Started: taken.Add(-26 * time.Hour)},
 	}
 }
 

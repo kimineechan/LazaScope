@@ -121,7 +121,13 @@ func healthy() *model.Snapshot {
 		Hosts: []model.HostsEntry{{Address: "127.0.0.1", Names: []string{"localhost"}}, {Address: "::1", Names: []string{"localhost"}}},
 		// Two programs whose names sound like remote control and are not.
 		Programs: []model.Installed{{Name: "Notes"}, {Name: "Chat"}, {Name: "Radmin VPN"}, {Name: "LogMeIn Hamachi"}},
+		// Defender's own log was read and holds nothing of note.
+		HistoryRead: true, HistoryDays: 90,
 	}
+	// Windows' log was read. One sudden stop and a disk that had to be
+	// asked twice now and then are everyday life, not findings.
+	s.Condition = model.Condition{Read: true, Days: 90, Retries: 2, PowerCuts: []time.Time{now.AddDate(0, 0, -20)},
+		Drives: []model.Drive{{Letter: "C:", Size: 500 << 30, Free: 200 << 30}, {Letter: "D:", Size: 2000 << 30, Free: 1 << 30}}, Started: now.Add(-26 * time.Hour)}
 	return s
 }
 
@@ -449,7 +455,7 @@ func TestLights(t *testing.T) {
 	s.Guard.RemoteDesktop = model.Yes
 	findings := Check(s)
 	lights := Lights(s, findings)
-	want := [model.Areas]Light{model.Protection: Green, model.StartsWithWindows: Amber, model.RunningNow: Red, model.Connections: Green, model.Accounts: Amber}
+	want := [model.Areas]Light{model.Protection: Green, model.StartsWithWindows: Amber, model.RunningNow: Red, model.Connections: Green, model.Accounts: Amber, model.Health: Green}
 	if lights != want {
 		t.Errorf("got %v, want %v", lights, want)
 	}

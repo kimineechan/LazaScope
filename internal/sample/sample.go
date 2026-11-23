@@ -5,7 +5,9 @@
 // The PC is invented, and so are the makers Northwind, Brightline, Contoso
 // and Fabrikam. It has a few honest oddities and two planted ones: a
 // program that borrows the name of a part of Windows, and a scheduled task
-// with a scrambled command.
+// with a scrambled command. Its logs tell the rest of the story: what the
+// antivirus stopped, which folder it was then told to skip, and a memory
+// module that has begun to fail.
 package sample
 
 import (
@@ -234,8 +236,28 @@ func PC() *model.Snapshot {
 			{Name: "Contoso Print Suite", Publisher: "Contoso Print Ltd"}, {Name: "Microsoft Edge", Publisher: "Microsoft Corporation"},
 			{Name: "Northwind Audio Console", Publisher: "Northwind Audio Ltd"}, {Name: "PhotoSorter"}},
 	}
+	// What the PC's own logs hold. Defender stopped a download twelve days
+	// ago, and its log shows the impostor's folder being added to the list
+	// of places it skips. The memory has begun to report errors, and
+	// Windows has stopped twice.
+	s.Guard.HistoryRead, s.Guard.HistoryDays = true, 90
+	s.Guard.Detections = []model.Detection{{When: now.AddDate(0, 0, -12).Add(-3 * time.Hour), Threat: "Trojan:Win32/Wacatac.B!ml", Severity: "Severe", Category: "Trojan",
+		Path: profile + `\Downloads\FreeVideoConverter_setup.exe`, Action: "Quarantine", Process: windowsFolder + `\explorer.exe`}}
+	s.Guard.LoggedExclusions = []model.LoggedExclusion{{When: now.AddDate(0, 0, -12).Add(-2 * time.Hour), Exclusion: model.Exclusion{Kind: "Folder or file", Value: profile + `\AppData\Roaming`}}}
+	memory := func(daysAgo int) model.Fault {
+		return model.Fault{When: now.AddDate(0, 0, -daysAgo).Add(-5 * time.Hour), Part: "the memory", ID: 47,
+			Words: "A corrected hardware error has occurred. Component: Memory. Error Source: Corrected Machine Check."}
+	}
+	s.Condition = model.Condition{
+		Read: true, Days: 90, Retries: 1, Started: now.Add(-52 * time.Hour),
+		Hardware:  []model.Fault{memory(2), memory(6), memory(6), memory(19)},
+		Crashes:   []model.Crash{{When: now.AddDate(0, 0, -6).Add(-4 * time.Hour), Code: 0x1A, Name: "MEMORY_MANAGEMENT"}, {When: now.AddDate(0, 0, -19).Add(-4 * time.Hour), Code: 0x50, Name: "PAGE_FAULT_IN_NONPAGED_AREA"}},
+		PowerCuts: []time.Time{now.AddDate(0, 0, -33)},
+		Drives:    []model.Drive{{Letter: "C:", Size: 237 << 30, Free: 41 << 30}},
+	}
 	s.Gaps = []model.Gap{
 		{Area: model.Protection, What: "The list of folders and programs that Microsoft Defender skips can only be read with administrator rights."},
+		{Area: model.StartsWithWindows, What: "Windows shows some scheduled tasks to administrators only, so they are missing from this list. There are usually a few dozen. Most are parts of Windows and of software updaters, but not always all. Look again as administrator to see them."},
 		{Area: model.RunningNow, What: "The command lines of 11 programs that run as other accounts can only be read with administrator rights."},
 	}
 	return s

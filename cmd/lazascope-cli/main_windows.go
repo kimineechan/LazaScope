@@ -23,6 +23,7 @@ Usage:
   lazascope-cli running [--details]         List the running programs as a family tree
   lazascope-cli network                     List the connections and the ports programs wait on
   lazascope-cli protection                  Show how the PC is protected and who can get into it
+  lazascope-cli health                      Show hardware errors, crashes and disk trouble from Windows' own log
   lazascope-cli sign <file>...              Say who signed each file and whether the signature holds
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
   lazascope-cli version
@@ -40,7 +41,7 @@ var commands = map[string]struct {
 }{
 	"scan": {options: []string{"--details", "--demo"}}, "report": {options: []string{"--demo"}, files: true},
 	"startup": {options: []string{"--details"}}, "running": {options: []string{"--details"}},
-	"network": {}, "protection": {}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
+	"network": {}, "protection": {}, "health": {}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
 }
 
 func main() {
@@ -100,6 +101,8 @@ func main() {
 		err = networkList()
 	case "protection":
 		err = protectionList()
+	case "health":
+		err = healthList()
 	case "sign":
 		err = sign(args)
 	case "rules":

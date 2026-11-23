@@ -23,7 +23,11 @@ func TestTheMadeUpPC(t *testing.T) {
 	}
 	sort.Strings(got)
 	want := []string{
+		`blue-screens (worth a look): 2 blue screens`,
+		`defender-exclusions-logged (look first): 1 exclusion in Defender's log`,
+		`defender-found-something (worth a look): Trojan:Win32/Wacatac.B!ml`,
 		`disk-not-encrypted (good to know): Drive C:`,
+		`hardware-errors (worth a look): 4 hardware errors`,
 		`hosts-entries (good to know): 2 sites blocked`,
 		`remote-tool (worth a look): AnyDesk`,
 		`running-temp-folder (worth a look): FabrikamLauncherSetup.exe`,
@@ -39,7 +43,7 @@ func TestTheMadeUpPC(t *testing.T) {
 		t.Errorf("the made-up PC is flagged for:\n%s\n\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 	lights := rules.Lights(s, findings)
-	if lights != [model.Areas]rules.Light{model.Protection: rules.Amber, model.StartsWithWindows: rules.Red, model.RunningNow: rules.Amber, model.Connections: rules.Green, model.Accounts: rules.Amber} {
+	if lights != [model.Areas]rules.Light{model.Protection: rules.Red, model.StartsWithWindows: rules.Red, model.RunningNow: rules.Amber, model.Connections: rules.Green, model.Accounts: rules.Amber, model.Health: rules.Amber} {
 		t.Errorf("lights: %v", lights)
 	}
 

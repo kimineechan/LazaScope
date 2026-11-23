@@ -111,7 +111,7 @@ func (p Page) Count() int {
 	return n
 }
 
-// Glance is one of the five lights of the overview, with its words.
+// Glance is one of the six lights of the overview, with its words.
 type Glance struct {
 	Area    model.Area
 	Light   rules.Light
@@ -126,12 +126,12 @@ type Book struct {
 	Summary  string // which PC, when, and with what rights
 	Glances  [model.Areas]Glance
 
-	Protection, Startup, Running, Connections, Accounts, Worth Page
+	Protection, Startup, Running, Connections, Accounts, Health, Worth Page
 }
 
-// Pages returns the six lists in the order they are shown.
+// Pages returns the seven lists in the order they are shown.
 func (b *Book) Pages() []*Page {
-	return []*Page{&b.Protection, &b.Startup, &b.Running, &b.Connections, &b.Accounts, &b.Worth}
+	return []*Page{&b.Protection, &b.Startup, &b.Running, &b.Connections, &b.Accounts, &b.Health, &b.Worth}
 }
 
 // builder holds what the pages are made from.
@@ -153,6 +153,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Running = b.running()
 	book.Connections = b.connections()
 	book.Accounts = b.accounts()
+	book.Health = b.health()
 	book.Worth = b.worth()
 	lights := rules.Lights(s, findings)
 	for area := model.Protection; area < model.Areas; area++ {

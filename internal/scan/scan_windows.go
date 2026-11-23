@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"lazascope/internal/files"
+	"lazascope/internal/health"
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
 	"lazascope/internal/pcinfo"
@@ -25,11 +26,11 @@ import (
 // Parts chooses what a look takes in. The window asks for everything; the
 // command-line tool can ask for one part.
 type Parts struct {
-	Startup, Processes, Connections, Guard bool
+	Startup, Processes, Connections, Guard, Health bool
 }
 
-// Everything is a look at all four.
-var Everything = Parts{true, true, true, true}
+// Everything is a look at all five.
+var Everything = Parts{true, true, true, true, true}
 
 // guard runs one collector. A fault inside it must not take the whole look
 // down with it: the part it was reading is left empty, which the lights
@@ -55,7 +56,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	world := pcinfo.World()
 
 	note("Reading what starts with Windows, what is running and what is connected...")
-	var gaps [4][]model.Gap
+	var gaps [5][]model.Gap
 	var work sync.WaitGroup
 	if parts.Startup {
 		work.Go(func() {
@@ -77,6 +78,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	if parts.Guard {
 		work.Go(func() {
 			guard(model.Protection, "The state of the protections", &gaps[0], func() { s.Guard, gaps[0] = protect.Collect() })
+		})
+	}
+	if parts.Health {
+		work.Go(func() {
+			guard(model.Health, "The health of the PC", &gaps[4], func() { s.Condition, gaps[4] = health.Collect() })
 		})
 	}
 	work.Wait()

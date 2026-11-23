@@ -148,6 +148,12 @@ type jsonProtection struct {
 	Hosts                 []jsonHosts     `json:"hostsEntries"`
 	HostsReadable         bool            `json:"hostsReadable"`
 	Installed             []jsonInstalled `json:"installedPrograms"`
+
+	// From Microsoft Defender's own log.
+	DefenderLogReadable   bool                  `json:"defenderLogReadable"`
+	DefenderFound         []jsonDetection       `json:"defenderFound"`
+	DefenderLogExclusions []jsonLoggedExclusion `json:"defenderExclusionsInLog"`
+	DefenderSwitchedOff   []string              `json:"defenderRealTimeSwitchedOff"`
 }
 
 type jsonFacts struct {
@@ -155,6 +161,7 @@ type jsonFacts struct {
 	Processes   []jsonProcess    `json:"processes"`
 	Connections []jsonConnection `json:"connections"`
 	Protection  jsonProtection   `json:"protection"`
+	Health      jsonHealth       `json:"health"`
 }
 
 func answer(a model.Answer) string {
@@ -255,6 +262,8 @@ func facts(s *model.Snapshot) jsonFacts {
 	for _, program := range g.Programs {
 		p.Installed = append(p.Installed, jsonInstalled{program.Name, program.Publisher, program.Location})
 	}
+	history(g, &p)
 	out.Protection = p
+	out.Health = healthFacts(s.Condition)
 	return out
 }

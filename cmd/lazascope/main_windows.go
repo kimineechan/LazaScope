@@ -22,8 +22,8 @@ import (
 
 // The layout, in the units winui scales to the screen.
 const (
-	width, height = 1040, 764
-	left, across  = 32, 976 // the margin, and the room between the margins
+	width, height = 1160, 764
+	left, across  = 32, 1096 // the margin, and the room between the margins
 )
 
 const reportFilter = "Web page, to read or send (*.html)\x00*.html\x00Plain text (*.txt)\x00*.txt\x00Data for other tools (*.json)\x00*.json\x00\x00"
@@ -36,13 +36,14 @@ const (
 	pageRunning
 	pageConnections
 	pageAccounts
+	pageHealth
 	pageWorth
 )
 
 // areaPage is the page that shows an area's list.
 var areaPage = [model.Areas]int{
 	model.Protection: pageProtection, model.StartsWithWindows: pageStartup, model.RunningNow: pageRunning,
-	model.Connections: pageConnections, model.Accounts: pageAccounts,
+	model.Connections: pageConnections, model.Accounts: pageAccounts, model.Health: pageHealth,
 }
 
 // filter is one way of narrowing a list.
@@ -238,7 +239,7 @@ func main() {
 	for i, section := range []struct {
 		label string
 		width int
-	}{{"01  Overview", 126}, {"02  Protection", 132}, {"03  Start-up", 120}, {"04  Running", 118}, {"05  Connections", 144}, {"06  Accounts", 126}, {"07  Worth a look", 184}} {
+	}{{"01  Overview", 126}, {"02  Protection", 132}, {"03  Start-up", 120}, {"04  Running", 118}, {"05  Connections", 144}, {"06  Accounts", 126}, {"07  Health", 110}, {"08  Worth a look", 184}} {
 		nav = append(nav, w.Section(section.label, i, x, 108, section.width, 36))
 		x += section.width + 3
 	}
@@ -253,25 +254,25 @@ func main() {
 	w.Page(pageOverview)
 	w.Heading("This PC at a glance", left, 166, across, 30)
 	summary := w.Label("LazaScope is looking at this PC. It reads, and changes nothing.", left, 200, across, 42)
-	w.Panel(left, 250, across, 246)
+	w.Panel(left, 250, across, 266)
 	var lamps, verdicts, facts [model.Areas]*winui.Control
 	for area := model.Protection; area < model.Areas; area++ {
-		y := 258 + int(area)*46
-		lamps[area] = w.Light(left+14, y+12, 22, 22)
-		w.Strong(area.String(), left+52, y+3, 290, 22)
-		verdicts[area] = w.Line("Looking...", left+350, y+3, 420, 22)
-		facts[area] = w.Note("", left+52, y+24, 760, 20)
+		y := 256 + int(area)*43
+		lamps[area] = w.Light(left+14, y+10, 22, 22)
+		w.Strong(area.String(), left+52, y+1, 290, 22)
+		verdicts[area] = w.Line("Looking...", left+350, y+1, 520, 22)
+		facts[area] = w.Note("", left+52, y+22, 860, 20)
 		page := areaPage[area]
-		w.Button("Open", left+across-118, y+7, 104, 32, func() { w.ShowPage(page) })
+		w.Button("Open", left+across-118, y+5, 104, 32, func() { w.ShowPage(page) })
 	}
-	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network and whether the protections are on. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 508, across, 100)
+	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network, whether the protections are on and how the PC is holding up. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 526, across, 92)
 	again := w.Button("Look again", left, 628, 200, 38, nil)
 	raise := w.Button("Look again as administrator", left+212, 628, 264, 38, nil)
 	save := w.Button("Save report...", left+across-266, 628, 266, 38, nil)
 	save.Lead(true)
 	jobs = append(jobs, again, raise, save)
 
-	// The six lists.
+	// The seven lists.
 	lists := map[int]*list{}
 	addList := func(page int, files bool, filters []filter) {
 		w.Page(page)
@@ -338,12 +339,13 @@ func main() {
 		{"Only what is worth a look", flagged, noneWorth},
 	})
 	addList(pageAccounts, false, nil)
+	addList(pageHealth, false, nil)
 	addList(pageWorth, true, nil)
 
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
 	lay := func(b *view.Book, waiting bool) {
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageWorth: &b.Worth} {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth} {
 			l := lists[index]
 			l.page, l.waiting = page, waiting
 			if waiting {
@@ -381,7 +383,7 @@ func main() {
 		}
 		note := "LazaScope read this PC and changed nothing. It is not an antivirus: it shows what is there and what is unusual, and leaves the judging to you. Worth a look does not mean harmful."
 		if unseen := len(b.Worth.Unseen); unseen > 0 && !b.Snapshot.Elevated {
-			note += fmt.Sprintf("\r\nWithout administrator rights, %d things could not be read. They are listed under 07 Worth a look.", unseen)
+			note += fmt.Sprintf("\r\nWithout administrator rights, %d things could not be read. They are listed under 08 Worth a look.", unseen)
 		}
 		about.SetText(note)
 		// With the rights already held there is nothing more to ask for, and
@@ -391,7 +393,7 @@ func main() {
 		}
 		raise.Enable(!b.Snapshot.Elevated && !demo)
 		lay(b, false)
-		nav[pageWorth].SetText(fmt.Sprintf("07  Worth a look (%d)", len(b.Findings)))
+		nav[pageWorth].SetText(fmt.Sprintf("08  Worth a look (%d)", len(b.Findings)))
 	}
 	// Until the first look comes back, every list has its heading and its
 	// columns and says that it is waiting.

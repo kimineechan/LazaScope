@@ -148,6 +148,26 @@ func protectionList() error {
 	} else {
 		line("Defender exclusions", "not readable")
 	}
+	if g.HistoryRead {
+		line("Defender found, last 90 days", len(g.Detections))
+		for _, d := range g.Detections {
+			what := d.Threat
+			if d.Action != "" {
+				what += ", action: " + d.Action
+			}
+			line("  "+d.When.Local().Format("2006-01-02 15:04"), what)
+			if d.Path != "" {
+				line("", d.Path)
+			}
+		}
+		line("Exclusions in Defender's log", len(g.LoggedExclusions))
+		for _, e := range g.LoggedExclusions {
+			line("  "+e.When.Local().Format("2006-01-02 15:04"), e.Kind+": "+e.Value)
+		}
+		line("Real-time protection switched off", fmt.Sprintf("%d in the last 90 days", len(g.SwitchedOff)))
+	} else {
+		line("Defender's own log", "not readable")
+	}
 	line("Firewall (Windows' verdict)", good(g.FirewallHealth))
 	for _, p := range g.FirewallProducts {
 		line("  "+p.Name, fmt.Sprintf("on: %s", p.On))

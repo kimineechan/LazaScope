@@ -135,7 +135,14 @@ var protectionRules = []Rule{
 			var values []string
 			broad := ""
 			for _, exclusion := range g.Exclusions {
-				facts = append(facts, Fact{exclusion.Kind, exclusion.Value})
+				value := exclusion.Value
+				// Defender's own log often still holds the moment it was added.
+				for _, logged := range g.LoggedExclusions {
+					if logged.Kind == exclusion.Kind && strings.EqualFold(logged.Value, exclusion.Value) {
+						value += ", added on " + Moment(s, logged.When) + " according to Defender's own log"
+					}
+				}
+				facts = append(facts, Fact{exclusion.Kind, value})
 				values = append(values, exclusion.Value)
 				if wide(exclusion, s.Folders) && broad == "" {
 					broad = exclusion.Value
