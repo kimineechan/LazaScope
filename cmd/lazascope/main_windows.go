@@ -15,6 +15,7 @@ import (
 	"lazascope/internal/compare"
 	"lazascope/internal/files"
 	"lazascope/internal/model"
+	"lazascope/internal/query"
 	"lazascope/internal/report"
 	"lazascope/internal/rules"
 	"lazascope/internal/sample"
@@ -174,7 +175,7 @@ func (l *list) fill() {
 	// list is flat.
 	flat := l.choice != nil && l.choice.Chosen() > 0
 	for _, row := range l.page.Rows {
-		if keep(row) {
+		if keep(row) && search.Match(query.Record{Fields: row.Fields, Text: row.Text}) {
 			l.shown = append(l.shown, row)
 			shown := row.Cells
 			if flat && len(shown) > 1 && strings.HasPrefix(shown[1], " ") {
@@ -196,6 +197,8 @@ func (l *list) fill() {
 	switch {
 	case len(l.page.Rows) == 0:
 		l.count.SetText("Nothing to show.")
+	case !search.Empty():
+		l.count.SetText(fmt.Sprintf("%d of %d match the search.", len(l.shown), len(l.page.Rows)))
 	case len(l.shown) == len(l.page.Rows):
 		l.count.SetText(fmt.Sprintf("%d shown.", len(l.shown)))
 	default:
@@ -212,6 +215,8 @@ func (l *list) fill() {
 		lines[1].Text = "This list is empty because it could not be read, not because there is nothing there."
 	case len(l.page.Rows) == 0:
 		lines[1].Text = "Windows reported nothing for this list."
+	case len(l.shown) == 0 && !search.Empty():
+		lines[1].Text = "Nothing in this list matches the search. Clear the search box at the top to see the whole list."
 	case len(l.shown) == 0:
 		if none == "" {
 			none = "Nothing in this list matches the view chosen above."
@@ -235,9 +240,20 @@ func (l *list) fill() {
 func (l *list) pick(row int) {
 	if row >= 0 && row < len(l.shown) {
 		l.picked = row
-		l.detail.Read(paragraphs(l.withPrint(l.shown[row]))...)
+		lines := l.withPrint(l.shown[row])
+		if analystMode && len(l.shown[row].Raw) > 0 {
+			lines = append(append(append([]view.Line{}, lines...), view.Line{Style: view.Heading, Text: view.AnalystHeading}), l.shown[row].Raw...)
+		}
+		l.detail.Read(paragraphs(lines)...)
 	}
 }
+
+// The search typed at the top, and whether analyst mode is on. Every list
+// follows them.
+var (
+	search      query.Query
+	analystMode bool
+)
 
 // withPrint returns a row's lines of detail, with the fingerprint of its
 // file and what VirusTotal said about it added when they came after the look.
@@ -314,8 +330,12 @@ func main() {
 		nav = append(nav, w.Section(section.label, i, x, 108, section.width, 36))
 		x += section.width + 3
 	}
-	// VirusTotal has a page of its own, reached from every page.
-	w.Button("VirusTotal...", left+across-176, 32, 176, 36, func() { w.ShowPage(pageVirusTotal) })
+	// The search box and analyst mode work on every list, and VirusTotal has
+	// a page of its own; all three can be reached from every page.
+	searchBox := w.Input("", left+420, 32, 340, 36, nil)
+	searchBox.Hint("Search the lists, or type ? for help")
+	analyst := w.Switch("Analyst mode", left+772, 32, 150, 36, nil)
+	w.Button("VirusTotal...", left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
 	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
 
@@ -538,6 +558,44 @@ func main() {
 	for _, l := range lists {
 		l.memory = vt.memory
 	}
+
+	searchBox.Do(func() {
+		text := strings.TrimSpace(searchBox.Text())
+		if text == "?" {
+			w.Info("Searching the lists", strings.Join(query.Help(), "\r\n"))
+			return
+		}
+		q, err := query.Parse(text)
+		if err != nil {
+			status.SetText("Search not applied: " + sentence(err))
+			return
+		}
+		search = q
+		for _, l := range lists {
+			l.fill()
+		}
+		if book != nil {
+			vt.shown(book)
+		}
+		if q.Empty() {
+			status.SetText("The search is cleared. Every list shows all its rows again.")
+		} else {
+			status.SetText("Every list shows only the rows that match the search.")
+		}
+	})
+	analyst.Do(func() {
+		analystMode = analyst.On()
+		for _, l := range lists {
+			if l.picked >= 0 && l.picked < len(l.shown) {
+				l.pick(l.picked)
+			}
+		}
+		if analystMode {
+			status.SetText("Analyst mode: a row's details end with the exact evidence, times in UTC, and the numbers of rules and ATT&CK techniques.")
+		} else {
+			status.SetText("Analyst mode is off.")
+		}
+	})
 
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.

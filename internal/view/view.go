@@ -86,6 +86,11 @@ type Row struct {
 	Off     bool   // it is switched off
 	Group   string // which of a page's groups it belongs to, for showing one group alone
 	Fresh   bool   // it is new, or came and went, since what the look was compared with
+
+	Ref    string              // what the row is about, such as startup:3 or process:1200
+	Raw    []Line              // the exact evidence behind it, for analyst mode
+	Fields map[string][]string // the values the search can ask about, by field
+	Text   string              // everything the row says, for search words that name no field
 }
 
 // Column is one column of a list.
@@ -170,6 +175,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Health = b.health()
 	book.Worth = b.worth()
 	book.VirusTotal = b.virusTotal()
+	b.analyst(book)
 	for _, page := range book.Pages() {
 		page.Compared = s.Compared != nil
 	}

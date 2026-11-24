@@ -124,7 +124,9 @@ func (v *vtPanel) shown(b *view.Book) {
 	if asked > 0 {
 		text += fmt.Sprintf(": %d flagged, %d not known", flagged, unknown)
 	}
-	l.count.SetText(text + ".")
+	if search.Empty() { // a search says how many rows match instead
+		l.count.SetText(text + ".")
+	}
 	if v.client == nil && !v.demo {
 		v.explain()
 	}

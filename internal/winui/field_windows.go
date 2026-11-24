@@ -10,9 +10,18 @@ import (
 
 // field is what a Control that takes typed text holds besides the rest.
 type field struct {
-	caret  int  // how many characters are before the place where typing goes
-	whole  bool // everything is selected, so typing replaces it
-	secret bool // the text is a secret, such as a key, and is shown as dots
+	caret  int    // how many characters are before the place where typing goes
+	whole  bool   // everything is selected, so typing replaces it
+	secret bool   // the text is a secret, such as a key, and is shown as dots
+	hint   string // shown faintly while the box is empty and not being typed in
+}
+
+// Hint sets the words an empty input box shows faintly, to say what it is for.
+func (c *Control) Hint(text string) {
+	if c.field != nil {
+		c.field.hint = text
+		c.redraw()
+	}
 }
 
 // Secret makes an input box show a dot for each character typed into it,
@@ -166,6 +175,9 @@ func (c *Control) drawInput(cv *Canvas) {
 	cv.Clip(max(x+inset, before[0]), max(y, before[1]), min(x+inset+room, before[2]), min(y+height, before[3]))
 	if c.field.whole && lit {
 		cv.Round(x+inset-w.px(2), y+w.px(6), min(w.span(c.shown()), room)+w.px(4), height-w.px(12), w.pxf(4), theme.FieldLit.Thinned(0.5))
+	}
+	if c.text == "" && !lit && c.field.hint != "" {
+		w.write(cv, c.field.hint, c.font, x+inset, y, room, height, textMiddle|textEllipsis, theme.Faint)
 	}
 	w.write(cv, c.shown(), c.font, x+inset-slide, y, w.span(c.shown())+w.px(4), height, textMiddle, pick(c.disabled, theme.Faint, theme.Ink))
 	if lit && !c.field.whole {

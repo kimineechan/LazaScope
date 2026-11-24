@@ -87,7 +87,7 @@ func (b *builder) virusTotal() Page {
 		Columns: []Column{{"VirusTotal", 112}, {"Program", 240}, {"Seen", 196}, {"Maker", 224}, {"File", 0}},
 	}
 	for _, c := range virustotal.Candidates(s, b.findings) {
-		row := Row{Path: c.Path, Level: Plain}
+		row := Row{Path: c.Path, Level: Plain, Ref: "file:" + strings.ToLower(c.Path)}
 		print := s.Fingerprint(c.Path)
 		r, asked := s.VirusTotal[print]
 		asked = asked && print != ""

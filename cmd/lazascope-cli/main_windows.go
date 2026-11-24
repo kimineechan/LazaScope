@@ -30,6 +30,8 @@ Usage:
   lazascope-cli virustotal [file]...        Ask VirusTotal about files by fingerprint, or with none named about the
                                             programs that start or run (needs your own VirusTotal key)
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
+  lazascope-cli find <search> [--details]   List the rows of every list that match a search, as in the window's
+                                            search box (find ? explains how; --details: with the exact evidence)
   lazascope-cli attack <file.json>          Write a layer for MITRE's ATT&CK Navigator of what a look finds
                                             (--coverage: of what the rules look for; --demo: of the made-up PC)
   lazascope-cli version
@@ -50,6 +52,7 @@ var commands = map[string]struct {
 	"startup": {options: []string{"--details"}}, "running": {options: []string{"--details"}},
 	"network": {}, "protection": {}, "health": {}, "compare": {files: true}, "watch": {files: true}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
 	"attack": {options: []string{"--coverage", "--demo"}, files: true}, "virustotal": {files: true},
+	"find": {options: []string{"--details", "--demo"}, files: true},
 }
 
 func main() {
@@ -123,6 +126,8 @@ func main() {
 		err = attackLayer(strings.Join(args, " "), flags["--coverage"], flags["--demo"])
 	case "virustotal":
 		err = virusTotalCommand(args)
+	case "find":
+		err = find(strings.Join(args, " "), flags["--details"], flags["--demo"])
 	case "version":
 		fmt.Println("LazaScope", lazascope.Version())
 	}

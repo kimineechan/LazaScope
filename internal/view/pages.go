@@ -182,7 +182,7 @@ func (b *builder) startup() Page {
 	for i, e := range s.Startup {
 		ref := rules.StartupRef(i)
 		works := e.Works()
-		row := Row{Level: b.worst(ref), Path: place(works), Off: !e.Enabled}
+		row := Row{Level: b.worst(ref), Path: place(works), Off: !e.Enabled, Ref: ref}
 		row.Windows = windowsEntry(e, s.Folders)
 		check, maker := mark(row.Level, e.New, false, !e.Enabled), works.Maker()
 		row.Fresh = e.New
@@ -284,7 +284,7 @@ func (b *builder) running() Page {
 		if p.File.Path != "" {
 			refs = append(refs, rules.FileRef(p.File.Path))
 		}
-		row := Row{Path: place(p.File), Windows: partOfWindows(p.File, s.Folders) || p.File.Path == ""}
+		row := Row{Path: place(p.File), Windows: partOfWindows(p.File, s.Folders) || p.File.Path == "", Ref: rules.ProcessRef(p.PID)}
 		for _, ref := range refs {
 			row.Level = max(row.Level, b.worst(ref))
 		}
@@ -346,8 +346,8 @@ func (b *builder) connections() Page {
 		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 290}, {"Reach", 112}, {"Maker", 0}},
 		Unseen:  b.unseen(model.Connections),
 	}
-	for _, c := range s.Connections {
-		row := Row{Path: place(c.File), Windows: partOfWindows(c.File, s.Folders) || c.File.Path == ""}
+	for i, c := range s.Connections {
+		row := Row{Path: place(c.File), Windows: partOfWindows(c.File, s.Folders) || c.File.Path == "", Ref: "connection:" + strconv.Itoa(i)}
 		ref := ""
 		if c.Listening && c.Protocol == "TCP" && c.Reach != model.ThisPC && c.File.Path != "" {
 			ref = rules.ListenRef(c.File.Path)
@@ -451,7 +451,7 @@ func (b *builder) connections() Page {
 // the rules said of it. Without a finding, the row is fine when the state
 // is known to be good and not known otherwise.
 func (b *builder) topic(what, state string, good model.Answer, about string, ref string, more ...Line) Row {
-	row := Row{Level: b.worst(ref)}
+	row := Row{Level: b.worst(ref), Ref: "topic:" + ref}
 	if row.Level == Plain {
 		switch good {
 		case model.Yes:
@@ -793,8 +793,8 @@ func (b *builder) worth() Page {
 	for _, gap := range b.s.Gaps {
 		page.Unseen = append(page.Unseen, gap.What)
 	}
-	for _, f := range b.findings {
-		row := Row{Level: level(f.Severity)}
+	for i, f := range b.findings {
+		row := Row{Level: level(f.Severity), Ref: "finding:" + strconv.Itoa(i)}
 		row.Cells = []string{f.Severity.String(), f.Area.String(), f.Title, f.Subject}
 		lines := []Line{{Heading, f.Title}, {Text, f.Reason}, {Heading, "What you can do"}, {Text, f.Advice}}
 		if len(f.Facts) > 0 {
