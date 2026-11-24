@@ -28,6 +28,8 @@ Usage:
   lazascope-cli watch [seconds]             Keep looking for a while (60 seconds unless told) and list what came and went
   lazascope-cli sign <file>...              Say who signed each file and whether the signature holds
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
+  lazascope-cli attack <file.json>          Write a layer for MITRE's ATT&CK Navigator of what a look finds
+                                            (--coverage: of what the rules look for; --demo: of the made-up PC)
   lazascope-cli version
   lazascope-cli help
 
@@ -44,6 +46,7 @@ var commands = map[string]struct {
 	"scan": {options: []string{"--details", "--demo"}}, "report": {options: []string{"--demo"}, files: true},
 	"startup": {options: []string{"--details"}}, "running": {options: []string{"--details"}},
 	"network": {}, "protection": {}, "health": {}, "compare": {files: true}, "watch": {files: true}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
+	"attack": {options: []string{"--coverage", "--demo"}, files: true},
 }
 
 func main() {
@@ -113,6 +116,8 @@ func main() {
 		err = sign(args)
 	case "rules":
 		ruleList(flags["--markdown"])
+	case "attack":
+		err = attackLayer(strings.Join(args, " "), flags["--coverage"], flags["--demo"])
 	case "version":
 		fmt.Println("LazaScope", lazascope.Version())
 	}

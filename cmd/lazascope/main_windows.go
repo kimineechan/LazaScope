@@ -466,6 +466,39 @@ func main() {
 	addList(pageAccounts, false, nil)
 	addList(pageHealth, false, nil)
 	addList(pageWorth, true, nil)
+	// The ATT&CK techniques the findings may be traces of, as a layer for
+	// MITRE's ATT&CK Navigator.
+	layerButton := w.Button("Save ATT&CK layer...", left+across-634, 250, 200, 34, func() {
+		const title = "Save for the ATT&CK Navigator"
+		if book == nil || busy {
+			return
+		}
+		name := fmt.Sprintf("LazaScope ATT&CK layer %s %s.json", book.Snapshot.Computer, book.Snapshot.Taken.Format("2006-01-02"))
+		path, err := w.FileDialog(title, "Layer for the ATT&CK Navigator (*.json)\x00*.json\x00\x00", "json", name, true)
+		if err != nil {
+			w.Alert(title, err.Error())
+			return
+		}
+		if path == "" {
+			return
+		}
+		content, count := report.NavigatorLayer(book, lazascope.Version())
+		if err := os.WriteFile(path, content, 0600); err != nil {
+			w.Alert(title, "The layer could not be saved: "+sentence(err))
+			return
+		}
+		status.SetText("Saved " + path)
+		colours := fmt.Sprintf("It colours in the %d ATT&CK techniques that the findings may be traces of.", count)
+		switch count {
+		case 0:
+			colours = "None of the findings is a trace of an ATT&CK technique, so it colours nothing in."
+		case 1:
+			colours = "It colours in the one ATT&CK technique that a finding may be a trace of."
+		}
+		w.Info(title, "Saved a layer for MITRE's ATT&CK Navigator, the free web page that shows the whole ATT&CK catalogue as a grid. "+colours+
+			"\r\n\r\nTo see it, open the Navigator at mitre-attack.github.io/attack-navigator in your web browser, choose Open Existing Layer, then Upload from local, and pick this file. The Navigator reads the file inside your browser.\r\n\r\nThe layer names this PC and what was found on it. Read it before you send it to anyone.")
+	})
+	jobs = append(jobs, layerButton)
 
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
