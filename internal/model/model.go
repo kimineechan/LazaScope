@@ -682,6 +682,31 @@ type SwapTest struct {
 	Path    string
 }
 
+// PhraseSearch is the outcome of the search for recovery phrases written
+// down in files. A recovery phrase is the 12 to 24 words that give whoever
+// has them a wallet's coins. The search keeps where the words are, never
+// the words.
+type PhraseSearch struct {
+	When    time.Time
+	Folders []string // the folders searched
+	Read    int      // files read
+	Cloud   int      // files not read because they are kept only in the cloud, and reading them would download them
+	Big     int      // files not read because they are larger than the search reads
+	Locked  int      // files and folders that could not be opened
+	Full    bool     // the search stopped at its limit of files, so some were not read
+	Stopped bool     // the search was stopped before it was done
+	Found   []PhraseFile
+}
+
+// PhraseFile is a file that holds a run of recovery words.
+type PhraseFile struct {
+	Path   string
+	Lines  []int // the line each run of words starts on
+	Words  int   // the most recovery words in a row, outside the word list itself
+	Phrase int   // the length of a complete phrase whose checksum holds, or 0 for none
+	List   bool  // every run is the word list itself, in the list's own order: not a phrase
+}
+
 // Gap is something that could not be read, so that the report can say so
 // plainly instead of leaving it out.
 type Gap struct {
@@ -772,6 +797,7 @@ type Snapshot struct {
 
 	Clipboard ClipboardSettings
 	SwapTest  *SwapTest
+	Phrases   *PhraseSearch // set once the search for recovery phrases in files has run
 
 	// VirusTotal holds what VirusTotal said about files, by fingerprint. It
 	// is empty unless the person using LazaScope set up a VirusTotal key of

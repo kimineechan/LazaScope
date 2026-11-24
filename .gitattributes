@@ -13,3 +13,5 @@ VERSION text eol=lf
 *.png binary
 *.exe binary
 *.zip binary
+# The recovery word list is kept byte for byte as published: its fingerprint is checked.
+internal/phrase/english.txt -text
