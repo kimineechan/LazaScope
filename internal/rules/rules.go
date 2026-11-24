@@ -98,6 +98,9 @@ func ProcessRef(pid uint32) string { return "process:" + strconv.Itoa(int(pid)) 
 // FileRef refers to every running copy of a program file.
 func FileRef(path string) string { return "file:" + strings.ToLower(path) }
 
+// ConnectionRef refers to one connection, by its place in the list.
+func ConnectionRef(index int) string { return "connection:" + strconv.Itoa(index) }
+
 // ListenRef refers to the ports a program file waits on.
 func ListenRef(path string) string { return "listen:" + strings.ToLower(path) }
 
@@ -113,7 +116,7 @@ func AdminRef(name string) string { return "admin:" + strings.ToLower(name) }
 // All returns every rule, in the order of the six areas.
 func All() []Rule {
 	var all []Rule
-	for _, group := range [][]Rule{protectionRules, historyRules, networkRules, startupRules, runningRules, virusTotalRules, connectionRules, accountRules, healthRules} {
+	for _, group := range [][]Rule{protectionRules, historyRules, networkRules, startupRules, runningRules, virusTotalRules, cryptoRules, connectionRules, accountRules, healthRules} {
 		all = append(all, group...)
 	}
 	for i := range all {

@@ -145,6 +145,10 @@ type Book struct {
 	// in the window only, and is not one of the report's pages: what
 	// VirusTotal said is in the report with each file.
 	VirusTotal Page
+
+	// Wallets lists the cryptocurrency wallets found. It too is shown in the
+	// window only: a list of someone's wallets is not for sending.
+	Wallets Page
 }
 
 // Pages returns the seven lists in the order they are shown.
@@ -175,6 +179,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Health = b.health()
 	book.Worth = b.worth()
 	book.VirusTotal = b.virusTotal()
+	book.Wallets = b.wallets()
 	b.analyst(book)
 	for _, page := range book.Pages() {
 		page.Compared = s.Compared != nil

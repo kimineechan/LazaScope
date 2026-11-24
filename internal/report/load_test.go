@@ -34,8 +34,8 @@ func TestLoadAndCompare(t *testing.T) {
 			}
 		}
 	}
-	if extensions != 2 {
-		t.Errorf("%d extensions read back, want 2", extensions)
+	if extensions != 4 {
+		t.Errorf("%d extensions read back, want 4", extensions)
 	}
 
 	now := sample.PC()

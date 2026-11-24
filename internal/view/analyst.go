@@ -195,7 +195,7 @@ func (b *builder) analyst(book *Book) {
 		processes[p.PID] = p
 	}
 	for page, name := range map[*Page]string{&book.Protection: "protection", &book.Startup: "start-up", &book.Running: "running", &book.Connections: "connections",
-		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal"} {
+		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal", &book.Wallets: "wallets"} {
 		for i := range page.Rows {
 			row := &page.Rows[i]
 			r := &raw{fields: map[string][]string{"page": {name}, "level": {levelWord(row.Level)}, "new": {yesNo(row.Fresh)}, "windows": {yesNo(row.Windows)}}}
@@ -356,6 +356,20 @@ func (b *builder) evidence(row *Row, r *raw, processes map[uint32]model.Process)
 		for _, t := range rules.Techniques(f.Attack) {
 			r.line("ATT&CK %s: %s %s", rules.AttackVersion, t.ID, t.Name)
 		}
+	case "wallet":
+		i, err := strconv.Atoi(key)
+		if err != nil || i < 0 || i >= len(s.Wallets) {
+			return
+		}
+		w := s.Wallets[i]
+		r.field("name", w.Name)
+		r.field("kind", w.Kind)
+		r.field("path", w.Where)
+		r.line("wallet: %s; kind: %s; where: %s", w.Name, w.Kind, w.Where)
+		r.line("real by its number: %s; can hold keys: %s; copied by: %s; ref: %s", yesNo(w.Verified), yesNo(w.Keys), orNone(w.Synced), orNone(w.Ref))
+		if w.Ref != "" {
+			b.rawFindings(r, w.Ref)
+		}
 	case "file":
 		for _, e := range s.Startup {
 			if strings.EqualFold(e.Works().Path, row.Path) {
@@ -444,6 +458,22 @@ func (b *builder) topicEvidence(ref string, r *raw) {
 				r.line("account: %s; a group: %s; switched off: %s; built in: %s", a.Name, yesNo(a.Group), a.Disabled, orNone(a.BuiltIn))
 				r.field("account", a.Name)
 			}
+		}
+	case ref == "clipboard":
+		r.line("clipboard settings read: %s; history: %s; sent to other devices: %s", yesNo(s.Clipboard.Read), s.Clipboard.History, s.Clipboard.Cloud)
+	case ref == "swaptest":
+		if t := s.SwapTest; t != nil {
+			r.line("test at %s; tried: %s; swapped: %s", utc(t.When), strings.Join(t.Tried, ", "), yesNo(t.Swapped))
+			if t.Swapped {
+				r.line("kind: %s; swapped for: %s; by: %s (pid %d) %s", t.Kind, t.Into, orNone(t.By), t.PID, t.Path)
+			}
+		} else {
+			r.line("not run")
+		}
+	case ref == "clouds":
+		for _, c := range s.Clouds {
+			r.line("cloud folder: %s = %s", c.Service, c.Path)
+			r.field("path", c.Path)
 		}
 	case ref == "guest":
 		r.line("Guest account on: %s", g.Guest)

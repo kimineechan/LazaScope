@@ -43,7 +43,8 @@ const (
 	pageAccounts
 	pageHealth
 	pageWorth
-	pageVirusTotal // reached from the button at the top right, not from a section of its own
+	pageVirusTotal // reached from the buttons at the top right, not from sections of their own
+	pageWallets
 )
 
 // areaPage is the page that shows an area's list.
@@ -332,9 +333,10 @@ func main() {
 	}
 	// The search box and analyst mode work on every list, and VirusTotal has
 	// a page of its own; all three can be reached from every page.
-	searchBox := w.Input("", left+420, 32, 340, 36, nil)
+	searchBox := w.Input("", left+345, 32, 285, 36, nil)
 	searchBox.Hint("Search the lists, or type ? for help")
-	analyst := w.Switch("Analyst mode", left+772, 32, 150, 36, nil)
+	analyst := w.Switch("Analyst mode", left+642, 32, 160, 36, nil)
+	w.Button("Wallets...", left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
 	w.Button("VirusTotal...", left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
 	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
@@ -555,6 +557,12 @@ func main() {
 	vt.book = func() *view.Book { return book }
 	vt.busy = func() bool { return busy }
 	lists[pageVirusTotal] = vt.list
+
+	// The Wallets page.
+	wp := newWallets(w, status, demo, prints)
+	wp.book = func() *view.Book { return book }
+	wp.busy = func() bool { return busy }
+	lists[pageWallets] = wp.list
 	for _, l := range lists {
 		l.memory = vt.memory
 	}
@@ -600,7 +608,7 @@ func main() {
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
 	lay := func(b *view.Book, waiting bool) {
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal} {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal, pageWallets: &b.Wallets} {
 			l := lists[index]
 			l.page, l.waiting = page, waiting
 			if waiting {
@@ -656,6 +664,7 @@ func main() {
 		vt.shown(b)
 	}
 	vt.reshow = show
+	wp.reshow = show
 	// Until the first look comes back, every list has its heading and its
 	// columns and says that it is waiting.
 	lay(view.Build(&model.Snapshot{}, nil), true)

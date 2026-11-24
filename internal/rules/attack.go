@@ -38,9 +38,11 @@ var techniques = map[string]string{
 	"T1053.005": "Scheduled Task",
 	"T1059":     "Command and Scripting Interpreter",
 	"T1078.001": "Default Accounts",
+	"T1115":     "Clipboard Data",
 	"T1176.001": "Browser Extensions",
 	"T1204.002": "Malicious File",
 	"T1219":     "Remote Access Tools",
+	"T1496.001": "Compute Hijacking",
 	"T1543.003": "Windows Service",
 	"T1546.008": "Accessibility Features",
 	"T1546.010": "AppInit DLLs",
@@ -91,6 +93,10 @@ var attackOf = map[string][]string{
 	"auto-sign-in":               {"T1552.002"},
 	"builtin-administrator-on":   {"T1078.001"},
 	"log-cleared":                {"T1685.005"},
+	"extension-fake-wallet":      {"T1176.001"},
+	"hosts-crypto-redirect":      {"T1557"},
+	"running-miner":              {"T1496.001"},
+	"clipboard-address-swapped":  {"T1115"},
 }
 
 // The rules about a start-up entry whose findings also carry the technique

@@ -347,6 +347,51 @@ var changes = []change{
 	{"a remote-control service is running inside a shared host", func(s *model.Snapshot) { s.Processes[1].Services = append(s.Processes[1].Services, "sshd") }, "remote-tool:medium"},
 	{"Quick Assist, which comes with Windows, is open", run(model.Process{PID: 9000, Name: "quickassist.exe", File: windows(`C:\Windows\System32\quickassist.exe`)}), "remote-tool:medium"},
 
+	// The cryptocurrency side.
+	{"an extension calls itself MetaMask with another number", add(model.Startup{Kind: model.BrowserExtension, Name: "MetaMask Wallet", Where: "Google Chrome, profile Default", Enabled: true,
+		Extension: &model.Extension{Browser: "Google Chrome", Profile: "Default", ID: "abcdefghijklmnopabcdefghijklmnop", Name: "MetaMask Wallet", Enabled: true, Source: model.FromStore}}), "extension-fake-wallet:high"},
+	{"the real MetaMask is in Chrome", add(model.Startup{Kind: model.BrowserExtension, Name: "MetaMask", Where: "Google Chrome, profile Default", Enabled: true,
+		Extension: &model.Extension{Browser: "Google Chrome", Profile: "Default", ID: "nkbihfbeogaeaoehlefnkodbefgpgknn", Name: "MetaMask", Enabled: true, Source: model.FromStore}}), ""},
+	{"an unsigned wallet program runs", run(model.Process{PID: 9200, Name: "Exodus.exe", File: unsigned(`C:\Program Files\Exodus\Exodus.exe`)}), "wallet-program-unsigned:medium"},
+	{"a wallet program whose signature broke runs", run(model.Process{PID: 9200, Name: "Exodus.exe", File: changed(`C:\Program Files\Exodus\Exodus.exe`)}), "running-altered:high wallet-program-unsigned:high"},
+	{"Monero's wallets are in a folder OneDrive copies", func(s *model.Snapshot) {
+		s.Wallets = []model.Wallet{{Name: "Monero", Kind: "Wallet files", Where: `C:\Users\sam\OneDrive\Documents\Monero\wallets`, Keys: true, Synced: "OneDrive"}}
+	}, "wallet-files-synced:medium"},
+	{"Electrum's wallets are on a disk that is not encrypted", func(s *model.Snapshot) {
+		s.Guard.Volumes[0] = model.Volume{Drive: "C:", Encrypted: model.No, State: "Off"}
+		s.Wallets = []model.Wallet{{Name: "Electrum", Kind: "Wallet files", Where: `C:\Users\sam\AppData\Roaming\Electrum\wallets`, Keys: true}}
+	}, "disk-not-encrypted:low wallet-files-unencrypted:low"},
+	{"clipboard history is on, with a wallet on the PC", func(s *model.Snapshot) {
+		s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes, Cloud: model.No}
+		s.Wallets = []model.Wallet{{Name: "MetaMask", Kind: "Browser extension", Keys: true}}
+	}, "clipboard-history-wallets:low"},
+	{"clipboard history is on and sent to other devices, with a wallet on the PC", func(s *model.Snapshot) {
+		s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes, Cloud: model.Yes}
+		s.Wallets = []model.Wallet{{Name: "MetaMask", Kind: "Browser extension", Keys: true}}
+	}, "clipboard-history-wallets:medium"},
+	{"clipboard history is on, with no wallet", func(s *model.Snapshot) { s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes} }, ""},
+	{"the hosts file sends metamask.io elsewhere", func(s *model.Snapshot) {
+		s.Guard.Hosts = append(s.Guard.Hosts, model.HostsEntry{Address: "203.0.113.9", Names: []string{"metamask.io"}})
+	}, "hosts-crypto-redirect:high hosts-entries:medium"},
+	{"the hosts file blocks an exchange", func(s *model.Snapshot) {
+		s.Guard.Hosts = append(s.Guard.Hosts, model.HostsEntry{Address: "0.0.0.0", Names: []string{"www.binance.com"}})
+	}, "hosts-entries:low"},
+	{"a browser talked to a copy of MetaMask's site", func(s *model.Snapshot) {
+		s.Connections = append(s.Connections, model.Connection{Protocol: "TCP", State: "Established", Remote: "203.0.113.7", RemotePort: 443, Reach: model.Internet,
+			PID: 9300, Process: "chrome.exe", Names: []string{"metamask-login.com"}})
+	}, "crypto-lookalike-site:medium"},
+	{"a browser talked to MetaMask's own site", func(s *model.Snapshot) {
+		s.Connections = append(s.Connections, model.Connection{Protocol: "TCP", State: "Established", Remote: "203.0.113.8", RemotePort: 443, Reach: model.Internet,
+			PID: 9300, Process: "chrome.exe", Names: []string{"api.metamask.io"}})
+	}, ""},
+	{"a miner runs", run(model.Process{PID: 9400, Name: "xmrig.exe", File: signed(`C:\Program Files\XMRig\xmrig.exe`, "XMRig")}), "running-miner:medium"},
+	{"a program is told to join a mining pool", run(model.Process{PID: 9401, Name: "helper.exe", File: signed(`C:\Program Files\Helper\helper.exe`, "Helper Ltd"),
+		Command: `helper.exe -o stratum+tcp://pool.example.com:3333 -u wallet`}), "running-miner:medium"},
+	{"the address-swap test caught a swap", func(s *model.Snapshot) {
+		s.SwapTest = &model.SwapTest{Swapped: true, Kind: "Ethereum", Into: "0x1111111111111111111111111111111111111111", By: "updater.exe", PID: 4242}
+	}, "clipboard-address-swapped:high"},
+	{"the address-swap test caught nothing", func(s *model.Snapshot) { s.SwapTest = &model.SwapTest{Tried: []string{"Bitcoin"}} }, ""},
+
 	// What VirusTotal's engines said, once a key was set up and files were looked up.
 	{"VirusTotal's engines flag a program that starts by itself", func(s *model.Snapshot) {
 		add(entry(model.RunKey, "Widget", signed(`C:\Program Files\Widget\widget.exe`, "Widget Ltd")))(s)

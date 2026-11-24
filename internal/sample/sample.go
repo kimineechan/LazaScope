@@ -18,6 +18,7 @@ import (
 
 	"lazascope/internal/model"
 	"lazascope/internal/sigcheck"
+	"lazascope/internal/wallets"
 )
 
 const (
@@ -284,6 +285,20 @@ func PC() *model.Snapshot {
 	lookedUp(anydesk, model.Reputation{Known: true, Undetected: 71, Harmless: 1, Analysed: now.AddDate(0, 0, -1), Kind: "Win32 EXE", KnownAs: "AnyDesk.exe"})
 	lookedUp(setup, model.Reputation{})
 	lookedUp(notes, model.Reputation{Known: true, Undetected: 70, Harmless: 2, Analysed: now.AddDate(0, 0, -9), Kind: "Win32 EXE", KnownAs: "notes.exe"})
+
+	// The wallets: the real MetaMask in Chrome, a copy of it dressed up as
+	// the real one in Edge, and Electrum's files in the account's folder.
+	// Clipboard history is on, and OneDrive copies the Documents folder.
+	s.Startup = append(s.Startup,
+		model.Startup{Kind: model.BrowserExtension, Name: "MetaMask", Where: "Google Chrome, profile Default", Enabled: true, Trigger: "Whenever Google Chrome is open",
+			Extension: &model.Extension{Browser: "Google Chrome", Profile: "Default", ID: "nkbihfbeogaeaoehlefnkodbefgpgknn", Name: "MetaMask", Version: "13.4.0", Enabled: true, Source: model.FromStore, EverySite: true}},
+		model.Startup{Kind: model.BrowserExtension, Name: "MetaMask Wallet Pro", Where: "Microsoft Edge, profile Default", Enabled: true, Trigger: "Whenever Microsoft Edge is open",
+			Description: "The secure way to keep your crypto. Restore your wallet in seconds.",
+			Extension: &model.Extension{Browser: "Microsoft Edge", Profile: "Default", ID: "hkmhgjgkcdaobfmhlcpjdhmpaggpljnb", Name: "MetaMask Wallet Pro", Version: "1.0.3", Enabled: true,
+				Source: model.FromStore, EverySite: true, May: []string{"read and change what you copy and paste"}}})
+	s.Clouds = []model.CloudFolder{{Service: "OneDrive", Path: profile + `\OneDrive`}}
+	s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes, Cloud: model.No}
+	s.Wallets = wallets.Inventory(s, []model.Wallet{{Name: "Electrum", Kind: "Wallet files", Where: profile + `\AppData\Roaming\Electrum\wallets`, Keys: true}})
 
 	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
 	s.Guard.Proxy = model.Proxy{Read: true}

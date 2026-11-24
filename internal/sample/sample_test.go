@@ -24,9 +24,11 @@ func TestTheMadeUpPC(t *testing.T) {
 	sort.Strings(got)
 	want := []string{
 		`blue-screens (worth a look): 2 blue screens`,
+		`clipboard-history-wallets (good to know): Clipboard history`,
 		`defender-exclusions-logged (look first): 1 exclusion in Defender's log`,
 		`defender-found-something (worth a look): Trojan:Win32/Wacatac.B!ml`,
 		`disk-not-encrypted (good to know): Drive C:`,
+		`extension-fake-wallet (look first): MetaMask Wallet Pro`,
 		`extension-not-from-store (worth a look): Shopping Helper Pro`,
 		`hardware-errors (worth a look): 4 hardware errors`,
 		`hosts-entries (good to know): 2 sites blocked`,
@@ -42,6 +44,7 @@ func TestTheMadeUpPC(t *testing.T) {
 		`startup-virustotal-flags (good to know): PhotoSorter`,
 		`startup-virustotal-flags (look first): Windows Host Service`,
 		`updates-old (worth a look): Windows Update`,
+		`wallet-files-unencrypted (good to know): Electrum`,
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("the made-up PC is flagged for:\n%s\n\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))

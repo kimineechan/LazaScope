@@ -24,6 +24,7 @@ import (
 	"lazascope/internal/services"
 	"lazascope/internal/startup"
 	"lazascope/internal/virustotal"
+	"lazascope/internal/wallets"
 )
 
 // Parts chooses what a look takes in. The window asks for everything; the
@@ -209,6 +210,17 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 			askAntivirus(s)
 		}()
 		mark("antivirus asked")
+	}
+	if parts.Startup && parts.Processes {
+		func() {
+			defer func() {
+				if fault := recover(); fault != nil {
+					s.Gaps = append(s.Gaps, model.Gap{Area: model.Protection, What: fmt.Sprintf("The wallets on this PC could not be listed, because of an error inside LazaScope itself (%v). Please report it.", fault)})
+				}
+			}()
+			wallets.Collect(s)
+		}()
+		mark("wallets listed")
 	}
 	if !parts.Processes {
 		s.Processes = nil // they were only gathered to name the connections

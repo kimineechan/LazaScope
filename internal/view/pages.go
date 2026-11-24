@@ -353,6 +353,11 @@ func (b *builder) connections() Page {
 			ref = rules.ListenRef(c.File.Path)
 			row.Level = b.worst(ref)
 		}
+		if own := rules.ConnectionRef(i); len(b.byRef[own]) > 0 {
+			// A rule flagged this one connection, such as for the name it went to.
+			ref = own
+			row.Level = max(row.Level, b.worst(own))
+		}
 		program := c.Process
 		if len(c.Services) > 0 {
 			program += " (" + strings.Join(c.Services, ", ") + ")"

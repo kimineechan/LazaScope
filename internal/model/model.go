@@ -589,6 +589,44 @@ type Comparison struct {
 	Changed                                           []string // settings that differ, one line each
 }
 
+// Wallet is a cryptocurrency wallet found on the PC: an extension in a
+// browser, a program, or a folder of wallet files.
+type Wallet struct {
+	Name     string // the wallet's name, such as MetaMask or Electrum
+	Kind     string // "Browser extension", "Program" or "Wallet files"
+	Where    string // the browser and profile, or the folder or file
+	Verified bool   // an extension whose number is the real wallet's, as its maker publishes it
+	Keys     bool   // its files can hold the keys to coins, as a hardware wallet's app does not
+	Ref      string // what the look also holds about it, such as startup:12 or process:4410
+	Synced   string // the cloud service that copies its folder off the PC, if any
+}
+
+// CloudFolder is a folder that a cloud service copies off the PC.
+type CloudFolder struct {
+	Service string // such as OneDrive or Dropbox
+	Path    string
+}
+
+// ClipboardSettings is what Windows keeps of what is copied.
+type ClipboardSettings struct {
+	Read    bool
+	History Answer // Windows keeps a history of what was copied, shown with Windows key + V
+	Cloud   Answer // ... and sends it to the account's other devices
+}
+
+// SwapTest is the outcome of the test for a program that swaps a copied
+// wallet address for another, so that coins go to a thief.
+type SwapTest struct {
+	When    time.Time
+	Tried   []string // the kinds of address tried, such as Bitcoin
+	Swapped bool
+	Kind    string // the kind of address that was swapped
+	Into    string // what it was swapped for
+	By      string // the program that swapped it, when Windows can say
+	PID     uint32
+	Path    string
+}
+
 // Gap is something that could not be read, so that the report can say so
 // plainly instead of leaving it out.
 type Gap struct {
@@ -661,6 +699,14 @@ type Snapshot struct {
 	// number worked out from every byte of a file: two files with the same
 	// fingerprint are the same file.
 	Fingerprints map[string]string
+
+	// The cryptocurrency side: the wallets found, the folders a cloud service
+	// copies, what Windows keeps of the clipboard, and the outcome of the
+	// address-swap test, when it was run.
+	Wallets   []Wallet
+	Clouds    []CloudFolder
+	Clipboard ClipboardSettings
+	SwapTest  *SwapTest
 
 	// VirusTotal holds what VirusTotal said about files, by fingerprint. It
 	// is empty unless the person using LazaScope set up a VirusTotal key of
