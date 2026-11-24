@@ -38,6 +38,10 @@ type jsonFile struct {
 	ScriptDoes []string `json:"scriptDoes,omitempty"`
 
 	SHA256 string `json:"sha256,omitempty"` // worked out for the files that findings are about
+
+	// What the installed antivirus said when asked about a script: "no objection" or "harmful".
+	AntivirusSaid  string `json:"antivirusSaid,omitempty"`
+	AntivirusNamed string `json:"antivirusNamedIt,omitempty"`
 }
 
 type jsonStartup struct {
@@ -58,6 +62,10 @@ type jsonStartup struct {
 	Description string    `json:"description,omitempty"`
 
 	Extension *jsonExtension `json:"extension,omitempty"` // for a browser extension
+
+	// What the installed antivirus said about the commands on the entry's line, when it was asked.
+	CommandSaid  string `json:"antivirusSaidOfCommand,omitempty"`
+	CommandNamed string `json:"antivirusNamedCommand,omitempty"`
 }
 
 type jsonExtension struct {
@@ -199,6 +207,17 @@ type jsonFacts struct {
 	Health      jsonHealth       `json:"health"`
 }
 
+// said writes what the antivirus said, or nothing when it was not asked.
+func said(o model.Opinion) (verdict, name string) {
+	switch {
+	case o.Harmful:
+		return "harmful", o.Name
+	case o.Asked:
+		return "no objection", ""
+	}
+	return "", ""
+}
+
 func answer(a model.Answer) string {
 	switch a {
 	case model.Yes:
@@ -228,6 +247,7 @@ func file(f model.File, s *model.Snapshot) *jsonFile {
 		out.ScriptRead, out.ScriptDoes = true, f.Script.Signs
 	}
 	out.SHA256 = s.Fingerprint(f.Path)
+	out.AntivirusSaid, out.AntivirusNamed = said(f.Opinion)
 	switch f.Signature.Status {
 	case sigcheck.Signed:
 		out.Signature = "signed"
@@ -265,6 +285,7 @@ func facts(s *model.Snapshot) jsonFacts {
 		if x := e.Extension; x != nil {
 			entry.Extension = &jsonExtension{x.Browser, x.Profile, x.ID, x.Version, x.Source.String(), x.EverySite, x.May, x.Folder}
 		}
+		entry.CommandSaid, entry.CommandNamed = said(e.Said)
 		out.Startup = append(out.Startup, entry)
 	}
 	for _, p := range s.Processes {

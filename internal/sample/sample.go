@@ -253,6 +253,15 @@ func PC() *model.Snapshot {
 			Extension: &model.Extension{Browser: "Microsoft Edge", Profile: "Default", ID: "kjdnpgcaeoblhikmnpiklmnopqrstuvw", Name: "Shopping Helper Pro", Version: "3.4.1", Enabled: true,
 				Source: model.FromOutside, EverySite: true, May: []string{"read the cookies that keep you signed in", "see the addresses of the pages you have open"},
 				Folder: profile + "\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Extensions\\kjdnpgcaeoblhikmnpiklmnopqrstuvw\\3.4.1_0"}})
+	s.Engine = "Microsoft Defender Antivirus"
+	for i := range s.Startup {
+		switch e := &s.Startup[i]; {
+		case e.Name == "Open study apps.cmd":
+			e.Target.Opinion, e.Program.Opinion = model.Opinion{Asked: true}, model.Opinion{Asked: true}
+		case e.Command == hidden:
+			e.Said = model.Opinion{Asked: true, Harmful: true, Name: "TrojanDownloader:PowerShell/Example.A!amsi"}
+		}
+	}
 	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
 	s.Guard.Proxy = model.Proxy{Read: true}
 	s.Guard.HistoryRead, s.Guard.HistoryDays = true, 90

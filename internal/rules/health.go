@@ -282,6 +282,22 @@ var healthRules = []Rule{
 	},
 }
 
+// TestSample reports whether a name Defender gave is that of the harmless
+// sample antivirus makers agree on for testing.
+func TestSample(threat string) bool {
+	lower := strings.ToLower(threat)
+	return strings.Contains(lower, "mptest") || strings.Contains(lower, "eicar")
+}
+
+// sourced says, for a detection that came from a program asking the
+// antivirus, which program asked.
+func sourced(d model.Detection) string {
+	if !strings.EqualFold(d.Source, "AMSI") || d.Process == "" {
+		return ""
+	}
+	return ". Found when " + d.Process + " asked the antivirus about some content"
+}
+
 // The rules about what Microsoft Defender's own log says.
 var historyRules = []Rule{
 	{
@@ -293,6 +309,28 @@ var historyRules = []Rule{
 			if !g.HistoryRead || len(g.Detections) == 0 {
 				return
 			}
+			// The makers of antivirus agree on a harmless sample for testing
+			// that an antivirus works. Finding it is not finding anything.
+			var real []model.Detection
+			for _, d := range g.Detections {
+				if !TestSample(d.Threat) {
+					real = append(real, d)
+				}
+			}
+			if len(real) == 0 {
+				var tests []Fact
+				for i, d := range g.Detections {
+					if i < 8 {
+						tests = append(tests, Fact{"Found on " + Moment(s, d.When), d.Threat + sourced(d)})
+					}
+				}
+				f := r.find("A test of the antivirus", "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
+					"Nothing needs doing. LazaScope's own tests do this, and so do some security tools.", tests...)
+				f.Severity = Low
+				return []Finding{f}
+			}
+			tested := len(g.Detections) - len(real)
+			g.Detections = real
 			var facts []Fact
 			for i, d := range g.Detections {
 				if i >= 8 {
@@ -308,7 +346,10 @@ var historyRules = []Rule{
 				if d.Action != "" {
 					text += ". Defender's action: " + d.Action
 				}
-				facts = append(facts, Fact{"Found on " + Moment(s, d.When), text})
+				facts = append(facts, Fact{"Found on " + Moment(s, d.When), text + sourced(d)})
+			}
+			if tested > 0 {
+				facts = append(facts, Fact{"Left out", plural(tested, "detection", "detections") + " of the harmless sample used to test an antivirus"})
 			}
 			latest := g.Detections[0]
 			what := latest.Threat

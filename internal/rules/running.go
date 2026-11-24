@@ -100,6 +100,26 @@ var runningRules = []Rule{
 		},
 	},
 	{
+		ID: "running-antivirus-objects", Area: model.RunningNow, Severity: High,
+		Title: "The antivirus objects to a command that is running",
+		Why:   "LazaScope hands the commands that scripting tools were started with to the antivirus installed on this PC and asks what it makes of them. When the antivirus calls them harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			for _, p := range s.Processes {
+				if !p.Said.Harmful || p.Self {
+					continue
+				}
+				r.at(ProcessRef(p.PID))
+				reason := Engine(s) + ", asked just now, calls the commands " + p.Name + " was started with harmful"
+				if p.Said.Name != "" {
+					reason += " and names them " + p.Said.Name
+				}
+				found = append(found, r.find(p.Name, reason+". That is the antivirus's judgement and not LazaScope's. The antivirus watches scripting tools as they work, so it has most likely stopped these commands already. That they are still on a running program's line is what makes this worth looking at first.",
+					"Look at what started it: the Running now page shows each program under the one that launched it. Open Windows Security from the Start menu, look at Protection history and run a full scan.", aboutProcess(s, p)...))
+			}
+			return
+		},
+	},
+	{
 		ID: "running-scrambled-command", Area: model.RunningNow, Severity: Medium,
 		Title: "A scripting tool is running a scrambled command",
 		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything.",

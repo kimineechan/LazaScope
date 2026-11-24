@@ -32,6 +32,7 @@ func TestTheMadeUpPC(t *testing.T) {
 		`hosts-entries (good to know): 2 sites blocked`,
 		`remote-tool (worth a look): AnyDesk`,
 		`running-temp-folder (worth a look): FabrikamLauncherSetup.exe`,
+		`startup-antivirus-objects (look first): \Updater\Check`,
 		`startup-missing-file (good to know): ContosoPrintTool`,
 		`startup-scrambled-command (look first): \Updater\Check`,
 		`startup-script (worth a look): Open study apps.cmd`,

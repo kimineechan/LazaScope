@@ -5,9 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"lazascope/internal/cmdline"
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
 	"lazascope/internal/rules"
+	"lazascope/internal/scripts"
 	"lazascope/internal/winpath"
 )
 
@@ -64,13 +66,62 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	case !f.Program:
 		if rules.Script(f.Path) {
 			lines = append(lines, Line{Text, "This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one."})
-			return script(lines, f)
+			return opinion(script(lines, f), f.Opinion, "this script", "it", rules.Engine(b.s))
 		}
 		return append(lines, Line{Text, "This is not a program file, so there is no maker's signature to check."})
 	}
 	lines = fact(lines, "Signature", rules.Signature(f))
 	lines = fact(lines, "The file says it is", rules.Claim(f))
 	return fact(lines, "Version", f.Version)
+}
+
+// opinion adds what the installed antivirus said when it was asked about a
+// script or about the commands on a line. what names the thing asked
+// about, and it is "it" or "them" to match.
+func opinion(lines []Line, o model.Opinion, what, it, engine string) []Line {
+	if !o.Asked {
+		return lines
+	}
+	// The name stands in the middle of a sentence here.
+	if strings.HasPrefix(engine, "The ") {
+		engine = "the " + engine[4:]
+	}
+	lines = append(lines, Line{Heading, "What the antivirus says"})
+	text := "LazaScope handed " + what + " to " + engine + " and asked. "
+	switch {
+	case o.Harmful && o.Name != "":
+		text += "It calls " + it + " harmful, under the name " + o.Name + "."
+	case o.Harmful:
+		text += "It calls " + it + " harmful."
+	default:
+		text += "It raised no objection."
+	}
+	lines = append(lines, Line{Text, text})
+	if o.Harmful {
+		return append(lines, Line{Aside, "That is the antivirus's judgement, not LazaScope's. LazaScope has no detection engine of its own."})
+	}
+	return append(lines, Line{Aside, "No objection means the antivirus knows nothing against it today. It is not a promise that it is harmless."})
+}
+
+// carried adds what the commands on a line say, when the line carries
+// commands of its own in place of naming a file: decoded, if they were
+// encoded, and with the antivirus's answer if it was asked.
+func (b *builder) carried(lines []Line, command string, said model.Opinion) []Line {
+	if decoded, ok := cmdline.EncodedCommand(command); ok {
+		reading := scripts.Read(decoded, 12)
+		lines = append(lines, Line{Heading, "What the encoded command says"},
+			Line{Text, "The commands on this line are written in an encoded form, a long run of letters and digits. LazaScope has turned them back into text. Nothing was run."})
+		for _, sign := range reading.Signs {
+			lines = append(lines, Line{Text, sign})
+		}
+		for _, line := range reading.Lines {
+			lines = append(lines, Line{Excerpt, line})
+		}
+		if reading.More {
+			lines = append(lines, Line{Aside, "The decoded commands go on beyond these lines."})
+		}
+	}
+	return opinion(lines, said, "the commands on this line", "them", rules.Engine(b.s))
 }
 
 // script adds what a script's own text shows: what it can be seen to do,
@@ -195,6 +246,7 @@ func (b *builder) startup() Page {
 		lines = fact(lines, "About", e.Description)
 		if e.Command != "" {
 			lines = append(lines, Line{Text, "Command:"}, Line{Command, e.Command})
+			lines = b.carried(lines, e.Command, e.Said)
 		}
 		lines = b.file(lines, works)
 		if e.Program.Path != "" && !winpath.Same(e.Program.Path, works.Path) {
@@ -267,6 +319,7 @@ func (b *builder) running() Page {
 		switch {
 		case p.Command != "":
 			lines = append(lines, Line{Text, "Command:"}, Line{Command, p.Command})
+			lines = b.carried(lines, p.Command, p.Said)
 		case p.CommandHidden && p.File.Path != "":
 			lines = append(lines, Line{Aside, "The command that started this program " + model.Withheld(b.s.Elevated, false) + "."})
 		}

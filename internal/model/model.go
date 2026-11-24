@@ -92,6 +92,17 @@ type File struct {
 	Modified time.Time
 
 	Script *Script // for a script that could be read: what its text shows
+
+	Opinion Opinion // for a script: what the installed antivirus said when asked about it
+}
+
+// Opinion is what the antivirus installed on this PC said when LazaScope
+// handed it a script or a hidden command and asked. It is the antivirus's
+// judgement, not LazaScope's, and is always shown as such.
+type Opinion struct {
+	Asked   bool   // the content was handed over, and the antivirus answered
+	Harmful bool   // the antivirus calls it harmful
+	Name    string // the antivirus's own name for what it found, when its log gives one
 }
 
 // Script is what the text of a script file shows. It is a reading of the
@@ -270,6 +281,8 @@ type Startup struct {
 
 	Extension *Extension // for a browser extension: what the browser records about it
 
+	Said Opinion // what the installed antivirus said about the commands on the entry's line, when they were worth asking about
+
 	New bool // it was not there in the report this look was compared with
 }
 
@@ -303,6 +316,8 @@ type Process struct {
 	ParentGone    bool // the program that started it has closed since
 	CommandHidden bool // its command line can only be read with administrator rights
 	Self          bool // it is the program taking this look
+
+	Said Opinion // what the installed antivirus said about the commands on its command line, when they were worth asking about
 
 	New   bool      // it started during the watch, or was not running in the report this look was compared with
 	Ended bool      // it was seen during the watch and has ended since
@@ -383,6 +398,7 @@ type Detection struct {
 	Path     string // the file or other thing it was found in
 	Action   string // what Defender did, such as Quarantine; "" when the log does not say
 	Process  string // the program that was touching it
+	Source   string // how Defender came by it, in its own word: "Real-Time Protection", "AMSI" when a program asked, and so on
 }
 
 // LoggedExclusion is an exclusion that Defender's own log shows being
@@ -603,6 +619,10 @@ type Snapshot struct {
 	Guard       Guard
 	Condition   Condition
 	Gaps        []Gap
+
+	// Engine names the antivirus that was asked about scripts and hidden
+	// commands, or is "" when none could be asked.
+	Engine string
 
 	// Compared is set when the look was held against an earlier report, or
 	// kept up for a while as a watch.

@@ -81,8 +81,11 @@ func TestReportLeavesScriptLinesOut(t *testing.T) {
 	if strings.Contains(page, secret) || strings.Contains(page, "library.example.ac.uk") {
 		t.Error("the web page holds lines copied out of a script")
 	}
-	if strings.Count(page, "They are left out of this report, in case they hold a password.") != 1 {
-		t.Error("the web page does not say, once, that the script's lines were left out")
+	if strings.Count(page, "They are left out of this report, in case they hold a password.") != 2 {
+		t.Error("the web page does not say, once for the script and once for the decoded command, that the lines were left out")
+	}
+	if strings.Contains(page, "DownloadString") || strings.Contains(Text(b, "1.0.0"), "DownloadString") {
+		t.Error("a report holds lines of a decoded command")
 	}
 	if !strings.Contains(page, "It deletes files or folders.") {
 		t.Error("the web page does not say what the script does")
@@ -123,7 +126,7 @@ func TestText(t *testing.T) {
 	b := book(nil)
 	text := Text(b, "1.0.0")
 	for _, want := range []string{
-		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (16)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
+		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (17)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
 		"    Why: ", "    What you can do: ", "    Rule: startup-system-name\r\n", "WHAT COULD NOT BE READ\r\n", "WHAT STARTS BY ITSELF (", "Check | Name | Kind | Maker | File\r\n",
 		"Look first | Windows Host Service | Registry Run | Not signed | C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n", "LazaScope is not an antivirus",
 	} {

@@ -3,7 +3,9 @@ package rules
 import (
 	"strings"
 
+	"lazascope/internal/cmdline"
 	"lazascope/internal/model"
+	"lazascope/internal/scripts"
 	"lazascope/internal/sigcheck"
 	"lazascope/internal/winpath"
 )
@@ -68,6 +70,17 @@ func about(e model.Startup) []Fact {
 	if works.Script != nil && len(works.Script.Signs) > 0 {
 		add("Going by the script's text", strings.Join(works.Script.Signs, " "))
 	}
+	if decoded, ok := cmdline.EncodedCommand(e.Command); ok {
+		if reading := scripts.Read(decoded, 0); len(reading.Signs) > 0 {
+			add("Going by the decoded command", strings.Join(reading.Signs, " "))
+		}
+	}
+	switch {
+	case works.Opinion.Harmful, e.Said.Harmful:
+		add("The antivirus, asked just now", "Calls it harmful")
+	case works.Opinion.Asked, e.Said.Asked:
+		add("The antivirus, asked just now", "Raised no objection")
+	}
 	return facts
 }
 
@@ -120,6 +133,14 @@ func stop(kind model.StartupKind) string {
 }
 
 const known = "If you know this program and installed it yourself, nothing needs doing. If you do not, search the web for its file name and maker before touching it. "
+
+// Engine names the antivirus that was asked, to start a sentence with.
+func Engine(s *model.Snapshot) string {
+	if s.Engine != "" {
+		return s.Engine
+	}
+	return "The antivirus on this PC"
+}
 
 // ownScript is the advice for a script, which has no maker to look up but
 // can be read.
@@ -184,6 +205,44 @@ var startupRules = []Rule{
 				found = append(found, r.find(e.Shown(),
 					"This entry runs "+winpath.Base(e.Program.Path)+", a tool that carries out whatever commands it is given, and the commands are hidden. "+strings.Join(signs, " ")+" Honest software has little reason to hide what it runs at start-up.",
 					"Do not run the command to see what it does. Unless you set this up yourself, show it to someone who knows Windows well. "+stop(e.Kind), about(e)...))
+			}
+			return
+		},
+	},
+	{
+		ID: "startup-antivirus-objects", Area: model.StartsWithWindows, Severity: High,
+		Title: "The antivirus objects to something that starts by itself",
+		Why:   "LazaScope has no detection engine of its own. It hands each script that starts by itself, and each command carried on a start-up line, to the antivirus installed on this PC and asks what it makes of it. When the antivirus calls one harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves.",
+		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
+			for i, e := range s.Startup {
+				if !e.Enabled {
+					continue
+				}
+				works := e.Works()
+				opinion, what, it, why := works.Opinion, "the script "+works.Path, "it", ""
+				switch {
+				case works.Opinion.Harmful:
+					// A file the antivirus objects to has usually been dealt with
+					// already. One that has not is often in a place it was told to skip.
+					why = " The antivirus checks files as they are opened, so one it objects to has normally been stopped already."
+					for _, skipped := range s.Guard.Exclusions {
+						if skipped.Kind == "Folder or file" && winpath.Under(works.Path, skipped.Value) {
+							why = " The script sits in " + skipped.Value + ", a place the antivirus was told to skip, which is why it was never checked by itself."
+						}
+					}
+				case e.Said.Harmful:
+					opinion, what, it = e.Said, "the commands carried on this entry's line", "them"
+					why = " A command kept in the registry or in a task is not a file, so the antivirus only meets it at the moment it runs."
+				default:
+					continue
+				}
+				r.at(StartupRef(i))
+				reason := Engine(s) + ", asked just now, calls " + what + " harmful"
+				if opinion.Name != "" {
+					reason += " and names " + it + " " + opinion.Name
+				}
+				found = append(found, r.find(e.Shown(), reason+". That is the antivirus's judgement and not LazaScope's."+why,
+					"Do not run it. Open Windows Security from the Start menu and run a full scan, then look at Protection history. "+stop(e.Kind), about(e)...))
 			}
 			return
 		},

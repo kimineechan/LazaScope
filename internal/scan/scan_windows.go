@@ -53,6 +53,14 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		note = func(string) {}
 	}
 	began := time.Now()
+	// With LAZASCOPE_TIMING set, each stage says how long the look has taken
+	// so far, to find what makes a look slow.
+	timing := os.Getenv("LAZASCOPE_TIMING") != ""
+	mark := func(stage string) {
+		if timing {
+			fmt.Fprintf(os.Stderr, "  %6d ms  %s\n", time.Since(began).Milliseconds(), stage)
+		}
+	}
 	s := &model.Snapshot{Taken: began, Folders: pcinfo.Folders(), Elevated: pcinfo.Elevated()}
 	s.Computer, s.User, s.Windows = pcinfo.Describe()
 	world := pcinfo.World()
@@ -63,6 +71,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	if parts.Startup {
 		work.Go(func() {
 			guard(model.StartsWithWindows, "What starts with Windows", &gaps[1], func() { s.Startup, gaps[1] = startup.Collect(world) })
+			mark("start-up read")
 		})
 	}
 	if parts.Processes || parts.Connections {
@@ -70,21 +79,25 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		// list of programs is needed for them too.
 		work.Go(func() {
 			guard(model.RunningNow, "What is running", &gaps[2], func() { s.Processes, gaps[2] = procs.Collect() })
+			mark("programs read")
 		})
 	}
 	if parts.Connections {
 		work.Go(func() {
 			guard(model.Connections, "The internet connections", &gaps[3], func() { s.Connections, gaps[3] = netconn.Collect() })
+			mark("connections read")
 		})
 	}
 	if parts.Guard {
 		work.Go(func() {
 			guard(model.Protection, "The state of the protections", &gaps[0], func() { s.Guard, gaps[0] = protect.Collect() })
+			mark("protection read")
 		})
 	}
 	if parts.Health {
 		work.Go(func() {
 			guard(model.Health, "The health of the PC", &gaps[4], func() { s.Condition, gaps[4] = health.Collect() })
+			mark("health read")
 		})
 	}
 	work.Wait()
@@ -172,6 +185,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	}
 	close(queue)
 	checks.Wait()
+	mark("files checked")
 	for i := range s.Startup {
 		s.Startup[i].Program = library.Look(s.Startup[i].Program.Path)
 		s.Startup[i].Target = library.Look(s.Startup[i].Target.Path)
@@ -181,6 +195,19 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	}
 	for i := range s.Connections {
 		s.Connections[i].File = library.Look(s.Connections[i].File.Path)
+	}
+	if parts.Startup || parts.Processes {
+		note("Asking the antivirus about scripts and hidden commands...")
+		// A fault here must not cost the rest of the look.
+		func() {
+			defer func() {
+				if fault := recover(); fault != nil {
+					s.Gaps = append(s.Gaps, model.Gap{Area: model.StartsWithWindows, What: fmt.Sprintf("The antivirus could not be asked about scripts, because of an error inside LazaScope itself (%v). Please report it.", fault)})
+				}
+			}()
+			askAntivirus(s)
+		}()
+		mark("antivirus asked")
 	}
 	if !parts.Processes {
 		s.Processes = nil // they were only gathered to name the connections

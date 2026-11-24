@@ -214,7 +214,7 @@ func HTML(b *view.Book, version string) []byte {
 					// Lines copied out of a file may hold a password or a key.
 					// The report is made to be sent, so they stay out of it.
 					if !excerpted {
-						w.WriteString("<p class=\"aside\">LazaScope's own window shows the script's first lines here. They are left out of this report, in case they hold a password.</p>")
+						w.WriteString("<p class=\"aside\">LazaScope's own window shows lines copied from the script or command here. They are left out of this report, in case they hold a password.</p>")
 						excerpted = true
 					}
 				case view.Heading:

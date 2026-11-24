@@ -32,6 +32,7 @@ import (
 	"time"
 	"unsafe"
 
+	"lazascope/internal/amsi"
 	"lazascope/internal/com"
 	"lazascope/internal/model"
 	"lazascope/internal/pcinfo"
@@ -63,7 +64,7 @@ var planted = []struct {
 	list  string
 	names []string
 }{
-	{runList, []string{" disguise", " lookalike", " download", " leftover", " scramble", " plain"}},
+	{runList, []string{" disguise", " lookalike", " download", " leftover", " scramble", " plain", " antivirus"}},
 	{runOnceList, []string{" once"}},
 }
 
@@ -197,6 +198,12 @@ func run(self string) error {
 		for _, rule := range item.rules {
 			if title, ok := flagged(findings, item.subject, rule); ok {
 				fmt.Printf("    flagged: %s\n", title)
+				// What the antivirus said is worth seeing word for word.
+				for _, f := range findings {
+					if rule == "startup-antivirus-objects" && f.Rule == rule && f.Subject == item.subject {
+						fmt.Printf("    in its words: %s\n", f.Reason)
+					}
+				}
 			} else {
 				fail("NOT FLAGGED by the rule %s", rule)
 			}
@@ -385,7 +392,23 @@ func put(p places, self string) (plants []plant, stop func(), err error) {
 	}
 	time.Sleep(300 * time.Millisecond) // let them get going before the look
 
-	return []plant{
+	// One more, where an antivirus answers: a start-up line whose command
+	// holds the harmless line of text that every antivirus agrees to call
+	// harmful. The line would only print that text. It proves the whole
+	// path, from a command kept in the registry to what the antivirus says
+	// of it.
+	var extra []plant
+	if answers() {
+		if err := setValueIn(runList, mark+" antivirus", `powershell.exe -NoProfile -Command "Write-Output '`+testLine()+`'"`); err != nil {
+			return nil, stop, err
+		}
+		extra = append(extra, plant{what: "A start-up line whose command holds the standard harmless test line for antivirus",
+			subject: mark + " antivirus", kind: model.RunKey, rules: []string{"startup-antivirus-objects"}})
+	} else {
+		fmt.Println("No antivirus on this PC answers when asked, so the item that tests that is left out.")
+	}
+
+	return append([]plant{
 		{what: "A copy of Notepad named svchost.exe in the temporary folder, set to start at sign-in",
 			subject: mark + " disguise", kind: model.RunKey, file: disguise, rules: []string{"startup-system-name", "startup-temp-folder"}},
 		{what: "A copy of Notepad named scvhost.exe, one slip from svchost, set to start at sign-in",
@@ -408,7 +431,27 @@ func put(p places, self string) (plants []plant, stop func(), err error) {
 			subject: "lsass.exe", running: true, file: running, rules: []string{"running-system-name", "running-temp-folder"}},
 		{what: "The unsigned program, running from the Downloads folder",
 			subject: "freebie.exe", running: true, file: download, rules: []string{"running-temp-folder"}},
-	}, stop, nil
+	}, extra...), stop, nil
+}
+
+// testLine returns the harmless line of text that every antivirus agrees
+// to call harmful. It is put together as the check runs and never written
+// out whole, because an antivirus that finds it in a file stops the file
+// being read, this one included.
+func testLine() string {
+	return strings.Join([]string{"AMSI", "Test", "Sample:", strings.Join([]string{"7e72c3ce", "861b", "4339", "8740", "0ac1484c1386"}, "-")}, " ")
+}
+
+// answers reports whether an antivirus on this PC calls the test line
+// harmful when asked. Where none does, the item that needs one is skipped.
+func answers() bool {
+	asker, err := amsi.Open("LazaScope verification")
+	if err != nil {
+		return false
+	}
+	defer asker.Close()
+	answer, _ := asker.Ask([]byte(testLine()), "LazaScope verification: the standard harmless test line")
+	return answer == amsi.Harmful
 }
 
 // present lists what is there of the planted things: every line, every

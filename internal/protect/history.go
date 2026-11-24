@@ -156,6 +156,7 @@ func Detections(records []eventlog.Event) []model.Detection {
 		fill(&d.Category, record.Value("Category Name"))
 		fill(&d.Path, foundIn(record.Value("Path")))
 		fill(&d.Process, record.Value("Process Name"))
+		fill(&d.Source, record.Value("Source Name"))
 		if record.ID == acted {
 			if action := record.Value("Action Name"); action != "" && !strings.EqualFold(action, "Not Applicable") {
 				d.Action = action

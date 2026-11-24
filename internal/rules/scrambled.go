@@ -32,7 +32,7 @@ func Scrambled(program, command string) []string {
 	var signs []string
 	add := func(sign string) { signs = append(signs, sign) }
 
-	if encoded(command) {
+	if cmdline.Encoded(command) {
 		add("It hands PowerShell its instructions in an encoded form, which hides what they say.")
 	}
 	if has("frombase64string", "[convert]::", "-bxor", "gzipstream", "deflatestream", "[text.encoding]", "[system.text.encoding]", "certutil -decode", "certutil.exe -decode", "certutil /decode") ||
@@ -57,7 +57,7 @@ func Scrambled(program, command string) []string {
 		add("Its words are broken into pieces so that they are hard to read or search for.")
 	}
 	// The encoded commands themselves are such a block, and have been said.
-	if !encoded(command) && blob(command) {
+	if !cmdline.Encoded(command) && blob(command) {
 		add("It carries a long block of unreadable text.")
 	}
 	return signs
@@ -87,22 +87,26 @@ func Hidden(program, command string) bool {
 	return false
 }
 
-// encoded reports whether a command gives PowerShell the -EncodedCommand
-// switch, in any of the shortened forms PowerShell accepts.
-func encoded(command string) bool {
-	words := cmdline.Words(command)
-	for i, word := range words {
-		if len(word) < 2 || (word[0] != '-' && word[0] != '/') || i+1 >= len(words) {
-			continue
-		}
-		name := strings.ToLower(strings.TrimLeft(word, "-/"))
-		if name == "ec" || (name != "" && strings.HasPrefix("encodedcommand", name) && !strings.HasPrefix("executionpolicy", name)) {
-			if base64ish(words[i+1]) >= 16 {
-				return true
-			}
-		}
+// Carried returns the commands that a command line carries for a scripting
+// tool to run, as opposed to naming a file: decoded when they are encoded,
+// and otherwise as written. It returns "" for a line that carries none, and
+// for one that only loads a named script. These are the commands worth
+// reading, and worth asking the antivirus about, because no file holds them.
+func Carried(program, command string) string {
+	if decoded, ok := cmdline.EncodedCommand(command); ok {
+		return decoded
 	}
-	return false
+	inline := cmdline.PowerShellCommand(command)
+	if _, loads := cmdline.Loads(inline); loads {
+		return ""
+	}
+	if inline != "" {
+		return inline
+	}
+	if len(Scrambled(program, command)) > 0 {
+		return command
+	}
+	return ""
 }
 
 // base64ish returns the length of a word if it is made only of the letters
