@@ -46,6 +46,8 @@ const (
 	pageVirusTotal // reached from the buttons at the top right, not from sections of their own
 	pageWallets
 	pageTimeline // reached from the Overview
+	pageDefences
+	pageDevices
 )
 
 // areaPage is the page that shows an area's list.
@@ -371,6 +373,8 @@ func main() {
 	jobs = append(jobs, again, raise, against, save)
 	// More ways to look, each with a page of its own.
 	w.Button("Timeline...", left, 676, 150, 36, func() { w.ShowPage(pageTimeline) })
+	w.Button("Protections to switch on...", left+162, 676, 262, 36, func() { w.ShowPage(pageDefences) })
+	w.Button("Camera and microphone...", left+436, 676, 240, 36, func() { w.ShowPage(pageDevices) })
 
 	// lookUp works out the fingerprint of the file a row is about and, on
 	// a yes, opens VirusTotal's page for that fingerprint in the user's own
@@ -530,6 +534,8 @@ func main() {
 		{"The last 30 days", within(30 * 24), "Nothing LazaScope can date happened in the last 30 days."},
 		{"Only what is worth a look", flagged, noneWorth},
 	})
+	addList(pageDefences, false, nil)
+	addList(pageDevices, true, nil)
 	addList(pageAccounts, false, nil)
 	addList(pageHealth, false, nil)
 	addList(pageWorth, true, nil)
@@ -623,7 +629,7 @@ func main() {
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
 	lay := func(b *view.Book, waiting bool) {
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal, pageWallets: &b.Wallets, pageTimeline: &b.Timeline} {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal, pageWallets: &b.Wallets, pageTimeline: &b.Timeline, pageDefences: &b.Defences, pageDevices: &b.Devices} {
 			l := lists[index]
 			l.page, l.waiting = page, waiting
 			if waiting {

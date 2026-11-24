@@ -195,7 +195,7 @@ func (b *builder) analyst(book *Book) {
 		processes[p.PID] = p
 	}
 	for page, name := range map[*Page]string{&book.Protection: "protection", &book.Startup: "start-up", &book.Running: "running", &book.Connections: "connections",
-		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal", &book.Wallets: "wallets", &book.Timeline: "timeline"} {
+		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal", &book.Wallets: "wallets", &book.Timeline: "timeline", &book.Defences: "defences", &book.Devices: "devices"} {
 		for i := range page.Rows {
 			row := &page.Rows[i]
 			r := &raw{fields: map[string][]string{"page": {name}, "level": {levelWord(row.Level)}, "new": {yesNo(row.Fresh)}, "windows": {yesNo(row.Windows)}}}
@@ -356,6 +356,29 @@ func (b *builder) evidence(row *Row, r *raw, processes map[uint32]model.Process)
 		for _, t := range rules.Techniques(f.Attack) {
 			r.line("ATT&CK %s: %s %s", rules.AttackVersion, t.ID, t.Name)
 		}
+	case "defence":
+		i, err := strconv.Atoi(key)
+		if err != nil || i < 0 || i >= len(s.Defences) {
+			return
+		}
+		d := s.Defences[i]
+		r.field("name", d.Name)
+		r.line("defence: %s (%s); on: %s; part of Defender: %s; helps against ransomware: %s", d.Name, d.Key, d.On, yesNo(d.Defender), yesNo(d.Ransomware))
+		b.rawFindings(r, "defences")
+	case "device":
+		i, err := strconv.Atoi(key)
+		if err != nil || i < 0 || i >= len(s.DeviceUses) {
+			return
+		}
+		d := s.DeviceUses[i]
+		r.field("name", d.App)
+		r.field("kind", d.Device)
+		r.line("device: %s; app: %s; a program file: %s; allowed: %s", d.Device, d.App, yesNo(d.Program), d.Allowed)
+		r.line("last started: %s; last stopped: %s; in use now: %s", utc(d.Start), utc(d.Stop), yesNo(d.InUse()))
+		if d.Program {
+			r.file(s, "image", d.File)
+		}
+		b.rawFindings(r, row.Ref)
 	case "wallet":
 		i, err := strconv.Atoi(key)
 		if err != nil || i < 0 || i >= len(s.Wallets) {
@@ -470,6 +493,9 @@ func (b *builder) topicEvidence(ref string, r *raw) {
 		} else {
 			r.line("not run")
 		}
+	case ref == "backups":
+		bk := s.Backups
+		r.line("File History last ran: %s; OneDrive copies: %s; backup programs: %s", utc(bk.FileHistory), orNone(strings.Join(bk.OneDrive, ", ")), orNone(strings.Join(bk.Programs, ", ")))
 	case ref == "clouds":
 		for _, c := range s.Clouds {
 			r.line("cloud folder: %s = %s", c.Service, c.Path)

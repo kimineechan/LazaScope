@@ -39,6 +39,8 @@ var techniques = map[string]string{
 	"T1059":     "Command and Scripting Interpreter",
 	"T1078.001": "Default Accounts",
 	"T1115":     "Clipboard Data",
+	"T1123":     "Audio Capture",
+	"T1125":     "Video Capture",
 	"T1176.001": "Browser Extensions",
 	"T1204.002": "Malicious File",
 	"T1219":     "Remote Access Tools",
@@ -189,6 +191,9 @@ func Named(rule string) []string {
 	if rule == "startup-debugger" {
 		ids = with(ids, "T1546.008")
 	}
+	if rule == "device-used-unsigned" {
+		ids = with(ids, "T1123", "T1125") // the microphone or the camera, by finding
+	}
 	sort.Strings(ids)
 	return ids
 }
@@ -205,6 +210,9 @@ func AttackNote(rule string) string {
 	}
 	if staying[rule] {
 		parts = append(parts, "and the technique of the way the entry starts")
+	}
+	if rule == "device-used-unsigned" {
+		parts = append(parts, "T1125 Video Capture for the camera; T1123 Audio Capture for the microphone")
 	}
 	return strings.Join(parts, "; ")
 }

@@ -126,7 +126,7 @@ func TestText(t *testing.T) {
 	b := book(nil)
 	text := Text(b, "1.0.0")
 	for _, want := range []string{
-		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (22)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
+		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (25)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
 		"    Why: ", "    What you can do: ", "    Rule: startup-system-name\r\n", "WHAT COULD NOT BE READ\r\n", "WHAT STARTS BY ITSELF (", "Check | Name | Kind | Maker | VirusTotal | File\r\n",
 		"Look first | Windows Host Service | Registry Run | Not signed | 25 of 72 | C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n", "LazaScope is not an antivirus",
 	} {

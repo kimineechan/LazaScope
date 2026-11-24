@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"lazascope"
+	"lazascope/internal/view"
 )
 
 const usage = `LazaScope command-line tool
@@ -32,6 +33,8 @@ Usage:
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
   lazascope-cli wallets [--demo]            List the cryptocurrency wallets on this PC and what stood out about them
   lazascope-cli timeline [days] [--demo]    List what happened when, newest first (the last 7 days unless told)
+  lazascope-cli protections [--demo]        List the protections this PC already has, whether each is on, and its backups
+  lazascope-cli devices [--demo]            List which programs used the camera and the microphone, and when
   lazascope-cli swap-test                   Copy made-up wallet addresses for a few seconds and watch whether a program swaps them
   lazascope-cli find <search> [--details]   List the rows of every list that match a search, as in the window's
                                             search box (find ? explains how; --details: with the exact evidence)
@@ -57,6 +60,7 @@ var commands = map[string]struct {
 	"attack": {options: []string{"--coverage", "--demo"}, files: true}, "virustotal": {files: true},
 	"find":    {options: []string{"--details", "--demo"}, files: true},
 	"wallets": {options: []string{"--demo"}}, "swap-test": {}, "timeline": {options: []string{"--demo"}, files: true},
+	"protections": {options: []string{"--demo"}}, "devices": {options: []string{"--demo"}},
 }
 
 func main() {
@@ -136,6 +140,10 @@ func main() {
 		err = walletList(flags["--demo"])
 	case "timeline":
 		err = timelineList(strings.Join(args, " "), flags["--demo"])
+	case "protections":
+		err = printPage(func(b *view.Book) *view.Page { return &b.Defences }, flags["--demo"])
+	case "devices":
+		err = printPage(func(b *view.Book) *view.Page { return &b.Devices }, flags["--demo"])
 	case "swap-test":
 		err = swapTest()
 	case "version":

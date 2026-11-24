@@ -19,6 +19,7 @@ import (
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
 	"lazascope/internal/pcinfo"
+	"lazascope/internal/privacy"
 	"lazascope/internal/procs"
 	"lazascope/internal/protect"
 	"lazascope/internal/rules"
@@ -99,7 +100,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	}
 	if parts.Guard {
 		work.Go(func() {
-			guard(model.Protection, "The state of the protections", &gaps[0], func() { s.Guard, gaps[0] = protect.Collect() })
+			guard(model.Protection, "The state of the protections", &gaps[0], func() {
+				s.Guard, gaps[0] = protect.Collect()
+				s.Defences = privacy.Defences()
+				s.DeviceUses = privacy.Devices()
+			})
 			mark("protection read")
 		})
 	}
@@ -179,6 +184,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	for _, p := range s.Processes {
 		want(p.File.Path)
 	}
+	for _, d := range s.DeviceUses {
+		if d.Program {
+			want(d.App)
+		}
+	}
 	note(fmt.Sprintf("Checking who made %d files...", len(paths)))
 	queue := make(chan string)
 	var checks sync.WaitGroup
@@ -205,6 +215,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	for i := range s.Connections {
 		s.Connections[i].File = library.Look(s.Connections[i].File.Path)
 	}
+	for i := range s.DeviceUses {
+		if s.DeviceUses[i].Program {
+			s.DeviceUses[i].File = library.Look(s.DeviceUses[i].App)
+		}
+	}
 	if parts.Startup || parts.Processes {
 		note("Asking the antivirus about scripts and hidden commands...")
 		// A fault here must not cost the rest of the look.
@@ -226,6 +241,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 				}
 			}()
 			wallets.Collect(s)
+			s.Backups = privacy.Collect(s.Guard.Programs, s.Clouds)
 		}()
 		mark("wallets listed")
 	}

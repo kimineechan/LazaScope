@@ -107,6 +107,41 @@ type Origin struct {
 	Referrer string // the page that led to it
 }
 
+// Defence is a protection that Windows or Microsoft Defender has, and
+// whether it is switched on.
+type Defence struct {
+	Key        string // a short name: pua, smartscreen, cfa, network, cloud, samples, hvci, lsa, drivers
+	Name       string // its name in Windows Security, such as Controlled folder access
+	On         Answer
+	Defender   bool // a part of Microsoft Defender, which stands aside when another antivirus is in charge
+	Ransomware bool // it helps against ransomware
+}
+
+// Backups is what the PC shows of copies of the account's files.
+type Backups struct {
+	FileHistory time.Time // when File History last copied the files; zero for never
+	OneDrive    []string  // the account's folders that OneDrive copies, such as Documents
+	Programs    []string  // backup programs installed
+}
+
+// DeviceUse is a program's use of the camera or the microphone, as
+// Windows records it for its privacy settings.
+type DeviceUse struct {
+	Device  string // "camera" or "microphone"
+	App     string // a program's path, or the name of an app from the Store
+	Program bool   // App is a program file on disk, not an app from the Store
+	Allowed Answer // the switch for this app in the privacy settings
+	Start   time.Time
+	Stop    time.Time
+	File    File // for a program, what is known of its file
+}
+
+// InUse reports whether the program is using the device now: it started
+// and has not stopped since.
+func (d DeviceUse) InUse() bool {
+	return !d.Start.IsZero() && (d.Stop.IsZero() || d.Stop.Before(d.Start))
+}
+
 // Run is a record Windows keeps of a program having been run.
 type Run struct {
 	Path   string        // the program, or for an app from the Store, its name
@@ -728,6 +763,12 @@ type Snapshot struct {
 
 	// Ran holds the records Windows keeps of programs having been run.
 	Ran []Run
+
+	// The defences Windows has, the backups, and the programs that used the
+	// camera and the microphone.
+	Defences   []Defence
+	Backups    Backups
+	DeviceUses []DeviceUse
 
 	Clipboard ClipboardSettings
 	SwapTest  *SwapTest

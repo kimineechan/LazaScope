@@ -347,6 +347,36 @@ var changes = []change{
 	{"a remote-control service is running inside a shared host", func(s *model.Snapshot) { s.Processes[1].Services = append(s.Processes[1].Services, "sshd") }, "remote-tool:medium"},
 	{"Quick Assist, which comes with Windows, is open", run(model.Process{PID: 9000, Name: "quickassist.exe", File: windows(`C:\Windows\System32\quickassist.exe`)}), "remote-tool:medium"},
 
+	// Protections switched off, ransomware, and the camera and the microphone.
+	{"PUA blocking and memory integrity are off", func(s *model.Snapshot) {
+		s.Defences = []model.Defence{{Key: "pua", Name: "Potentially unwanted app blocking", On: model.No, Defender: true}, {Key: "hvci", Name: "Memory integrity", On: model.No},
+			{Key: "cfa", Name: "Controlled folder access", On: model.Yes, Defender: true, Ransomware: true}}
+	}, "defences-off:low"},
+	{"Defender's own protections are off, but another antivirus is in charge", func(s *model.Snapshot) {
+		s.Guard.RealTime = model.No
+		s.Guard.Antivirus = []model.SecurityProduct{{Name: "Example Antivirus", On: model.Yes, UpToDate: model.Yes}}
+		s.Defences = []model.Defence{{Key: "pua", Name: "Potentially unwanted app blocking", On: model.No, Defender: true}, {Key: "cfa", Name: "Controlled folder access", On: model.No, Defender: true, Ransomware: true}}
+		s.Backups = model.Backups{OneDrive: []string{"Documents"}}
+	}, ""},
+	{"nothing stops ransomware and nothing is backed up", func(s *model.Snapshot) {
+		s.Defences = []model.Defence{{Key: "cfa", Name: "Controlled folder access", On: model.No, Defender: true, Ransomware: true}}
+	}, "defences-off:low ransomware-not-ready:medium"},
+	{"File History ran yesterday", func(s *model.Snapshot) {
+		s.Defences = []model.Defence{{Key: "cfa", Name: "Controlled folder access", On: model.No, Defender: true, Ransomware: true}}
+		s.Backups = model.Backups{FileHistory: now.AddDate(0, 0, -1)}
+	}, "defences-off:low"},
+	{"a video-call app is using the camera", func(s *model.Snapshot) {
+		s.DeviceUses = []model.DeviceUse{{Device: "camera", App: "Microsoft.WindowsCamera_8wekyb3d8bbwe", Allowed: model.Yes, Start: now.Add(-10 * time.Minute)}}
+	}, "device-in-use:low"},
+	{"an unsigned program used the microphone", func(s *model.Snapshot) {
+		file := unsigned(`C:\Users\sam\AppData\Roaming\rec\rec.exe`)
+		s.DeviceUses = []model.DeviceUse{{Device: "microphone", App: file.Path, Program: true, Allowed: model.Yes, Start: now.Add(-5 * time.Hour), Stop: now.Add(-4 * time.Hour), File: file}}
+	}, "device-used-unsigned:medium"},
+	{"a signed program used the camera last week", func(s *model.Snapshot) {
+		file := signed(`C:\Program Files\Zoom\bin\Zoom.exe`, "Zoom Video Communications, Inc.")
+		s.DeviceUses = []model.DeviceUse{{Device: "camera", App: file.Path, Program: true, Allowed: model.Yes, Start: now.AddDate(0, 0, -7), Stop: now.AddDate(0, 0, -7).Add(time.Hour), File: file}}
+	}, ""},
+
 	// The cryptocurrency side.
 	{"an extension calls itself MetaMask with another number", add(model.Startup{Kind: model.BrowserExtension, Name: "MetaMask Wallet", Where: "Google Chrome, profile Default", Enabled: true,
 		Extension: &model.Extension{Browser: "Google Chrome", Profile: "Default", ID: "abcdefghijklmnopabcdefghijklmnop", Name: "MetaMask Wallet", Enabled: true, Source: model.FromStore}}), "extension-fake-wallet:high"},

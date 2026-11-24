@@ -153,6 +153,10 @@ type Book struct {
 
 	// Timeline puts everything LazaScope can date in one list, newest first.
 	Timeline Page
+
+	// Defences lists the protections the PC has and its backups; Devices,
+	// the programs that used the camera and the microphone.
+	Defences, Devices Page
 }
 
 // Pages returns the seven lists in the order they are shown.
@@ -185,6 +189,8 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.VirusTotal = b.virusTotal()
 	book.Wallets = b.wallets()
 	book.Timeline = b.timeline()
+	book.Defences = b.defences()
+	book.Devices = b.devices()
 	b.analyst(book)
 	for _, page := range book.Pages() {
 		page.Compared = s.Compared != nil

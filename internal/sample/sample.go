@@ -302,6 +302,25 @@ func PC() *model.Snapshot {
 	s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes, Cloud: model.No}
 	s.Wallets = wallets.Inventory(s, []model.Wallet{{Name: "Electrum", Kind: "Wallet files", Where: profile + `\AppData\Roaming\Electrum\wallets`, Keys: true}})
 
+	// The protections: PUA blocking, Controlled folder access, network
+	// protection, memory integrity and LSA protection are off; no backup.
+	s.Defences = []model.Defence{
+		{Key: "pua", Name: "Potentially unwanted app blocking", On: model.No, Defender: true},
+		{Key: "smartscreen", Name: "Check apps and files (SmartScreen)", On: model.Yes, Ransomware: true},
+		{Key: "cfa", Name: "Controlled folder access", On: model.No, Defender: true, Ransomware: true},
+		{Key: "network", Name: "Network protection", On: model.No, Defender: true, Ransomware: true},
+		{Key: "cloud", Name: "Cloud-delivered protection", On: model.Yes, Defender: true, Ransomware: true},
+		{Key: "hvci", Name: "Memory integrity", On: model.No},
+		{Key: "lsa", Name: "Local Security Authority protection", On: model.No},
+		{Key: "drivers", Name: "Microsoft Vulnerable Driver Blocklist", On: model.Yes},
+	}
+	// The camera app was used two days ago, and the impostor in the account's
+	// folder used the microphone this morning.
+	s.DeviceUses = []model.DeviceUse{
+		{Device: "camera", App: "Microsoft.WindowsCamera_8wekyb3d8bbwe", Allowed: model.Yes, Start: now.AddDate(0, 0, -2), Stop: now.AddDate(0, 0, -2).Add(4 * time.Minute)},
+		{Device: "microphone", App: impostor.Path, Program: true, Allowed: model.Yes, Start: now.Add(-6 * time.Hour), Stop: now.Add(-5 * time.Hour), File: impostor},
+	}
+
 	// What Windows remembers of programs this account opened.
 	s.Ran = []model.Run{
 		{Path: setup.Path, Source: "UserAssist", Count: 1, Last: now.Add(-25 * time.Hour), Focus: 2 * time.Minute},
