@@ -6,7 +6,18 @@ import (
 
 	"lazascope/internal/model"
 	"lazascope/internal/rules"
+	"lazascope/internal/wallets"
 )
+
+// claim judges the extension a wallet row refers to, by its startup reference.
+func (b *builder) claim(ref string) wallets.Claim {
+	key, ok := strings.CutPrefix(ref, "startup:")
+	i, err := strconv.Atoi(key)
+	if !ok || err != nil || i < 0 || i >= len(b.s.Startup) || b.s.Startup[i].Extension == nil {
+		return wallets.Claim{}
+	}
+	return wallets.Judge(*b.s.Startup[i].Extension)
+}
 
 // wallets lists the cryptocurrency wallets found, and the settings and
 // tests that matter for them. It is shown in the window only: a report is
@@ -31,6 +42,9 @@ func (b *builder) wallets() Page {
 				if row.Level == Plain {
 					row.Level = Fine
 				}
+			} else if claim := b.claim(w.Ref); claim.Fake {
+				kind += ", not the real one"
+				lines = append(lines, Line{Text, "This extension calls itself " + claim.Brand + ", and LazaScope checked its number against the ones " + claim.Brand + "'s makers publish: it is none of them."})
 			} else {
 				lines = append(lines, Line{Text, "An extension that calls itself a wallet. LazaScope knows the real numbers of only some wallets, so it could not check this one. Check that it came from the wallet maker's own link."})
 			}

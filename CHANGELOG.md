@@ -20,9 +20,17 @@ First version.
 - Compare a look with a report saved earlier as data: what is new, what is gone and which of fifteen protection settings have changed.
 - Watch for a minute, reading the programs and connections once a second, so that what starts and ends again within seconds is still seen.
 - Read the start-up lists of the other accounts whose settings are loaded, and say plainly that Windows hides some scheduled tasks from accounts without administrator rights.
-- Flag what is worth a look with forty-four written rules, each with its reason and what to do.
+- Flag what is worth a look with sixty-one written rules, each with its reason and what to do.
+- Ask the installed antivirus about scripts and hidden commands through Windows' AMSI, and decode PowerShell's encoded commands to read them.
+- Name the MITRE ATT&CK techniques each finding may be a trace of, and write layers for MITRE's ATT&CK Navigator.
+- A search box over every list, and an analyst mode that adds the exact evidence behind each row.
+- VirusTotal's verdicts in the window, with a key of the user's own: fingerprints only, at the pace a free key allows, the key sealed for the user's account.
+- Cryptocurrency wallets: the wallets found, fake wallet extensions told apart by their numbers, wallet files left where they can be copied, a test for clipboard-stealing malware, and a check of a wallet download against its published fingerprint.
+- A timeline of what happened when, with where downloaded files came from and Windows' records of what ran (UserAssist, and BAM with administrator rights).
+- The protections the PC already has and whether each is on, how ready the PC is for ransomware, and which programs used the camera and the microphone.
+- A live watch of programs starting, checked against fifteen detections written as code.
 - Save a report as one self-contained web page, as plain text, or as JSON that carries every fact as it was read, with a reference from each finding to the fact it is about.
 - Say so in words when something could not be read, when a view of a list matches nothing, and when a fault inside LazaScope stopped one part of a look. The rest of the look carries on.
 - Show a made-up PC with `--demo`.
-- Include a command-line tool, a check that plants eleven harmless items and confirms that ten are flagged and one is left alone, Windows build and release automation, and tests.
-- Read only, with no network client, and without needing administrator rights. The one thing that reaches the internet is the user's browser, when the user asks for a file to be looked up and says yes.
+- Include a command-line tool, a check that plants twelve harmless items and confirms that eleven are flagged and one is left alone, Windows build and release automation, and tests.
+- Read only, and without needing administrator rights. Nothing reaches the internet unless the user asks a file to be looked up on VirusTotal: then its fingerprint is sent, never the file. Only internal/virustotal may reach the network, and a test holds the code to that.

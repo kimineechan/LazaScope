@@ -9,9 +9,9 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-222222" alt="MIT licence"></a>
 </p>
 
-**LazaScope is a portable Windows utility that shows what a PC is doing and points out anything worth a second look, in plain English.** It lists what starts by itself, what is running, what is talking to the network, whether the PC's protections are on and how the hardware is holding up, and gives a written reason for everything it flags. It only reads: nothing on the PC is changed. Nothing leaves the PC either, unless you press the one button that looks a file up online and then say yes.
+**LazaScope is a portable Windows utility that shows what a PC is doing and points out anything worth a second look, in plain English.** It lists what starts by itself, what is running, what is talking to the network, whether the PC's protections are on and how the hardware is holding up, and gives a written reason for everything it flags. It only reads: nothing on the PC is changed. Nothing leaves the PC either, unless you ask: looking a file up on VirusTotal sends its fingerprint, never the file.
 
-[Download the latest Windows release](https://github.com/kimineechan/LazaScope/releases/latest) · [Usage guide](docs/USAGE.md) · [The rules](docs/RULES.md) · [Report a bug](https://github.com/kimineechan/LazaScope/issues/new/choose)
+[Download the latest Windows release](https://github.com/kimineechan/LazaScope/releases/latest) · [Usage guide](docs/USAGE.md) · [The rules](docs/RULES.md) · [The detections](docs/DETECTIONS.md) · [Report a bug](https://github.com/kimineechan/LazaScope/issues/new/choose)
 
 <p align="center"><img src="docs/screenshots/overview.png" width="1160" alt="LazaScope's overview page: six lights for protection, start-up, running programs, connections, accounts and the health of the PC"></p>
 
@@ -33,13 +33,22 @@ The pictures on this page show a made-up PC, which LazaScope displays when start
 | PC health | From Windows' own log: errors the hardware reported about itself, blue screens with their stop codes, disk faults, cleared logs, and free room on the disks |
 | What is new | **Compare with a report...** holds a look against one you saved earlier. **Watch for a minute** keeps looking, so that a program that starts, connects and is gone again in seconds is still seen |
 | Fingerprints | A SHA-256 fingerprint for every flagged file. **Look up file...** offers to open VirusTotal's page for a file's fingerprint in your own browser |
-| Worth a look | Forty-four written rules. Every flag comes with the reason and with what you can do about it |
+| Worth a look | Sixty-one written rules. Every flag comes with the reason and with what you can do about it |
+| Asks the antivirus | Hands scripts and hidden commands to the antivirus installed on the PC, through Windows' own AMSI, and says what it answered. Decodes PowerShell's encoded commands so that they can be read |
+| MITRE ATT&CK | Each finding names the ATT&CK techniques it may be a trace of, the numbers security teams file findings under. **Save ATT&CK layer...** writes a layer for MITRE's ATT&CK Navigator |
+| Search and analyst mode | A search box over every list (`kind:service signed:no`, `attack:T1547.001`, `vt:flagged`), and an analyst mode that ends each row with the exact evidence: paths, numbers, codes, UTC times, rules and techniques |
+| VirusTotal | With a free key of your own, what about 70 antivirus engines say about each program, in the lists and in the findings. Only fingerprints are sent, at the pace a free key allows |
+| Wallets | The cryptocurrency wallets on the PC, fake wallet extensions told apart by their numbers, wallet files left where they can be copied, a test for malware that swaps a copied wallet address, and a check of a wallet download |
+| Timeline | Everything LazaScope can date, newest first: programs started, opened and downloaded, Defender's actions, hardware errors and blue screens. With Windows' records of what ran (UserAssist and BAM) and where downloads came from |
+| Protections to switch on | The protections Windows and Defender already have, whether each is on, what each does and where to switch it on, and how ready the PC is for ransomware |
+| Camera and microphone | Which programs used the camera and the microphone, and when |
+| Live watch | Every program as it starts, checked against fifteen detections written as code: Word starting PowerShell, a command deleting Windows' backups, and more |
 | Signatures, checked properly | Who signed each file, including the many Windows files whose signature is kept in a separate catalogue |
 | Report | One self-contained web page, plain text, or JSON with every fact as it was read, to keep or to send to someone who is helping you |
 | Demo | `--demo` shows a made-up PC, so you can see what findings look like without having any |
 | Command line | Run the same engine from a terminal with `lazascope-cli.exe` |
 | Dark, see-through window | Black, with rounded controls and a blurred view of what is behind it. LazaScope draws it itself, with no web view or interface toolkit |
-| Portable, local and read-only | No installer, no network client, no telemetry. It works without administrator rights and says plainly what it could not read |
+| Portable, local and read-only | No installer, no telemetry. It reaches the internet only for VirusTotal lookups you set up, and works without administrator rights, saying plainly what it could not read |
 
 "A fingerprint" is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so a file can be looked up by it without being sent anywhere.
 
@@ -72,6 +81,14 @@ Every flag comes from a written rule, so LazaScope can always say why. These are
 | Website names are looked up through a server someone typed in, or web traffic goes through a proxy | Whoever runs either can see where this PC goes, and decide where it ends up |
 | The hardware has been reporting errors, or Windows keeps stopping with a blue screen | A failing part causes crashes that look like software trouble |
 | A Windows log was wiped | Rare in everyday use. It removes the record of what happened |
+| The antivirus, asked, calls a start-up command or a running command harmful | The judgement of a product made for exactly this |
+| Antivirus engines on VirusTotal flag a program | Many flags from well-known engines are a strong sign; one or two are often false alarms |
+| An extension takes a wallet's name with another number | Fake wallet extensions steal the recovery phrase typed into them |
+| A program swapped a copied wallet address | What clipboard-stealing malware does, so that coins go to a thief |
+| The hosts file sends a cryptocurrency site elsewhere, or a program talked to a look-alike of one | How fake copies of wallet and exchange sites catch people |
+| A program is mining cryptocurrency | Costs electricity and wears the PC, and is often someone else's malware |
+| Nothing would stop ransomware, or give the files back | No Controlled folder access and no backup |
+| A program with no signature used the camera or the microphone | Spying tools watch and listen through them |
 
 **Worth a look does not mean harmful.** The same signs that mark an intruder also mark plenty of honest software: a small free tool is often unsigned, and a program you built yourself always is. LazaScope gives the reason and leaves the judging to you.
 
@@ -104,7 +121,13 @@ Select **Save report...** to keep the result as one file. The report names the P
 
 To see what has changed on a PC, save a report as data (.json) today. Another day, press **Compare with a report...** and choose it: what was not there then is marked **New**, and what is gone or has changed is listed. To catch what comes and goes, press **Watch for a minute**.
 
+At the top of every page are the search box, **Analyst mode**, **Wallets...** and **VirusTotal...**. Below the Overview's buttons are **Timeline...**, **Protections to switch on...**, **Camera and microphone...** and **Watch programs start...**.
+
 See the [usage guide](docs/USAGE.md) for each section, the report, the command-line tool and what administrator rights add.
+
+<p align="center"><img src="docs/screenshots/wallets.png" width="1160" alt="LazaScope's Wallets page: the real MetaMask, a fake one that takes its name, wallet files and the clipboard settings"></p>
+
+<p align="center"><img src="docs/screenshots/timeline.png" width="1160" alt="LazaScope's Timeline page: programs started, opened and downloaded, newest first"></p>
 
 <p align="center"><img src="docs/screenshots/health.png" width="1160" alt="LazaScope's Health page: hardware errors and blue screens read from Windows' own log"></p>
 
@@ -119,6 +142,13 @@ LazaScope does not include or call Microsoft's Sysinternals tools or any other p
 - **Windows' own logs:** the System log for hardware errors, blue screens, disk faults and cleared logs, and Microsoft Defender's log for what it found and how its settings changed.
 - **Scripts:** a script that starts by itself is opened and read as text, up to 2 MB. It is never run.
 - **Signatures:** Windows' own signature check, for a signature inside the file and for one in a catalogue.
+- **The antivirus:** through AMSI, Windows' doorway for programs to hand content to the installed antivirus and ask. It gives no name for what it found, so the name is read from Defender's log.
+- **What ran:** UserAssist from the account's own settings, and with administrator rights BAM, for this account only. The download mark (Zone.Identifier) on each file looked at.
+- **Defender's settings:** through Windows Management Instrumentation, as PowerShell's Get-MpPreference reads them.
+- **Camera and microphone:** the records behind Windows' privacy settings, for this account.
+- **Wallets:** wallet extensions from the browsers' record files, wallet programs among those running, and whether the usual folders of wallet files exist. No wallet file is opened.
+- **New programs, live:** reported once a second by Windows Management Instrumentation while the live watch runs.
+- **VirusTotal:** only with a key of your own, and only when you ask: a file's fingerprint, over a secure connection, with no redirect followed.
 
 <p align="center"><img src="docs/screenshots/startup.png" width="1160" alt="LazaScope's Start-up page listing start-up entries with their maker and file"></p>
 
@@ -129,7 +159,11 @@ LazaScope does not include or call Microsoft's Sysinternals tools or any other p
 - **A clean result is not proof that nothing is wrong.** LazaScope only knows the signs it was taught.
 - It covers the start-up places that matter most, and browser extensions. Windows has well over a hundred such places, and the rest are not read in this version.
 - Without administrator rights it cannot read the list of folders Microsoft Defender skips, the scheduled tasks Windows shows to administrators only, the start-up lists of other accounts, the command lines and accounts of programs that run as other accounts, or a few protected services. It says so on the page where each belongs. **Look again as administrator** reads these too.
-- **Look up file...** is the one thing that reaches the internet, and it is your browser that does it. LazaScope works out the file's fingerprint, shows it to you and asks. On a yes it opens VirusTotal's page for that fingerprint. The file itself is never sent.
+- **Looking a file up on VirusTotal is the one thing that reaches the internet.** Without a key of your own, **Look up file...** asks and then has your browser open VirusTotal's page for the file's fingerprint. With a key, LazaScope asks VirusTotal itself, by fingerprint, when you ask it to. The file itself is never sent.
+- The live watch hears of new programs once a second, so a program that starts and ends within the same second can be missed.
+- Fake wallet extensions are told apart only for wallets whose real numbers LazaScope knows: MetaMask and Phantom in Chrome, Edge, Brave and Vivaldi, and several more in Firefox. Opera's store is not covered.
+- The Wallets page, the timeline and the camera and microphone list stay in the window. They are not put into saved reports, which are made to be sent.
+- Prefetch, Windows' third record of what ran, is not read in this version.
 - **Watch for a minute** reads the list of programs and connections once a second. A program that lives for less than a second can slip between two readings, and LazaScope sees that a connection exists, not what is said over it.
 - The health page reports what Windows wrote in its log. A fault that Windows never noticed is not in it, and a log that was cleared holds nothing from before.
 - A script is read for a list of things it can be seen to do. A script can hide what it does, so an empty list is not a clean bill.
@@ -152,7 +186,7 @@ cd LazaScope
 
 The results are `dist\LazaScope.exe` and `dist\lazascope-cli.exe`. The build script runs `go vet` and the tests, builds both programs, then runs the check described below.
 
-The last step, `cmd/verify`, plants eleven harmless items in your own account. An antivirus may stop it, because planting start-up entries is what an antivirus watches for: `go run ./cmd/verify --clean` then removes whatever was left. Ten look suspicious, such as a copy of Notepad named `svchost.exe` in the temporary folder with a line in your `Run` list, and one does not. It checks that LazaScope flags each of the ten for the right reason and leaves the eleventh alone, removes them all and checks that none is left. It touches nothing outside your own account and needs no administrator rights.
+The last step, `cmd/verify`, plants twelve harmless items in your own account. An antivirus may stop it, because planting start-up entries is what an antivirus watches for: `go run ./cmd/verify --clean` then removes whatever was left. Eleven look suspicious, such as a copy of Notepad named `svchost.exe` in the temporary folder with a line in your `Run` list, and one does not. One of the eleven holds the standard harmless test line that every antivirus agrees to call harmful, so that the antivirus is asked and answers; Defender notes it in its history as a test. It checks that LazaScope flags each of the eleven for the right reason and leaves the twelfth alone, removes them all and checks that none is left. It touches nothing outside your own account and needs no administrator rights.
 
 The project uses the Go standard library and native Windows APIs. No third-party Go modules are required. The icon and the Windows resources are generated by `tools/mkres`, which is also plain Go.
 
@@ -177,6 +211,10 @@ LazaScope has three parts that know nothing of each other's insides.
 A fault inside one collector does not end the look. That part is left out, its light shows a ring, and the page says that it could not be read and why.
 
 The window and the report show the same pages, built once from the facts and the findings.
+
+**The detections** of the live watch are written as code too: each is a few lines in `internal/detect` that look at one program starting, with its reason, its ATT&CK technique and a test that makes it fire and one that keeps it quiet on the honest command most like it.
+
+**One package reaches the network:** `internal/virustotal`, and only with a key the user set up. A test reads every source file and fails if any other package imports Go's network packages.
 
 Implementation details and checks are in [VALIDATION.md](VALIDATION.md).
 

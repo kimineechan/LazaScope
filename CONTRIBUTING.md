@@ -73,13 +73,20 @@ An antivirus may stop `cmd/verify`, because planting start-up entries is what an
 - A normal PC must come out quiet. If a rule would fire on ordinary software, narrow it until it does not, and write down in `docs/RULES.md` what it leaves alone.
 - Regenerate the table in `docs/RULES.md` with `lazascope-cli rules --markdown`.
 
+### Rules for a detection
+
+- A detection in `internal/detect` looks at one program starting: its name, its file, its command line and the program that started it. It reads nothing else.
+- Give it a title, a reason a person can follow, and the ATT&CK technique it stands for, checked on attack.mitre.org.
+- Add a case to `detect_test.go` that makes it fire, and one for the honest command most like it, which must stay quiet.
+- Print the table again with `lazascope-cli detections --markdown` and put it in `docs/DETECTIONS.md`. A test checks that the two agree.
+
 ### Rules for a collector
 
 - **Read only.** Nothing in LazaScope itself may write to the registry, to a file it did not create as a report, or to any setting. The only writing is in `cmd/verify`, in the current account, and it is undone at once.
 - Ask for the least access that works, and no administrator rights.
 - What cannot be read is returned as a gap with a plain sentence, never silently left out.
 - Call a Windows component only through functions that read. Where a table of functions also holds ones that change something, do not use a place next to one.
-- No network calls of any kind.
+- No network calls. The one exception is `internal/virustotal`, which a user switches on with a key of their own, and a test fails the build if any other package imports Go's network packages.
 - Load Windows' own DLLs through `internal/sysdll`, by their full path.
 
 To regenerate the icon and resources after changing the design, the manifest or `VERSION`:

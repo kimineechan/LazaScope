@@ -10,7 +10,7 @@ A portable Windows application that **shows what a PC is doing and points out an
 
 The window has no title bar from Windows. Drag it by its top part, around the name, and use the two buttons at its top right corner to minimise or close it. With the keyboard, **Tab** moves from control to control, **Enter** or **Space** presses, the arrow keys move through a list or scroll the box of details, and **Ctrl + Tab** changes section.
 
-The app targets **64-bit Windows 10 and Windows 11**. You do not need Go, Node, Python or an installer. Nothing is uploaded: the app has no network client.
+The app targets **64-bit Windows 10 and Windows 11**. You do not need Go, Node, Python or an installer. Nothing is uploaded unless you ask: looking a file up on VirusTotal sends its fingerprint, never the file.
 
 To see what findings look like without having any, start it with `--demo`. It then shows a made-up PC in place of yours.
 
@@ -143,7 +143,9 @@ Under the list, **What could not be read** names everything LazaScope had no acc
 
 If VirusTotal has never seen the file, it says so. That is common for new and home-made programs, and is not a bad sign in itself.
 
-This is the only thing in LazaScope that reaches the internet, and it never happens without your yes.
+With a VirusTotal key of your own saved, **Look up file...** fetches VirusTotal's answer into the details instead, and pressed again offers the page. See [VirusTotal](#virustotal).
+
+Looking files up on VirusTotal is the only thing in LazaScope that reaches the internet, and it never happens unless you ask.
 
 ## What is new
 
@@ -206,6 +208,79 @@ If User Account Control is set to never notify, Windows gives the rights without
 
 With or without administrator rights, LazaScope only reads.
 
+## The top of the window
+
+Four things at the top work on every page:
+
+- **The search box** narrows whichever list is on show. Type words to find the rows that mention them, or `field:value` to ask about one thing, such as `kind:service signed:no`, `path:*\Users\*`, `rule:startup-unsigned`, `attack:T1547.001` or `vt:flagged`. Every term must match. `*` stands for anything, a comma gives a choice (`kind:service,driver`), a minus in front leaves out (`-windows:yes`) and quotes keep words together. Type `?` in the box for the full list of fields. A field that does not exist, or a value a field does not take, is named in the status line instead of quietly matching nothing.
+- **Analyst mode** ends each row's details with the exact evidence behind it, as an analyst would copy it into a ticket: registry places and task paths, command lines, process numbers, file sizes and times in UTC, SHA-256, the signature's source, signer, catalogue and the number Windows' check returned, version information, the raw answers of the antivirus and of VirusTotal, log records with their event numbers, and each finding's rule and ATT&CK techniques. **Copy details** copies it with the rest.
+- **Wallets...** opens the page about cryptocurrency wallets.
+- **VirusTotal...** opens the page about VirusTotal.
+
+## MITRE ATT&CK
+
+MITRE ATT&CK is the public catalogue of the methods attackers use, kept by the MITRE Corporation. Each method, called a technique, has a number such as T1547.001. Security teams file what they find under these numbers, so a finding that carries one can be handed to any of them.
+
+Every finding that may be a trace of a technique names it, under its rule. A finding about a start-up entry also names the technique of the way the entry starts: a line in the Run list, a scheduled task, a service. A weakness, such as a disk that is not encrypted, names none. The numbers were checked against ATT&CK version 20.1 on attack.mitre.org.
+
+**Save ATT&CK layer...** on the 08 Worth a look page writes a layer for MITRE's ATT&CK Navigator, the free web page that shows the whole catalogue as a grid. Open the Navigator at mitre-attack.github.io/attack-navigator, choose **Open Existing Layer**, then **Upload from local**, and pick the file. Each technique is coloured by the most pressing finding that names it. The Navigator reads the file inside your browser. The layer names the PC and what was found on it, so read it before you send it to anyone.
+
+## VirusTotal
+
+VirusTotal is a website, owned by Google, that runs each file it is shown through about 70 antivirus engines. With a free VirusTotal key of your own, LazaScope asks it about the programs on the PC and shows the answers in the window.
+
+1. Make a free account at virustotal.com and open the link VirusTotal sends by email.
+2. In your account's menu, choose **API key** and copy the key.
+3. In LazaScope, press **VirusTotal...**, click in the box, press Ctrl + V and choose **Save key**. LazaScope checks the key by asking about the fingerprint of an empty file, which says nothing about your PC.
+
+Then **Ask VirusTotal now** asks about every program that starts by itself or is running, except Microsoft's own signed files. **Look up file...** on a list asks about one file; pressed again, it offers to open VirusTotal's page. **Also after each look** asks about new programs after every look.
+
+- **Only the fingerprint is sent, never the file.** VirusTotal learns that your account asked about that file.
+- **Nothing is sent until you ask.** Without a key, LazaScope never contacts VirusTotal.
+- The key is kept in LazaScope's folder inside your own AppData folder, sealed by Windows so that only your Windows account on this PC can open it. **Forget** removes it and every answer.
+- A free key allows 4 lookups a minute and 500 a day, for personal use that is not commercial. LazaScope keeps to that pace, and remembers each answer for a week so as not to ask twice.
+
+What the engines say shows in a **VirusTotal** column on the 03 Start-up and 04 Running pages, and in each file's details. When engines flag a program that starts or runs, it is under 08 Worth a look: five or more engines calling it harmful is **Look first**, two to four **Worth a look**, and one, or suspicion alone, **Good to know**. One or two flags on a little-known or home-made program are often false alarms.
+
+The command-line tool asks with `lazascope-cli virustotal`, with the saved key or the environment variable `LAZASCOPE_VIRUSTOTAL_KEY`.
+
+## Wallets
+
+**Wallets...** lists the cryptocurrency wallets LazaScope found: wallet extensions in the browsers, wallet programs, and folders of wallet files in their usual places. It only notes where they are. It never opens a wallet, reads a key or sends anything about them. The list is kept out of saved reports: a list of someone's wallets is not for sending.
+
+- **A fake wallet extension** takes a real wallet's name, then sends the recovery phrase typed into it to a thief. LazaScope compares an extension's number with the ones the wallet's makers publish. It knows MetaMask's and Phantom's for Chrome, Edge, Brave and Vivaldi, and those of several more wallets for Firefox. It never calls an extension a fake for a wallet whose real number it does not know.
+- **Test for address swapping** looks for clipboard-stealing malware, which swaps a copied wallet address for the thief's. It copies three made-up addresses, a Bitcoin one, a newer bc1 Bitcoin one and an Ethereum one, for two seconds each and watches whether anything changes them. Their checksums are wrong on purpose, so no wallet would send coins to one, and Windows is told to keep them out of the clipboard history. Afterwards LazaScope puts back the text that was on the clipboard, and says so plainly if it could not. A picture or files on the clipboard cannot be put back, and LazaScope says so before it starts.
+- **Check a download...** compares a wallet installer with the fingerprint (SHA-256) its maker publishes. Paste the fingerprint into the box first.
+
+The rules also look at wallet files in a folder OneDrive, Dropbox or iCloud copies, wallet files on a disk that is not encrypted, clipboard history on a PC with a wallet, hosts-file lines that send a cryptocurrency site somewhere else, connections to names built from such a site's name, such as metamask-login.com, and programs that mine cryptocurrency.
+
+## Timeline
+
+**Timeline...** on the Overview puts everything LazaScope can date in one list, newest first, over the last 90 days: programs started and opened, files changed and downloaded, what Defender found and was told, the last update, hardware errors, blue screens, sudden stops, disk faults and cleared logs. The view above the list narrows it to the last day, week or month, or to what is worth a look.
+
+Two of Windows' records say what ran, even after it closed:
+
+- **UserAssist**, what this account opened from the desktop, Explorer and Start, with how often and when last. It needs no administrator rights.
+- **BAM**, the Background Activity Moderator, when each program last ran. Only administrators can read it. Only the account's own records are read, even with administrator rights.
+
+A file saved from the internet carries a hidden mark from Windows (its Zone.Identifier) that often names the address it came from. A file's details say where it came from. The address shows in the window only: the saved web page holds no addresses.
+
+## Protections to switch on
+
+**Protections to switch on...** on the Overview lists the protections that come with Windows and Microsoft Defender, whether each is on, what each does and where to switch it on: blocking of potentially unwanted apps, SmartScreen's check of apps and files, Controlled folder access, network protection, cloud-delivered protection, automatic sample submission, memory integrity, Local Security Authority protection and the vulnerable driver blocklist. Defender's settings are read the way PowerShell's Get-MpPreference reads them. When another antivirus is in charge, Defender's own protections do not apply and are not judged. A setting Windows does not record says **Not known**.
+
+The same page says how ready the PC is for ransomware. Two things limit the harm: Controlled folder access, and a copy of your files kept somewhere else. LazaScope looks for File History run in the last 30 days, OneDrive's backup of Documents, Desktop and Pictures, and backup programs it knows by name. With neither, it says so under 08 Worth a look.
+
+## Camera and microphone
+
+**Camera and microphone...** on the Overview lists which programs last used the camera and the microphone, and when, from the records behind Windows' privacy settings. A program using one now is noted. A program with no maker's signature that used one in the last 90 days is worth a look.
+
+## Watch programs start
+
+**Watch programs start...** on the Overview lists every program as it starts, with the program that started it and its command line, and checks each against LazaScope's detections: Word starting PowerShell, a command that deletes Windows' backups, a tool of Windows' own fetching a file, and more. Each detection is a few lines of Go with its reason and its ATT&CK technique, listed in [The detections](DETECTIONS.md).
+
+Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only. Nothing is changed and nothing is sent.
+
 ## Command line
 
 `lazascope-cli.exe` runs the same engine from a terminal or a script.
@@ -219,6 +294,10 @@ With or without administrator rights, LazaScope only reads.
 .\lazascope-cli.exe compare last-week.json
 .\lazascope-cli.exe watch 120
 .\lazascope-cli.exe sign "C:\Program Files\App\app.exe"
+.\lazascope-cli.exe find "kind:service signed:no"
+.\lazascope-cli.exe timeline 7
+.\lazascope-cli.exe live 120
+.\lazascope-cli.exe attack layer.json
 ```
 
 | Command | Result |
@@ -234,12 +313,22 @@ With or without administrator rights, LazaScope only reads.
 | `watch [seconds]` | Keeps looking for that long (60 seconds unless told, at most 600) and lists what came and went |
 | `sign <file>...` | Says who signed each file, where the signature was found and whether it holds, and gives the file's fingerprint |
 | `rules` | Lists every rule and why it exists. `--markdown` prints the table in [The rules](RULES.md) |
+| `find <search>` | Runs a search, written as in the search box, over every list. `--details` adds the exact evidence |
+| `attack <file.json>` | Writes a layer for MITRE's ATT&CK Navigator. `--coverage` writes the techniques the rules look for instead, with nothing about any PC |
+| `virustotal [files or fingerprints]` | Asks VirusTotal about files by fingerprint, or with none named, about the programs that start or run. Needs your own key |
+| `wallets` | Lists the cryptocurrency wallets on the PC and what stood out about them |
+| `swap-test` | Runs the address-swap test |
+| `timeline [days]` | Lists what happened when, newest first (the last 7 days unless told) |
+| `protections` | Lists the protections the PC already has, whether each is on, and its backups |
+| `devices` | Lists which programs used the camera and the microphone, and when |
+| `live [seconds]` | Watches programs start, and checks each against the detections (60 seconds unless told) |
+| `detections` | Lists every detection. `--markdown` prints the table in [The detections](DETECTIONS.md) |
 | `version` | Prints the version |
 | `help` | Prints the list of commands |
 
 A command that is given an option or a file name it does not take says so and does nothing. The tool ends with 0 when it worked, 1 when what it was asked could not be done, 2 when the command itself was wrong, and 3 if it stopped on a fault of its own.
 
-`scan` and `report` take `--demo` to show the made-up PC.
+`scan`, `report`, `find`, `attack`, `wallets`, `timeline`, `protections` and `devices` take `--demo` to show the made-up PC.
 
 ## Limits
 
@@ -253,8 +342,10 @@ A command that is given an option or a file name it does not take says so and do
 | Addresses | Shown by name only where Windows remembers the lookup. Browsers that do their own lookups leave nothing there, so many stay numbers |
 | Scripts | Read for a list of things they can be seen to do. A script can hide what it does |
 | Health | What Windows wrote in its log. A fault Windows never noticed is not in it, and a cleared log holds nothing from before |
-| A watch | Reads once a second. What lives for less than a second can be missed, and what a connection carries is not read |
+| A watch | Reads once a second. What lives for less than a second can be missed, and what a connection carries is not read. The live watch has the same limit |
+| VirusTotal | Needs a free key of your own, and allows 4 lookups a minute. A file VirusTotal has never seen is not a bad sign in itself |
+| Wallets | Fake extensions are told apart only for wallets whose real numbers LazaScope knows |
 | One moment | A look is a snapshot. Without a watch, a program that ran and closed a minute earlier is not in it |
-| Storage | Nothing is kept. Close the window and the look is gone, unless you saved a report |
+| Storage | Nothing is kept, except what you set up: a saved report, and with VirusTotal, the key (sealed for your account) and its answers, in LazaScope's folder inside AppData. Forget on the VirusTotal page removes both |
 
 For the full list of rules, see [The rules](RULES.md). For source builds and development, see [the README](../README.md).

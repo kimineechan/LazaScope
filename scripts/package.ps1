@@ -29,11 +29,16 @@ $files = @(
     @('VALIDATION.md'),
     @('docs/USAGE.md'),
     @('docs/RULES.md'),
+    @('docs/DETECTIONS.md'),
     @("docs/releases/v$version.md"),
     @('docs/screenshots/overview.png'),
     @('docs/screenshots/worth.png'),
     @('docs/screenshots/startup.png'),
     @('docs/screenshots/health.png'),
+    @('docs/screenshots/wallets.png'),
+    @('docs/screenshots/virustotal.png'),
+    @('docs/screenshots/timeline.png'),
+    @('docs/screenshots/protections.png'),
     @('assets/logo.svg')
 )
 foreach ($file in $files) {

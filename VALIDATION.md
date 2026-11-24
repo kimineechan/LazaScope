@@ -1,5 +1,42 @@
 # Validation
 
+## Checks completed on 24 November 2026
+
+The fourth round added the parts below, on Windows 10 Pro 22H2 (build 19045), with and without administrator rights. Each part was tested with made-up data first, then on this PC. The full automated tests pass, `go vet` is clean, and both programs build twice to the same bytes.
+
+### What was added, and how each part was checked
+
+- **Asking the installed antivirus** (AMSI). The standard harmless test line was called harmful and an ordinary line was not, live. The test line is never written into any file: Defender blocked one of LazaScope's own source files the one time it was, so it is put together as the program runs.
+- **MITRE ATT&CK.** Every technique number was opened on attack.mitre.org (version 20.1). A test checks that every number a rule names is in the list and that every number in the list is named. Both kinds of layer, the findings of the made-up PC and what the rules look for, were opened in MITRE's ATT&CK Navigator 5.3.2 on its own website with ATT&CK 20.1, and every technique showed in the expected colour. The Navigator read the files in the browser; nothing was sent.
+- **Search and analyst mode.** The search language has its own tests, among them every field, choices, wildcards, a minus, quotes, and the errors for a field or a value that does not exist. The search was used in the window and from the terminal on the made-up PC.
+- **VirusTotal.** Tested against a stand-in for VirusTotal on this PC: a report read in full, a file never seen, every refusal VirusTotal's documentation lists, the pace of four lookups a minute, a minute's refusal waited out once, stopping, a redirect not followed (so the key goes nowhere else), damaged and oversized answers, and an unreachable network. Then once against the real VirusTotal with a made-up key, which it refused as "Wrong API key", read correctly. The key's seal opens again for this account and not when damaged. A test reads every source file and fails if any package but `internal/virustotal` imports Go's network packages. No real key was used: a live lookup with a key waits for the owner of the PC to set one up.
+- **Wallets.** The real numbers of wallet extensions were read from the makers' own download pages (metamask.com, docs.metamask.com, phantom.com), the Edge store and Mozilla's catalogue. The Chrome Web Store could not be read automatically, so brands without a number read from a maker's own page are not judged. The rules have cases for each sign and for the honest look-alikes, such as PhantomBuster, phantomjs.org, finance.yahoo.com and trevor.com.
+- **The address-swap test.** The three made-up addresses fail their own checksums, proved in tests with Base58Check, bech32 and EIP-55 (Keccak-256 checked against its known value, and each checker against published examples). With a harmless stand-in for a clipper that swapped only the made-up Ethereum address, the test caught the swap from the terminal and from the window, named the stand-in's process, and put the clipboard back.
+- **Timeline and what ran.** UserAssist and BAM are read with made-up records in tests. On this PC, 39 UserAssist records were read without administrator rights; with them, LazaScope read 50 BAM records for this account, the same 50 the registry holds.
+- **Protections and camera use.** Defender's settings read through WMI matched `Get-MpPreference` exactly, with and without administrator rights. The camera and microphone records listed the programs the privacy settings show.
+- **The live watch.** Fifteen detections, each tested on what it is written for and on the honest command most like it. On this PC, a two-second ping and an encoded two-second PowerShell pause were seen with their command lines, and the pause set off `powershell-encoded`, from the terminal and in the window. A command that ends within a second, such as `schtasks /query`, was not seen, as WMI's once-a-second report says it would be.
+
+### Faults found while building this round
+
+- **The address-swap test lost the clipboard's text once.** The command-line tool's window did not answer the message Windows sends a clipboard's owner when another program empties the clipboard, so the stand-in clipper's swap was held up for three seconds, and the putting back failed without saying so. The test now answers those messages while it waits, keeps trying to put the clipboard back for five seconds, and says plainly when it could not. Every clipboard call now stays on one thread from opening to closing, as Windows requires.
+- A file report from VirusTotal names engines and labels that are not LazaScope's to trust: they are kept to one line of limited length before they are shown.
+- The saved web page holds no web addresses. VirusTotal's and a download's addresses are marked so that the window shows them and the web page leaves them out.
+- The first look at Defender's PUA setting read the registry, which does not always record it; it now reads Defender's own setting through WMI.
+- A browser running as many copies flooded the timeline; a program's copies are now one moment.
+- The Wallets page said it could not check an extension it had in fact found to be a fake; it now says what was found.
+
+### Planted items
+
+`cmd/verify` now plants twelve items. All twelve came out as they should, were removed, and were checked to be gone, and a further check of the Run lists, the Startup folder, Temp and Downloads found nothing left. Defender quarantined `verify.exe` afterwards, as it has before, and its history holds the test line's entries, named as tests.
+
+### Where the fourth round stops
+
+- A live VirusTotal lookup with a real key, and "Check a download..." with a real wallet installer, wait for the PC's owner.
+- The recovery-phrase finder is not built: it needs the public list of 2,048 recovery words, which is not downloaded without the owner's yes.
+- Prefetch, the third record of what ran, is not read.
+- The comparison of every list with Windows' own tools was done in the third round; this round changed none of those lists and did not repeat it.
+- Tested on Windows 10 only, with Microsoft Defender as the antivirus.
+
 ## Checks completed on 23 November 2026
 
 A third round, on the same PC: Windows 10 Pro 22H2 (build 19045), this time **both without and with administrator rights**. It added a sixth light and thirteen rules, and it began with the one check the second round had left open.
