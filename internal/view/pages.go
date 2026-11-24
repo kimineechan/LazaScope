@@ -58,6 +58,9 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	if print := b.s.Fingerprint(f.Path); print != "" {
 		lines = append(lines, Line{Text, "Fingerprint (SHA-256):"}, Line{Command, print})
 	}
+	if r, ok := b.s.Reputation(f.Path); ok {
+		lines = append(lines, VirusTotalLines(r, b.s.Fingerprint(f.Path))...)
+	}
 	switch {
 	case !f.Exists && f.Signature.Problem != "" && f.Signature.Problem != "The file does not exist.":
 		return append(lines, Line{Text, f.Signature.Problem})
@@ -258,6 +261,7 @@ func (b *builder) startup() Page {
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
 	}
+	b.withVirusTotal(&page, 4, map[int]int{1: 20, 3: 24})
 	byLevel(page.Rows)
 	return page
 }
@@ -330,6 +334,7 @@ func (b *builder) running() Page {
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
 	}
+	b.withVirusTotal(&page, 4, map[int]int{1: 30, 3: 20})
 	return page
 }
 

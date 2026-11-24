@@ -27,13 +27,16 @@ Usage:
   lazascope-cli compare <report.json>       Take a look and say what has changed since a report saved as data
   lazascope-cli watch [seconds]             Keep looking for a while (60 seconds unless told) and list what came and went
   lazascope-cli sign <file>...              Say who signed each file and whether the signature holds
+  lazascope-cli virustotal [file]...        Ask VirusTotal about files by fingerprint, or with none named about the
+                                            programs that start or run (needs your own VirusTotal key)
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
   lazascope-cli attack <file.json>          Write a layer for MITRE's ATT&CK Navigator of what a look finds
                                             (--coverage: of what the rules look for; --demo: of the made-up PC)
   lazascope-cli version
   lazascope-cli help
 
-Everything is read from this PC. Nothing is changed and nothing is sent anywhere.
+Everything is read from this PC. Nothing is changed, and nothing is sent anywhere
+except the fingerprints the virustotal command sends, with your key.
 With --demo a made-up PC is shown in place of this one.
 `
 
@@ -46,7 +49,7 @@ var commands = map[string]struct {
 	"scan": {options: []string{"--details", "--demo"}}, "report": {options: []string{"--demo"}, files: true},
 	"startup": {options: []string{"--details"}}, "running": {options: []string{"--details"}},
 	"network": {}, "protection": {}, "health": {}, "compare": {files: true}, "watch": {files: true}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
-	"attack": {options: []string{"--coverage", "--demo"}, files: true},
+	"attack": {options: []string{"--coverage", "--demo"}, files: true}, "virustotal": {files: true},
 }
 
 func main() {
@@ -118,6 +121,8 @@ func main() {
 		ruleList(flags["--markdown"])
 	case "attack":
 		err = attackLayer(strings.Join(args, " "), flags["--coverage"], flags["--demo"])
+	case "virustotal":
+		err = virusTotalCommand(args)
 	case "version":
 		fmt.Println("LazaScope", lazascope.Version())
 	}

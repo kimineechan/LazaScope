@@ -360,7 +360,7 @@ func ruleList(markdown bool) {
 		for _, rule := range all {
 			attack := rules.AttackNote(rule.ID)
 			if attack == "" {
-				attack = "None: it flags a weakness, not a trace"
+				attack = "None"
 			}
 			fmt.Printf("| `%s` | %s | %s | %s | %s | %s |\n", rule.ID, rule.Area, rule.Severity, rule.Title, rule.Why, attack)
 		}

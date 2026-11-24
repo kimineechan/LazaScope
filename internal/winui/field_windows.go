@@ -10,8 +10,26 @@ import (
 
 // field is what a Control that takes typed text holds besides the rest.
 type field struct {
-	caret int  // how many characters are before the place where typing goes
-	whole bool // everything is selected, so typing replaces it
+	caret  int  // how many characters are before the place where typing goes
+	whole  bool // everything is selected, so typing replaces it
+	secret bool // the text is a secret, such as a key, and is shown as dots
+}
+
+// Secret makes an input box show a dot for each character typed into it,
+// for a key or a password. What is typed cannot be copied back out.
+func (c *Control) Secret() {
+	if c.field != nil {
+		c.field.secret = true
+		c.redraw()
+	}
+}
+
+// shown returns the text as the box shows it.
+func (c *Control) shown() string {
+	if c.field != nil && c.field.secret {
+		return strings.Repeat("\u2022", len([]rune(c.text)))
+	}
+	return c.text
 }
 
 // Input is a box for one line of typed text. action runs when the text changes.
@@ -115,7 +133,7 @@ func (w *Window) span(text string) int {
 // caretAt puts the caret of an input box where the pointer pressed.
 func (c *Control) caretAt(px int) {
 	x, _, _, _ := c.box()
-	letters := []rune(c.text)
+	letters := []rune(c.shown())
 	target := px - x - c.w.px(12) + c.slide()
 	c.field.caret, c.field.whole = len(letters), false
 	for i := range letters {
@@ -132,7 +150,7 @@ func (c *Control) caretAt(px int) {
 func (c *Control) slide() int {
 	_, _, width, _ := c.box()
 	room := width - 2*c.w.px(12)
-	return max(c.w.span(string([]rune(c.text)[:c.field.caret]))-room, 0)
+	return max(c.w.span(string([]rune(c.shown())[:c.field.caret]))-room, 0)
 }
 
 func (c *Control) drawInput(cv *Canvas) {
@@ -147,11 +165,11 @@ func (c *Control) drawInput(cv *Canvas) {
 	before := cv.clipped()
 	cv.Clip(max(x+inset, before[0]), max(y, before[1]), min(x+inset+room, before[2]), min(y+height, before[3]))
 	if c.field.whole && lit {
-		cv.Round(x+inset-w.px(2), y+w.px(6), min(w.span(c.text), room)+w.px(4), height-w.px(12), w.pxf(4), theme.FieldLit.Thinned(0.5))
+		cv.Round(x+inset-w.px(2), y+w.px(6), min(w.span(c.shown()), room)+w.px(4), height-w.px(12), w.pxf(4), theme.FieldLit.Thinned(0.5))
 	}
-	w.write(cv, c.text, c.font, x+inset-slide, y, w.span(c.text)+w.px(4), height, textMiddle, pick(c.disabled, theme.Faint, theme.Ink))
+	w.write(cv, c.shown(), c.font, x+inset-slide, y, w.span(c.shown())+w.px(4), height, textMiddle, pick(c.disabled, theme.Faint, theme.Ink))
 	if lit && !c.field.whole {
-		at := x + inset - slide + w.span(string([]rune(c.text)[:c.field.caret]))
+		at := x + inset - slide + w.span(string([]rune(c.shown())[:c.field.caret]))
 		cv.Fill(at, y+w.px(8), max(w.px(1), 1), height-w.px(16), theme.Ink)
 	}
 	cv.Clip(before[0], before[1], before[2], before[3])

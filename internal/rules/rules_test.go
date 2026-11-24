@@ -346,6 +346,19 @@ var changes = []change{
 	{"TeamViewer's service starts with Windows", add(entry(model.Service, "TeamViewer", signed(`C:\Program Files\TeamViewer\TeamViewer_Service.exe`, "TeamViewer Germany GmbH"))), "remote-tool:medium"},
 	{"a remote-control service is running inside a shared host", func(s *model.Snapshot) { s.Processes[1].Services = append(s.Processes[1].Services, "sshd") }, "remote-tool:medium"},
 	{"Quick Assist, which comes with Windows, is open", run(model.Process{PID: 9000, Name: "quickassist.exe", File: windows(`C:\Windows\System32\quickassist.exe`)}), "remote-tool:medium"},
+
+	// What VirusTotal's engines said, once a key was set up and files were looked up.
+	{"VirusTotal's engines flag a program that starts by itself", func(s *model.Snapshot) {
+		add(entry(model.RunKey, "Widget", signed(`C:\Program Files\Widget\widget.exe`, "Widget Ltd")))(s)
+		answer(s, `C:\Program Files\Widget\widget.exe`, model.Reputation{Asked: now, Known: true, Malicious: 7, Undetected: 63})
+	}, "startup-virustotal-flags:high"},
+	{"one engine on VirusTotal flags a running program", func(s *model.Snapshot) {
+		run(model.Process{PID: 9100, Name: "widget.exe", File: signed(`C:\Program Files\Widget\widget.exe`, "Widget Ltd")})(s)
+		answer(s, `C:\Program Files\Widget\widget.exe`, model.Reputation{Asked: now, Known: true, Malicious: 1, Undetected: 69})
+	}, "running-virustotal-flags:low"},
+	{"VirusTotal has never seen an unsigned program that runs", func(s *model.Snapshot) {
+		answer(s, `C:\Program Files\Tool\tool.exe`, model.Reputation{Asked: now})
+	}, ""},
 	{"the Guest account is switched on", func(s *model.Snapshot) { s.Guard.Guest = model.Yes }, "guest-on:medium"},
 	{"Windows signs in by itself", func(s *model.Snapshot) { s.Guard.AutoSignIn, s.Guard.AutoUser = model.Yes, "sam" }, "auto-sign-in:medium"},
 	{"the built-in Administrator account is switched on", func(s *model.Snapshot) { s.Guard.Admins[0].Disabled = model.No }, "builtin-administrator-on:low"},
@@ -384,7 +397,7 @@ func checkWording(t *testing.T, name string, f Finding) {
 			t.Errorf("%s: the finding %s has no %s", name, f.Rule, part)
 		}
 		lower := strings.ToLower(text)
-		if strings.Contains(strings.NewReplacer("antivirus", "", "virus and threat protection", "").Replace(lower), "virus") || strings.Contains(lower, "infected") || strings.Contains(lower, "infection") {
+		if strings.Contains(strings.NewReplacer("antivirus", "", "virus and threat protection", "", "virustotal", "").Replace(lower), "virus") || strings.Contains(lower, "infected") || strings.Contains(lower, "infection") {
 			t.Errorf("%s: the %s of %s gives a verdict instead of a reason: %q", name, part, f.Rule, text)
 		}
 		if strings.ContainsAny(text, "\u2014\u2013") {
@@ -422,7 +435,8 @@ func TestEveryRuleIsDescribed(t *testing.T) {
 		if rule.Area < 0 || rule.Area >= model.Areas {
 			t.Errorf("the rule %s belongs to no area", rule.ID)
 		}
-		if strings.Contains(strings.ReplaceAll(strings.ToLower(rule.Title+rule.Why), "antivirus", ""), "virus") {
+		// "Antivirus" and the name VirusTotal are allowed; calling anything a virus is not.
+		if strings.Contains(strings.NewReplacer("antivirus", "", "virustotal", "").Replace(strings.ToLower(rule.Title+rule.Why)), "virus") {
 			t.Errorf("the rule %s talks of a virus", rule.ID)
 		}
 	}

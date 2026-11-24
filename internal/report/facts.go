@@ -8,6 +8,7 @@ import (
 	"lazascope/internal/netconn"
 	"lazascope/internal/rules"
 	"lazascope/internal/sigcheck"
+	"lazascope/internal/virustotal"
 )
 
 // The JSON report carries the facts as they were read, one record per
@@ -42,6 +43,27 @@ type jsonFile struct {
 	// What the installed antivirus said when asked about a script: "no objection" or "harmful".
 	AntivirusSaid  string `json:"antivirusSaid,omitempty"`
 	AntivirusNamed string `json:"antivirusNamedIt,omitempty"`
+
+	// What VirusTotal's engines said, when the file was looked up there.
+	VirusTotal *jsonReputation `json:"virusTotal,omitempty"`
+}
+
+type jsonReputation struct {
+	Known      bool             `json:"known"` // false: VirusTotal has never seen the file
+	Malicious  int              `json:"malicious"`
+	Suspicious int              `json:"suspicious"`
+	Undetected int              `json:"undetected"`
+	Harmless   int              `json:"harmless"`
+	Label      string           `json:"label,omitempty"`
+	Names      []jsonEngineName `json:"names,omitempty"`
+	Analysed   string           `json:"lastAnalysed,omitempty"`
+	Asked      string           `json:"asked"`
+	Page       string           `json:"page,omitempty"`
+}
+
+type jsonEngineName struct {
+	Engine string `json:"engine"`
+	Name   string `json:"name"`
 }
 
 type jsonStartup struct {
@@ -248,6 +270,13 @@ func file(f model.File, s *model.Snapshot) *jsonFile {
 	}
 	out.SHA256 = s.Fingerprint(f.Path)
 	out.AntivirusSaid, out.AntivirusNamed = said(f.Opinion)
+	if r, ok := s.Reputation(f.Path); ok {
+		out.VirusTotal = &jsonReputation{Known: r.Known, Malicious: r.Malicious, Suspicious: r.Suspicious, Undetected: r.Undetected, Harmless: r.Harmless,
+			Label: r.Label, Analysed: stamp(r.Analysed), Asked: stamp(r.Asked), Page: virustotal.Page(out.SHA256)}
+		for _, n := range r.Names {
+			out.VirusTotal.Names = append(out.VirusTotal.Names, jsonEngineName{n.Engine, n.Name})
+		}
+	}
 	switch f.Signature.Status {
 	case sigcheck.Signed:
 		out.Signature = "signed"

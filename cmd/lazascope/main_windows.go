@@ -20,6 +20,7 @@ import (
 	"lazascope/internal/sample"
 	"lazascope/internal/scan"
 	"lazascope/internal/view"
+	"lazascope/internal/virustotal"
 	"lazascope/internal/winui"
 )
 
@@ -41,6 +42,7 @@ const (
 	pageAccounts
 	pageHealth
 	pageWorth
+	pageVirusTotal // reached from the button at the top right, not from a section of its own
 )
 
 // areaPage is the page that shows an area's list.
@@ -109,6 +111,10 @@ type list struct {
 	// prints holds the fingerprints worked out so far, by path in small
 	// letters. Every list shares the one map.
 	prints map[string]string
+
+	// memory holds what VirusTotal said, when a key was set up. Every list
+	// shares the one memory.
+	memory *virustotal.Memory
 }
 
 // lookupAddress returns the page on VirusTotal for a file's fingerprint.
@@ -148,7 +154,7 @@ func tint(row view.Row) winui.Colour {
 func paragraphs(lines []view.Line) []winui.Paragraph {
 	out := make([]winui.Paragraph, len(lines))
 	for i, line := range lines {
-		out[i] = winui.Paragraph{Text: line.Text, Style: map[view.Style]winui.Style{view.Text: winui.Body, view.Heading: winui.Head, view.Aside: winui.Fine, view.Command: winui.Code, view.Excerpt: winui.Code}[line.Style]}
+		out[i] = winui.Paragraph{Text: line.Text, Style: map[view.Style]winui.Style{view.Text: winui.Body, view.Heading: winui.Head, view.Aside: winui.Fine, view.Command: winui.Code, view.Excerpt: winui.Code, view.Link: winui.Code}[line.Style]}
 	}
 	return out
 }
@@ -234,20 +240,32 @@ func (l *list) pick(row int) {
 }
 
 // withPrint returns a row's lines of detail, with the fingerprint of its
-// file added when that was worked out after the look.
+// file and what VirusTotal said about it added when they came after the look.
 func (l *list) withPrint(row view.Row) []view.Line {
+	lines := row.Detail
 	print := l.prints[strings.ToLower(row.Path)]
 	if row.Path == "" || print == "" {
-		return row.Detail
+		return lines
 	}
-	for _, line := range row.Detail {
-		if line.Text == print {
-			return row.Detail // the look had worked it out already
+	has := func(text string) bool {
+		for _, line := range lines {
+			if line.Text == text {
+				return true
+			}
+		}
+		return false
+	}
+	if !has(print) { // the look had not worked it out
+		lines = append(append([]view.Line{}, lines...),
+			view.Line{Style: view.Heading, Text: "Fingerprint of the file (SHA-256)"}, view.Line{Style: view.Command, Text: print},
+			view.Line{Style: view.Aside, Text: "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
+	}
+	if l.memory != nil && !has(view.VirusTotalHeading) {
+		if r, ok := l.memory.Answer(print); ok {
+			lines = append(append([]view.Line{}, lines...), view.VirusTotalLines(r, print)...)
 		}
 	}
-	return append(append([]view.Line{}, row.Detail...),
-		view.Line{Style: view.Heading, Text: "Fingerprint of the file (SHA-256)"}, view.Line{Style: view.Command, Text: print},
-		view.Line{Style: view.Aside, Text: "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
+	return lines
 }
 
 func main() {
@@ -296,6 +314,8 @@ func main() {
 		nav = append(nav, w.Section(section.label, i, x, 108, section.width, 36))
 		x += section.width + 3
 	}
+	// VirusTotal has a page of its own, reached from every page.
+	w.Button("VirusTotal...", left+across-176, 32, 176, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
 	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
 
@@ -333,6 +353,7 @@ func main() {
 	// and it is the browser that does it, with the fingerprint and nothing else.
 	prints := map[string]string{}
 	working := false
+	var vt *vtPanel // the VirusTotal page, made further down
 	lookUp := func(l *list) {
 		const title = "Look up file"
 		switch {
@@ -355,7 +376,7 @@ func main() {
 				return
 			}
 			if !w.Ask(title, "Look this file up on VirusTotal?\r\n\r\n"+path+"\r\n\r\nVirusTotal is a website, owned by Google, that shows what about 70 antivirus products say about a file. Your web browser will open its page for this file's fingerprint:\r\n\r\n"+print+
-				"\r\n\r\nOnly the fingerprint is sent, and it is your browser that sends it. The file itself stays on this PC. If VirusTotal has never seen the file, it says so. That is common for new and home-made programs, and is not a bad sign in itself.\r\n\r\nOpen the page now?") {
+				"\r\n\r\nOnly the fingerprint is sent, and it is your browser that sends it. The file itself stays on this PC. If VirusTotal has never seen the file, it says so. That is common for new and home-made programs, and is not a bad sign in itself.\r\n\r\nTo see VirusTotal's answer here in LazaScope instead, set up a free key with the VirusTotal... button at the top right.\r\n\r\nOpen the page now?") {
 				status.SetText("Nothing was sent. The fingerprint is shown with the file's details, and Copy details copies it.")
 				return
 			}
@@ -365,8 +386,17 @@ func main() {
 				w.Alert(title, "Windows could not open your browser. You can type this address into it yourself:\r\n\r\n"+address)
 			}
 		}
+		// With a key of the person's own, VirusTotal's answer is fetched and
+		// shown here; without one, its page can be opened in the browser.
+		use := func(print string) {
+			if vt != nil && vt.client != nil {
+				vt.lookUp(l, path, print)
+			} else {
+				ask(print)
+			}
+		}
 		if print := prints[strings.ToLower(path)]; print != "" {
-			ask(print)
+			use(print)
 			return
 		}
 		working = true
@@ -385,7 +415,7 @@ func main() {
 				if l.picked >= 0 && l.picked < len(l.shown) && l.shown[l.picked].Path == path {
 					l.pick(l.picked)
 				}
-				ask(print)
+				use(print)
 			})
 		}()
 	}
@@ -500,10 +530,19 @@ func main() {
 	})
 	jobs = append(jobs, layerButton)
 
+	// The VirusTotal page.
+	vt = newVirusTotal(w, status, demo, prints)
+	vt.book = func() *view.Book { return book }
+	vt.busy = func() bool { return busy }
+	lists[pageVirusTotal] = vt.list
+	for _, l := range lists {
+		l.memory = vt.memory
+	}
+
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
 	lay := func(b *view.Book, waiting bool) {
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth} {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal} {
 			l := lists[index]
 			l.page, l.waiting = page, waiting
 			if waiting {
@@ -556,7 +595,9 @@ func main() {
 		raise.Enable(!b.Snapshot.Elevated && !demo)
 		lay(b, false)
 		nav[pageWorth].SetText(fmt.Sprintf("08  Worth a look (%d)", len(b.Findings)))
+		vt.shown(b)
 	}
+	vt.reshow = show
 	// Until the first look comes back, every list has its heading and its
 	// columns and says that it is waiting.
 	lay(view.Build(&model.Snapshot{}, nil), true)
@@ -613,6 +654,7 @@ func main() {
 					text = "This is a made-up PC, to show what findings look like. Start LazaScope without --demo to look at this one."
 				}
 				status.SetText(text)
+				vt.afterLook(b)
 			})
 		}()
 	}
@@ -735,6 +777,7 @@ func main() {
 				watch.Enable(true)
 				show(b)
 				status.SetText("Watched. Under 04 Running and 05 Connections, choose the view What is new to see what came and went. Nothing was changed.")
+				vt.afterLook(b)
 			})
 		}()
 	})

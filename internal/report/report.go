@@ -221,6 +221,10 @@ func HTML(b *view.Book, version string) []byte {
 						w.WriteString("<p class=\"aside\">LazaScope's own window shows lines copied from the script or command here. They are left out of this report, in case they hold a password.</p>")
 						excerpted = true
 					}
+				case view.Link:
+					// The web page holds no addresses, so that it can neither fetch
+					// nor lead anywhere. The fingerprint beside it is enough to look
+					// the file up.
 				case view.Heading:
 					fmt.Fprintf(&w, "<h4>%s</h4>", e(line.Text))
 				case view.Command:

@@ -11,6 +11,9 @@
 package sample
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
 	"time"
 
 	"lazascope/internal/model"
@@ -262,6 +265,26 @@ func PC() *model.Snapshot {
 			e.Said = model.Opinion{Asked: true, Harmful: true, Name: "TrojanDownloader:PowerShell/Example.A!amsi"}
 		}
 	}
+	// What VirusTotal said, as if a key had been set up and the programs
+	// looked up two hours ago. The fingerprints and the engines are made up.
+	s.Fingerprints, s.VirusTotal = map[string]string{}, map[string]model.Reputation{}
+	lookedUp := func(f model.File, r model.Reputation) {
+		sum := sha256.Sum256([]byte("LazaScope made-up file: " + f.Path))
+		print := hex.EncodeToString(sum[:])
+		s.Fingerprints[strings.ToLower(f.Path)] = print
+		r.Asked = now.Add(-2 * time.Hour)
+		s.VirusTotal[print] = r
+	}
+	lookedUp(impostor, model.Reputation{Known: true, Malicious: 23, Suspicious: 2, Undetected: 46, Harmless: 1, Analysed: now.AddDate(0, 0, -4),
+		Label: "trojan.fakesvc/example", Votes: -14, Kind: "Win32 EXE", KnownAs: "svchost.exe",
+		Names: []model.EngineName{{Engine: "Contoso Defend", Name: "Trojan:Win32/FakeSvc.A"}, {Engine: "Fabrikam Shield", Name: "Win32.Trojan.FakeSvc"},
+			{Engine: "Litware Antivirus", Name: "Trojan.Agent.Example"}, {Engine: "Northwind AV", Name: "Gen:Variant.FakeSvc.1"}, {Engine: "Tailspin Secure", Name: "Suspicious.Svc"}}})
+	lookedUp(sorter, model.Reputation{Known: true, Suspicious: 1, Undetected: 69, Harmless: 1, Analysed: now.AddDate(0, 0, -20), Kind: "Win32 EXE", KnownAs: "PhotoSorter.exe",
+		Names: []model.EngineName{{Engine: "Tailspin Secure", Name: "Heuristic.Unsigned.Generic"}}})
+	lookedUp(anydesk, model.Reputation{Known: true, Undetected: 71, Harmless: 1, Analysed: now.AddDate(0, 0, -1), Kind: "Win32 EXE", KnownAs: "AnyDesk.exe"})
+	lookedUp(setup, model.Reputation{})
+	lookedUp(notes, model.Reputation{Known: true, Undetected: 70, Harmless: 2, Analysed: now.AddDate(0, 0, -9), Kind: "Win32 EXE", KnownAs: "notes.exe"})
+
 	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
 	s.Guard.Proxy = model.Proxy{Read: true}
 	s.Guard.HistoryRead, s.Guard.HistoryDays = true, 90

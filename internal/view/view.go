@@ -67,6 +67,7 @@ const (
 	Aside                // a note, smaller and quieter
 	Command              // a command or a path, in letters of one width
 	Excerpt              // a line copied out of a file on the PC: shown in the window, left out of a saved report
+	Link                 // a web address: shown in the window, left out of the saved web page, which holds no addresses
 )
 
 // Line is one line of what is said about a row.
@@ -134,6 +135,11 @@ type Book struct {
 	Glances  [model.Areas]Glance
 
 	Protection, Startup, Running, Connections, Accounts, Health, Worth Page
+
+	// VirusTotal lists the files worth asking VirusTotal about. It is shown
+	// in the window only, and is not one of the report's pages: what
+	// VirusTotal said is in the report with each file.
+	VirusTotal Page
 }
 
 // Pages returns the seven lists in the order they are shown.
@@ -163,6 +169,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Accounts = b.accounts()
 	book.Health = b.health()
 	book.Worth = b.worth()
+	book.VirusTotal = b.virusTotal()
 	for _, page := range book.Pages() {
 		page.Compared = s.Compared != nil
 	}

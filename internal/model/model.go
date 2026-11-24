@@ -105,6 +105,34 @@ type Opinion struct {
 	Name    string // the antivirus's own name for what it found, when its log gives one
 }
 
+// Reputation is what VirusTotal said about a file when it was asked by the
+// file's fingerprint: what the antivirus engines VirusTotal runs made of
+// the file the last time they looked at it. It is their judgement, gathered
+// by VirusTotal, and never LazaScope's.
+type Reputation struct {
+	Asked      time.Time    // when VirusTotal was asked
+	Known      bool         // VirusTotal has a report on the file; false when it has never seen it
+	Malicious  int          // engines that call it harmful
+	Suspicious int          // engines that call it suspicious
+	Undetected int          // engines that found nothing
+	Harmless   int          // engines that call it harmless
+	Analysed   time.Time    // when the engines last looked at it
+	Label      string       // VirusTotal's own suggested name for what it is, when it has one
+	Names      []EngineName // what the engines that flag it call it
+	Votes      int          // the VirusTotal community's score: below zero when people voted it harmful
+	Kind       string       // what kind of file VirusTotal says it is, such as Win32 EXE
+	KnownAs    string       // the name VirusTotal knows the file by
+}
+
+// EngineName is what one antivirus engine on VirusTotal calls a file.
+type EngineName struct{ Engine, Name string }
+
+// Engines returns how many engines gave a verdict on the file.
+func (r Reputation) Engines() int { return r.Malicious + r.Suspicious + r.Undetected + r.Harmless }
+
+// Flags returns how many engines call the file harmful or suspicious.
+func (r Reputation) Flags() int { return r.Malicious + r.Suspicious }
+
 // Script is what the text of a script file shows. It is a reading of the
 // text and not a test: nothing was run.
 type Script struct {
@@ -633,4 +661,19 @@ type Snapshot struct {
 	// number worked out from every byte of a file: two files with the same
 	// fingerprint are the same file.
 	Fingerprints map[string]string
+
+	// VirusTotal holds what VirusTotal said about files, by fingerprint. It
+	// is empty unless the person using LazaScope set up a VirusTotal key of
+	// their own and had files looked up.
+	VirusTotal map[string]Reputation
+}
+
+// Reputation returns what VirusTotal said about a file, if it was asked.
+func (s *Snapshot) Reputation(path string) (Reputation, bool) {
+	print := s.Fingerprint(path)
+	if print == "" {
+		return Reputation{}, false
+	}
+	r, ok := s.VirusTotal[print]
+	return r, ok
 }

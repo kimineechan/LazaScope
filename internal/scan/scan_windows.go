@@ -23,6 +23,7 @@ import (
 	"lazascope/internal/rules"
 	"lazascope/internal/services"
 	"lazascope/internal/startup"
+	"lazascope/internal/virustotal"
 )
 
 // Parts chooses what a look takes in. The window asks for everything; the
@@ -220,6 +221,11 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 // file a finding is about, so that the file can be told apart from any
 // other and looked up by that number. The files are only read.
 func Judge(s *model.Snapshot) []rules.Finding {
+	// What VirusTotal said on earlier lookups, kept on this PC, joins the
+	// look before the rules read it. Nothing is asked here.
+	if path, err := virustotal.MemoryPath(); err == nil {
+		virustotal.OpenMemory(path).Apply(s)
+	}
 	findings := rules.Check(s)
 	if s.Fingerprints == nil {
 		s.Fingerprints = map[string]string{}

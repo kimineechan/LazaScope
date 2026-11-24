@@ -39,6 +39,8 @@ func TestTheMadeUpPC(t *testing.T) {
 		`startup-system-name (look first): Windows Host Service`,
 		`startup-unsigned (worth a look): PhotoSorter`,
 		`startup-unsigned (worth a look): Windows Host Service`,
+		`startup-virustotal-flags (good to know): PhotoSorter`,
+		`startup-virustotal-flags (look first): Windows Host Service`,
 		`updates-old (worth a look): Windows Update`,
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
