@@ -94,6 +94,26 @@ type File struct {
 	Script *Script // for a script that could be read: what its text shows
 
 	Opinion Opinion // for a script: what the installed antivirus said when asked about it
+
+	Origin *Origin // where the file came from, when Windows marked it as a download
+}
+
+// Origin is the mark Windows puts on a downloaded file (a hidden part of
+// the file called Zone.Identifier): which zone it came from and, when the
+// program that saved it said so, the address.
+type Origin struct {
+	Zone     int    // 3 is the internet; 1 the local network, 2 trusted sites, 4 restricted sites
+	Host     string // the address it was downloaded from
+	Referrer string // the page that led to it
+}
+
+// Run is a record Windows keeps of a program having been run.
+type Run struct {
+	Path   string        // the program, or for an app from the Store, its name
+	Source string        // "UserAssist": opened by this account from the desktop or Start; "BAM": Windows' record of programs run lately
+	Count  int           // how many times, where the record says
+	Last   time.Time     // when last
+	Focus  time.Duration // how long it was in front, where the record says
 }
 
 // Opinion is what the antivirus installed on this PC said when LazaScope
@@ -703,8 +723,12 @@ type Snapshot struct {
 	// The cryptocurrency side: the wallets found, the folders a cloud service
 	// copies, what Windows keeps of the clipboard, and the outcome of the
 	// address-swap test, when it was run.
-	Wallets   []Wallet
-	Clouds    []CloudFolder
+	Wallets []Wallet
+	Clouds  []CloudFolder
+
+	// Ran holds the records Windows keeps of programs having been run.
+	Ran []Run
+
 	Clipboard ClipboardSettings
 	SwapTest  *SwapTest
 

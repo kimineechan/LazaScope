@@ -31,6 +31,7 @@ Usage:
                                             programs that start or run (needs your own VirusTotal key)
   lazascope-cli rules [--markdown]          List every rule and why it exists (--markdown: as the table in docs/RULES.md)
   lazascope-cli wallets [--demo]            List the cryptocurrency wallets on this PC and what stood out about them
+  lazascope-cli timeline [days] [--demo]    List what happened when, newest first (the last 7 days unless told)
   lazascope-cli swap-test                   Copy made-up wallet addresses for a few seconds and watch whether a program swaps them
   lazascope-cli find <search> [--details]   List the rows of every list that match a search, as in the window's
                                             search box (find ? explains how; --details: with the exact evidence)
@@ -55,7 +56,7 @@ var commands = map[string]struct {
 	"network": {}, "protection": {}, "health": {}, "compare": {files: true}, "watch": {files: true}, "sign": {files: true}, "rules": {options: []string{"--markdown"}}, "version": {},
 	"attack": {options: []string{"--coverage", "--demo"}, files: true}, "virustotal": {files: true},
 	"find":    {options: []string{"--details", "--demo"}, files: true},
-	"wallets": {options: []string{"--demo"}}, "swap-test": {},
+	"wallets": {options: []string{"--demo"}}, "swap-test": {}, "timeline": {options: []string{"--demo"}, files: true},
 }
 
 func main() {
@@ -133,6 +134,8 @@ func main() {
 		err = find(strings.Join(args, " "), flags["--details"], flags["--demo"])
 	case "wallets":
 		err = walletList(flags["--demo"])
+	case "timeline":
+		err = timelineList(strings.Join(args, " "), flags["--demo"])
 	case "swap-test":
 		err = swapTest()
 	case "version":

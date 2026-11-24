@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -60,6 +61,20 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	}
 	if r, ok := b.s.Reputation(f.Path); ok {
 		lines = append(lines, VirusTotalLines(r, b.s.Fingerprint(f.Path))...)
+	}
+	if o := f.Origin; o != nil {
+		lines = append(lines, Line{Heading, "Where it came from"})
+		lines = append(lines, originLines(o)...)
+		lines = append(lines, Line{Aside, "Windows puts this mark on files saved from the internet or from another computer, which is what makes it ask before opening them. It can be removed, so a file without it may still have been downloaded."})
+	}
+	for _, r := range b.s.Ran {
+		if r.Source == "UserAssist" && winpath.Same(r.Path, f.Path) && !r.Last.IsZero() {
+			text := "This account last opened it on " + r.Last.In(location(b.s)).Format("2 January 2006 at 15:04")
+			if r.Count > 0 {
+				text += fmt.Sprintf(", %d times all told", r.Count)
+			}
+			lines = append(lines, Line{Text, text + ", going by Windows' UserAssist record."})
+		}
 	}
 	switch {
 	case !f.Exists && f.Signature.Problem != "" && f.Signature.Problem != "The file does not exist.":

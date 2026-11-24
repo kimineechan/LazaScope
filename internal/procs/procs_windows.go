@@ -294,6 +294,13 @@ func driveNames() map[string]string {
 	return names
 }
 
+// DriveNames returns the inside name of each drive letter, such as
+// \Device\HarddiskVolume3 for C:.
+func DriveNames() map[string]string { return driveNames() }
+
+// DrivePath turns the inside form of a path into the usual one, or "".
+func DrivePath(path string, drives map[string]string) string { return toDrivePath(path, drives) }
+
 // toDrivePath turns the inside form of a path into the usual one.
 func toDrivePath(path string, drives map[string]string) string {
 	lower := strings.ToLower(path)

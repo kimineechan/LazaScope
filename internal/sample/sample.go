@@ -92,6 +92,8 @@ func PC() *model.Snapshot {
 	anydesk := signed(`C:\Program Files (x86)\AnyDesk\AnyDesk.exe`, "AnyDesk Software GmbH", "AnyDesk")
 	sorter := unsigned(`C:\Program Files\PhotoSorter\PhotoSorter.exe`, "PhotoSorter contributors", "PhotoSorter")
 	setup := signed(profile+`\Downloads\FabrikamLauncherSetup.exe`, "Fabrikam Games Inc.", "Fabrikam Launcher Setup")
+	setup.Modified = now.Add(-26 * time.Hour)
+	setup.Origin = &model.Origin{Zone: 3, Host: "https://downloads.fabrikam.example/launcher/FabrikamLauncherSetup.exe", Referrer: "https://www.fabrikam.example/download"}
 	impostor := unsigned(profile+`\AppData\Roaming\svchost.exe`, "", "")
 	shell := part(system+`WindowsPowerShell\v1.0\powershell.exe`, "Windows PowerShell")
 	svchost := part(system+"svchost.exe", "Host Process for Windows Services")
@@ -299,6 +301,13 @@ func PC() *model.Snapshot {
 	s.Clouds = []model.CloudFolder{{Service: "OneDrive", Path: profile + `\OneDrive`}}
 	s.Clipboard = model.ClipboardSettings{Read: true, History: model.Yes, Cloud: model.No}
 	s.Wallets = wallets.Inventory(s, []model.Wallet{{Name: "Electrum", Kind: "Wallet files", Where: profile + `\AppData\Roaming\Electrum\wallets`, Keys: true}})
+
+	// What Windows remembers of programs this account opened.
+	s.Ran = []model.Run{
+		{Path: setup.Path, Source: "UserAssist", Count: 1, Last: now.Add(-25 * time.Hour), Focus: 2 * time.Minute},
+		{Path: `C:\Program Files\PhotoSorter\PhotoSorter.exe`, Source: "UserAssist", Count: 31, Last: now.Add(-3 * time.Hour), Focus: 95 * time.Minute},
+		{Path: "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App", Source: "UserAssist", Count: 4, Last: now.Add(-50 * time.Hour)},
+	}
 
 	s.Guard.NameServers, s.Guard.NameServersRead = []model.NameServer{{Address: "192.168.1.1", Connection: "Wi-Fi"}}, true
 	s.Guard.Proxy = model.Proxy{Read: true}

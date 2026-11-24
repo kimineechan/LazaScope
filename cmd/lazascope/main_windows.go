@@ -45,6 +45,7 @@ const (
 	pageWorth
 	pageVirusTotal // reached from the buttons at the top right, not from sections of their own
 	pageWallets
+	pageTimeline // reached from the Overview
 )
 
 // areaPage is the page that shows an area's list.
@@ -368,6 +369,8 @@ func main() {
 	save := w.Button("Save report...", left+across-212, 628, 212, 38, nil)
 	save.Lead(true)
 	jobs = append(jobs, again, raise, against, save)
+	// More ways to look, each with a page of its own.
+	w.Button("Timeline...", left, 676, 150, 36, func() { w.ShowPage(pageTimeline) })
 
 	// lookUp works out the fingerprint of the file a row is about and, on
 	// a yes, opens VirusTotal's page for that fingerprint in the user's own
@@ -515,6 +518,18 @@ func main() {
 		{"Only what is worth a look", flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
+	within := func(hours int) func(view.Row) bool {
+		return func(row view.Row) bool {
+			return book != nil && !row.When.IsZero() && book.Snapshot.Taken.Sub(row.When) <= time.Duration(hours)*time.Hour
+		}
+	}
+	addList(pageTimeline, true, []filter{
+		{"Everything, newest first", everything, ""},
+		{"The last 24 hours", within(24), "Nothing LazaScope can date happened in the last 24 hours."},
+		{"The last 7 days", within(7 * 24), "Nothing LazaScope can date happened in the last 7 days."},
+		{"The last 30 days", within(30 * 24), "Nothing LazaScope can date happened in the last 30 days."},
+		{"Only what is worth a look", flagged, noneWorth},
+	})
 	addList(pageAccounts, false, nil)
 	addList(pageHealth, false, nil)
 	addList(pageWorth, true, nil)
@@ -608,7 +623,7 @@ func main() {
 	// lay sets every list out from a book: its heading, its columns and its
 	// rows. While waiting for the first look only the first two are shown.
 	lay := func(b *view.Book, waiting bool) {
-		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal, pageWallets: &b.Wallets} {
+		for index, page := range map[int]*view.Page{pageProtection: &b.Protection, pageStartup: &b.Startup, pageRunning: &b.Running, pageConnections: &b.Connections, pageAccounts: &b.Accounts, pageHealth: &b.Health, pageWorth: &b.Worth, pageVirusTotal: &b.VirusTotal, pageWallets: &b.Wallets, pageTimeline: &b.Timeline} {
 			l := lists[index]
 			l.page, l.waiting = page, waiting
 			if waiting {

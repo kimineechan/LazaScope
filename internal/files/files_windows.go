@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"lazascope/internal/history"
 	"lazascope/internal/model"
 	"lazascope/internal/scripts"
 	"lazascope/internal/sigcheck"
@@ -91,6 +92,7 @@ func (l *Library) look(path string) (file model.File) {
 		return file
 	}
 	file.Exists, file.Size, file.Modified = true, info.Size(), info.ModTime()
+	file.Origin = history.Origin(path) // the mark Windows puts on downloads, if any
 	file.Program = program(path)
 	if !file.Program {
 		// A script or a document has no maker's seal worth reporting, and

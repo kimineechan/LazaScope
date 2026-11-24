@@ -195,7 +195,7 @@ func (b *builder) analyst(book *Book) {
 		processes[p.PID] = p
 	}
 	for page, name := range map[*Page]string{&book.Protection: "protection", &book.Startup: "start-up", &book.Running: "running", &book.Connections: "connections",
-		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal", &book.Wallets: "wallets"} {
+		&book.Accounts: "accounts", &book.Health: "health", &book.Worth: "worth a look", &book.VirusTotal: "virustotal", &book.Wallets: "wallets", &book.Timeline: "timeline"} {
 		for i := range page.Rows {
 			row := &page.Rows[i]
 			r := &raw{fields: map[string][]string{"page": {name}, "level": {levelWord(row.Level)}, "new": {yesNo(row.Fresh)}, "windows": {yesNo(row.Windows)}}}

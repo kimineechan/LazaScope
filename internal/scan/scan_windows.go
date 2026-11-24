@@ -15,6 +15,7 @@ import (
 
 	"lazascope/internal/files"
 	"lazascope/internal/health"
+	"lazascope/internal/history"
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
 	"lazascope/internal/pcinfo"
@@ -68,7 +69,7 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 	world := pcinfo.World()
 
 	note("Reading what starts with Windows, what is running and what is connected...")
-	var gaps [5][]model.Gap
+	var gaps [6][]model.Gap
 	var work sync.WaitGroup
 	if parts.Startup {
 		work.Go(func() {
@@ -88,6 +89,12 @@ func Run(parts Parts, note func(stage string)) *model.Snapshot {
 		work.Go(func() {
 			guard(model.Connections, "The internet connections", &gaps[3], func() { s.Connections, gaps[3] = netconn.Collect() })
 			mark("connections read")
+		})
+	}
+	if parts.Processes {
+		work.Go(func() {
+			guard(model.RunningNow, "The records of what ran", &gaps[5], func() { s.Ran, gaps[5] = history.Collect(s.Folders, s.Elevated) })
+			mark("records of what ran read")
 		})
 	}
 	if parts.Guard {

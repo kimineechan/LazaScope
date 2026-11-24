@@ -81,11 +81,12 @@ type Row struct {
 	Cells   []string
 	Level   Level
 	Detail  []Line
-	Path    string // the file the row is about, to show in its folder
-	Windows bool   // it is a part of Windows itself
-	Off     bool   // it is switched off
-	Group   string // which of a page's groups it belongs to, for showing one group alone
-	Fresh   bool   // it is new, or came and went, since what the look was compared with
+	Path    string    // the file the row is about, to show in its folder
+	Windows bool      // it is a part of Windows itself
+	Off     bool      // it is switched off
+	Group   string    // which of a page's groups it belongs to, for showing one group alone
+	Fresh   bool      // it is new, or came and went, since what the look was compared with
+	When    time.Time // for a moment on the timeline: when it happened
 
 	Ref    string              // what the row is about, such as startup:3 or process:1200
 	Raw    []Line              // the exact evidence behind it, for analyst mode
@@ -149,6 +150,9 @@ type Book struct {
 	// Wallets lists the cryptocurrency wallets found. It too is shown in the
 	// window only: a list of someone's wallets is not for sending.
 	Wallets Page
+
+	// Timeline puts everything LazaScope can date in one list, newest first.
+	Timeline Page
 }
 
 // Pages returns the seven lists in the order they are shown.
@@ -180,6 +184,7 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 	book.Worth = b.worth()
 	book.VirusTotal = b.virusTotal()
 	book.Wallets = b.wallets()
+	book.Timeline = b.timeline()
 	b.analyst(book)
 	for _, page := range book.Pages() {
 		page.Compared = s.Compared != nil
