@@ -75,6 +75,22 @@ func task(name, command, trigger, account string, program, target model.File) mo
 	return model.Startup{Kind: model.ScheduledTask, Name: name, Where: scheduler, AllUsers: true, Enabled: true, Command: command, Program: program, Target: target, Trigger: trigger, Account: account}
 }
 
+// Phrases returns what the search for recovery phrases finds on the
+// made-up PC: a phrase saved in the Documents folder, which OneDrive copies,
+// a run of recovery words in a note on the Desktop, and the word list that
+// a downloaded wallet kit carries.
+func Phrases() *model.PhraseSearch {
+	return &model.PhraseSearch{
+		When: time.Now(), Folders: []string{profile + `\Desktop`, profile + `\OneDrive\Documents`, profile + `\Downloads`},
+		Read: 1873, Cloud: 41, Big: 2,
+		Found: []model.PhraseFile{
+			{Path: profile + `\OneDrive\Documents\wallet backup.txt`, Runs: 1, Lines: []int{3}, Words: 12, Phrase: 12},
+			{Path: profile + `\Desktop\stream notes.md`, Runs: 1, Lines: []int{14}, Words: 13},
+			{Path: profile + `\Downloads\WalletKit\assets\english.txt`, Runs: 1, Lines: []int{1}, List: true},
+		},
+	}
+}
+
 // PC returns the made-up PC, as if looked at just now.
 func PC() *model.Snapshot {
 	now := time.Now()

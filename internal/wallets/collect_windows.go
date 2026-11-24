@@ -42,8 +42,10 @@ func shellFolder(name string) string {
 	return path
 }
 
-// clouds returns the folders that OneDrive, Dropbox and iCloud Drive copy
+// Clouds returns the folders that OneDrive, Dropbox and iCloud Drive copy
 // off the PC, as they record them for the account.
+func Clouds() []model.CloudFolder { return clouds() }
+
 func clouds() []model.CloudFolder {
 	var out []model.CloudFolder
 	seen := map[string]bool{}

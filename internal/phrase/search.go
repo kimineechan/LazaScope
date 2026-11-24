@@ -148,7 +148,7 @@ func judge(path string, hits []Hit) (model.PhraseFile, bool) {
 	if len(hits) == 0 {
 		return model.PhraseFile{}, false
 	}
-	f := model.PhraseFile{Path: path, List: true}
+	f := model.PhraseFile{Path: path, Runs: len(hits), List: true}
 	for _, h := range hits {
 		if len(f.Lines) < 20 {
 			f.Lines = append(f.Lines, h.Line)

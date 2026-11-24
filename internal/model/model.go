@@ -701,7 +701,8 @@ type PhraseSearch struct {
 // PhraseFile is a file that holds a run of recovery words.
 type PhraseFile struct {
 	Path   string
-	Lines  []int // the line each run of words starts on
+	Runs   int   // how many runs of recovery words it holds
+	Lines  []int // the line each run starts on, for the first twenty runs
 	Words  int   // the most recovery words in a row, outside the word list itself
 	Phrase int   // the length of a complete phrase whose checksum holds, or 0 for none
 	List   bool  // every run is the word list itself, in the list's own order: not a phrase

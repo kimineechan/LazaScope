@@ -38,6 +38,8 @@ Usage:
   lazascope-cli live [seconds]              Watch programs start, live, and check each against the detections (60 seconds unless told)
   lazascope-cli detections [--markdown]     List every detection the live watch uses (--markdown: as the table in docs/DETECTIONS.md)
   lazascope-cli swap-test                   Copy made-up wallet addresses for a few seconds and watch whether a program swaps them
+  lazascope-cli phrases [folder]...         Look for recovery phrases written in files (in Desktop, Documents and Downloads
+                                            unless told), and say where they are without ever showing the words
   lazascope-cli find <search> [--details]   List the rows of every list that match a search, as in the window's
                                             search box (find ? explains how; --details: with the exact evidence)
   lazascope-cli attack <file.json>          Write a layer for MITRE's ATT&CK Navigator of what a look finds
@@ -63,7 +65,7 @@ var commands = map[string]struct {
 	"find":    {options: []string{"--details", "--demo"}, files: true},
 	"wallets": {options: []string{"--demo"}}, "swap-test": {}, "timeline": {options: []string{"--demo"}, files: true},
 	"protections": {options: []string{"--demo"}}, "devices": {options: []string{"--demo"}},
-	"live": {files: true}, "detections": {options: []string{"--markdown"}},
+	"live": {files: true}, "detections": {options: []string{"--markdown"}}, "phrases": {files: true},
 }
 
 func main() {
@@ -153,6 +155,8 @@ func main() {
 		err = printPage(func(b *view.Book) *view.Page { return &b.Devices }, flags["--demo"])
 	case "swap-test":
 		err = swapTest()
+	case "phrases":
+		err = phraseSearch(args)
 	case "version":
 		fmt.Println("LazaScope", lazascope.Version())
 	}

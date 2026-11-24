@@ -11,23 +11,27 @@ import (
 
 	"lazascope/internal/clipboard"
 	"lazascope/internal/files"
+	"lazascope/internal/model"
+	"lazascope/internal/phrase"
 	"lazascope/internal/rules"
+	"lazascope/internal/sample"
 	"lazascope/internal/view"
 	"lazascope/internal/virustotal"
 	"lazascope/internal/winui"
 )
 
 // walletPanel is the Wallets page: the wallets found, the address-swap
-// test, and the check of a downloaded wallet against the fingerprint its
-// maker publishes.
+// test, the check of a downloaded wallet against the fingerprint its maker
+// publishes, and the search for recovery phrases written in files.
 type walletPanel struct {
 	w      *winui.Window
 	status *winui.Control
 	demo   bool
 
-	list        *list
-	test, print *winui.Control
-	testing     bool
+	list              *list
+	test, print, find *winui.Control
+	testing           bool
+	stop              chan struct{} // closed to stop the search for phrases; nil when none runs
 
 	book   func() *view.Book
 	busy   func() bool
@@ -39,12 +43,13 @@ func newWallets(w *winui.Window, status *winui.Control, demo bool, prints map[st
 	w.Page(pageWallets)
 	heading := w.Heading("", left, 166, across, 30)
 	intro := w.Label("", left, 200, across, 42)
-	p.test = w.Button("Test for address swapping", left, 250, 250, 34, p.swapTest)
+	p.test = w.Button("Test for address swapping", left, 250, 232, 34, p.swapTest)
 	p.test.Lead(true)
-	p.print = w.Input("", left+262, 250, 470, 34, nil)
-	p.print.Hint("Paste the fingerprint (SHA-256) the wallet's maker publishes")
-	w.Button("Check a download...", left+744, 250, 190, 34, p.checkDownload)
-	count := w.Caption("", left+946, 250, across-946, 34)
+	p.print = w.Input("", left+242, 250, 240, 34, nil)
+	p.print.Hint("Paste the maker's SHA-256")
+	w.Button("Check a download...", left+492, 250, 170, 34, p.checkDownload)
+	p.find = w.Button("Find recovery phrases...", left+672, 250, 214, 34, p.findPhrases)
+	count := w.Caption("", left+896, 250, across-896, 34)
 	l := &list{picked: -1, prints: prints, count: count}
 	l.table = w.Table(left, 292, across, 244, []winui.Column{{Title: ""}}, func(row int) { l.pick(row) })
 	l.detail = w.Reader(left, 544, across, 168)
@@ -175,4 +180,111 @@ func (p *walletPanel) checkDownload() {
 			p.w.Alert(title, fmt.Sprintf("The fingerprints do not match.\r\n\r\nPublished: %s\r\nThis file: %s\r\n\r\n%s\r\n\r\nThis is not the file the maker published, or the fingerprint was copied from the wrong place. Do not install or open it. Download it again from the maker's own website, and check again.%s", want, print, path, signature))
 		})
 	}()
+}
+
+// findPhrases searches the folders where people keep notes for recovery
+// phrases written in files, after saying what it reads. While it runs, the
+// same button stops it.
+func (p *walletPanel) findPhrases() {
+	const title = "Find recovery phrases"
+	if p.stop != nil {
+		close(p.stop)
+		p.stop = nil
+		p.find.Enable(false) // until the search has wound down
+		p.status.SetText("Stopping the search...")
+		return
+	}
+	b := p.book()
+	if b == nil || p.busy() {
+		return
+	}
+	if p.demo {
+		p.w.Info(title, "This is the made-up PC, so LazaScope shows what a search could find there.\r\n\r\nOn your own PC, this reads the text files and documents in your Desktop, Documents and Downloads folders and looks for recovery phrases, without ever showing the words.")
+		b.Snapshot.Phrases = sample.Phrases()
+		p.reshow(view.Build(b.Snapshot, b.Findings))
+		p.status.SetText("The made-up PC: a recovery phrase in one file, and recovery words in another.")
+		return
+	}
+	places := phrase.Places()
+	if len(places) == 0 {
+		p.w.Alert(title, "Windows did not say where this account's Desktop, Documents and Downloads folders are, so there is nowhere to search.")
+		return
+	}
+	text := "A recovery phrase is the 12 to 24 words a cryptocurrency wallet gives you to write down. Whoever has them has the wallet's coins, so a phrase saved in a file can be taken by any program that reads the file.\r\n\r\n" +
+		"LazaScope will read the text files and documents in:\r\n\r\n" + strings.Join(places, "\r\n") + "\r\n\r\n" +
+		"It looks for 12 or more words in a row from the list that phrases are made from, and checks whether they make a complete phrase. It only reads. It never shows, keeps or sends the words: it notes only the file and the line.\r\n\r\n" +
+		"Files kept only in OneDrive are left unread, as reading them would download them, and so are folders of program code such as node_modules.\r\n\r\nSearch now? On a full disk it can take a minute or two, and you can stop it."
+	if !p.w.Ask(title, text) {
+		return
+	}
+	stop := make(chan struct{})
+	p.stop = stop
+	p.find.SetText("Stop the search")
+	p.status.SetText("Searching for recovery phrases...")
+	go func() {
+		result := phrase.Search(places, stop, func(read int) {
+			p.w.Post(func() {
+				if p.stop == stop {
+					p.status.SetText(fmt.Sprintf("Searching for recovery phrases: %d files read so far...", read))
+				}
+			})
+		})
+		p.w.Post(func() {
+			if p.stop == stop {
+				p.stop = nil
+			}
+			p.find.SetText("Find recovery phrases...")
+			p.find.Enable(true)
+			b := p.book()
+			if b == nil {
+				return
+			}
+			if p.busy() {
+				// A new look is on its way and will replace this one.
+				p.status.SetText("The search ended while LazaScope was looking at the PC again. Search again to see what it finds.")
+				return
+			}
+			b.Snapshot.Phrases = &result
+			p.reshow(view.Build(b.Snapshot, b.Findings))
+			p.phrasesFound(title, result)
+		})
+	}()
+}
+
+// phrasesFound says what the search for recovery phrases found.
+func (p *walletPanel) phrasesFound(title string, result model.PhraseSearch) {
+	var phrases, others []string
+	for _, f := range result.Found {
+		switch {
+		case f.Phrase > 0:
+			phrases = append(phrases, f.Path)
+		case !f.List:
+			others = append(others, f.Path)
+		}
+	}
+	read := fmt.Sprintf("%d files read", result.Read)
+	if result.Stopped {
+		read += ", stopped before the end"
+	}
+	switch {
+	case len(phrases) > 0:
+		p.status.SetText(fmt.Sprintf("Found what is very likely a recovery phrase in %d file(s) (%s). See the rows above.", len(phrases), read))
+		text := "LazaScope found what is very likely a recovery phrase in:\r\n\r\n" + strings.Join(phrases, "\r\n") + "\r\n\r\n" +
+			"Whoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and only then delete the file and empty the Recycle Bin. If it is a test phrase that never held coins, there is nothing to move."
+		if len(others) > 0 {
+			text += fmt.Sprintf("\r\n\r\n%d other file(s) hold runs of recovery words without a complete phrase. They are on the list too.", len(others))
+		}
+		p.w.Alert(title, text+"\r\n\r\nThe words were not shown, kept or sent. Select a row on the Wallets page to read more.")
+	case len(others) > 0:
+		p.status.SetText(fmt.Sprintf("Found recovery words in %d file(s), with no complete phrase (%s). See the rows above.", len(others), read))
+		p.w.Info(title, "No complete recovery phrase was found, but these files hold 12 or more words in a row from the list phrases are made from:\r\n\r\n"+strings.Join(others, "\r\n")+
+			"\r\n\r\nIt may be a phrase written down with a slip or in another order, part of one, or something else. Open them and see.")
+	default:
+		p.status.SetText(fmt.Sprintf("No recovery phrase found (%s).", read))
+		text := fmt.Sprintf("No recovery phrase was found in the %d files read.", result.Read)
+		if result.Stopped || result.Full {
+			text += " The search did not read every file, so that is only part of the answer."
+		}
+		p.w.Info(title, text+"\r\n\r\nA phrase can still hide where this search does not look: in a photo or a screenshot, a PDF, an email, a password manager, or written in another language. The safest place for a phrase is on paper, kept somewhere safe.")
+	}
 }

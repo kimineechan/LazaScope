@@ -8,6 +8,7 @@ import (
 
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
+	"lazascope/internal/phrase"
 	"lazascope/internal/rules"
 	"lazascope/internal/sigcheck"
 )
@@ -393,6 +394,22 @@ func (b *builder) evidence(row *Row, r *raw, processes map[uint32]model.Process)
 		if w.Ref != "" {
 			b.rawFindings(r, w.Ref)
 		}
+	case "phrase":
+		i, err := strconv.Atoi(key)
+		if s.Phrases == nil || err != nil || i < 0 || i >= len(s.Phrases.Found) {
+			return
+		}
+		f := s.Phrases.Found[i]
+		r.field("path", f.Path)
+		r.field("kind", "recovery phrase")
+		r.line("file: %s", f.Path)
+		var starts []string
+		for _, line := range f.Lines {
+			starts = append(starts, strconv.Itoa(line))
+		}
+		r.line("runs of recovery words start on lines: %s; most words in a row: %d; longest complete phrase whose checksum holds: %d words; the word list itself: %s",
+			strings.Join(starts, ", "), f.Words, f.Phrase, yesNo(f.List))
+		r.line("found at: %s; the words were not kept", utc(s.Phrases.When))
 	case "file":
 		for _, e := range s.Startup {
 			if strings.EqualFold(e.Works().Path, row.Path) {
@@ -489,6 +506,18 @@ func (b *builder) topicEvidence(ref string, r *raw) {
 			r.line("test at %s; tried: %s; swapped: %s", utc(t.When), strings.Join(t.Tried, ", "), yesNo(t.Swapped))
 			if t.Swapped {
 				r.line("kind: %s; swapped for: %s; by: %s (pid %d) %s", t.Kind, t.Into, orNone(t.By), t.PID, t.Path)
+			}
+		} else {
+			r.line("not run")
+		}
+	case ref == "phrases":
+		if p := s.Phrases; p != nil {
+			r.line("search at %s; folders: %s", utc(p.When), strings.Join(p.Folders, "; "))
+			r.line("files read: %d; only in the cloud, not read: %d; too large, not read: %d; could not be opened: %d; stopped at the limit of %d files: %s; stopped by hand: %s",
+				p.Read, p.Cloud, p.Big, p.Locked, phrase.Limit, yesNo(p.Full), yesNo(p.Stopped))
+			r.line("files with a run of recovery words: %d", len(p.Found))
+			for _, folder := range p.Folders {
+				r.field("path", folder)
 			}
 		} else {
 			r.line("not run")

@@ -26,7 +26,7 @@ func (b *builder) wallets() Page {
 	s := b.s
 	page := Page{
 		Name: "Wallets", Title: "Cryptocurrency wallets on this PC",
-		Intro:   "The wallets LazaScope found: extensions in the browsers, wallet programs, and folders of wallet files. LazaScope only notes where they are. It never opens a wallet, reads a key or sends anything about them anywhere.",
+		Intro:   "The wallets LazaScope found: extensions in the browsers, wallet programs, and folders of wallet files, and any recovery phrase written in a file. LazaScope only notes where they are. It never opens a wallet, shows a key or a phrase, or sends anything about them anywhere.",
 		Columns: []Column{{"Check", 124}, {"Wallet", 210}, {"Kind", 250}, {"Where", 0}},
 	}
 	for i, w := range s.Wallets {
@@ -85,7 +85,16 @@ func (b *builder) wallets() Page {
 		page.Rows = append(page.Rows, row)
 	}
 
-	// The clipboard, and the test for programs that swap a copied address.
+	// Recovery phrases written in files, once the search has run.
+	if p := s.Phrases; p != nil {
+		for i, f := range p.Found {
+			page.Rows = append(page.Rows, b.phraseRow(i, f))
+		}
+	}
+
+	// The clipboard, the test for programs that swap a copied address, the
+	// search for phrases and the cloud folders, each a row of its own.
+	topics := len(page.Rows)
 	clip := "Not known"
 	switch {
 	case s.Clipboard.History == model.Yes && s.Clipboard.Cloud == model.Yes:
@@ -119,7 +128,7 @@ func (b *builder) wallets() Page {
 		swapRow.Cells[0] = First.String()
 		swapRow.Detail = b.said(swapRow.Detail, rules.ProcessRef(t.PID))
 	}
-	page.Rows = append(page.Rows, swapRow)
+	page.Rows = append(page.Rows, swapRow, b.phraseTopic())
 	var clouds []string
 	for _, c := range s.Clouds {
 		clouds = append(clouds, c.Service+": "+c.Path)
@@ -129,9 +138,9 @@ func (b *builder) wallets() Page {
 	}
 	page.Rows = append(page.Rows, b.topic("Cloud folders", strings.Join(clouds, "; "), model.Yes,
 		"OneDrive, Dropbox and iCloud Drive copy their folders to the internet. Wallet files in them are copied too.", "clouds"))
-	for i := range page.Rows[len(page.Rows)-3:] {
-		row := &page.Rows[len(page.Rows)-3+i]
-		row.Cells = []string{row.Cells[0], row.Cells[1], "Setting", row.Cells[2]}
+	for i, kind := range []string{"Setting", "Test", "Search", "Setting"} {
+		row := &page.Rows[topics+i]
+		row.Cells = []string{row.Cells[0], row.Cells[1], kind, row.Cells[2]}
 	}
 	return page
 }

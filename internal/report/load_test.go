@@ -80,6 +80,20 @@ func TestLoadAndCompare(t *testing.T) {
 	}
 }
 
+// The search for recovery phrases shows in the window only: a saved report
+// is made to be sent, and where someone keeps a phrase is not for sending.
+func TestReportsLeavePhrasesOut(t *testing.T) {
+	b := book(func(s *model.Snapshot) { s.Phrases = sample.Phrases() })
+	web, text, data := string(HTML(b, "1.0.0")), Text(b, "1.0.0"), string(JSON(b, "1.0.0"))
+	for name, content := range map[string]string{"web page": web, "text": text, "data": data} {
+		for _, secret := range []string{"wallet backup.txt", "stream notes.md", "Recovery phrase"} {
+			if strings.Contains(content, secret) {
+				t.Errorf("the %s report holds %q", name, secret)
+			}
+		}
+	}
+}
+
 // The saved reports hold every page the window shows, and the fingerprint
 // of each flagged file.
 func TestReportsAreWhole(t *testing.T) {
