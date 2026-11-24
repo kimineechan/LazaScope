@@ -179,7 +179,11 @@ func HTML(b *view.Book, version string) []byte {
 			}
 			w.WriteString("</dl>\n")
 		}
-		fmt.Fprintf(&w, "<p class=\"quiet\">Rule: %s</p>\n</div>\n", e(f.Rule))
+		fmt.Fprintf(&w, "<p class=\"quiet\">Rule: %s", e(f.Rule))
+		if attack := rules.Attack(f.Attack); attack != "" {
+			fmt.Fprintf(&w, ". MITRE ATT&amp;CK %s: %s", e(rules.AttackVersion), e(attack))
+		}
+		w.WriteString("</p>\n</div>\n")
 	}
 	if len(b.Worth.Unseen) > 0 {
 		w.WriteString("<h2>What could not be read</h2>\n<ul>\n")
@@ -305,6 +309,9 @@ func Text(b *view.Book, version string) string {
 			line("    %s: %s", fact.Label, fact.Value)
 		}
 		line("    Rule: %s", f.Rule)
+		if attack := rules.Attack(f.Attack); attack != "" {
+			line("    MITRE ATT&CK %s: %s", rules.AttackVersion, attack)
+		}
 		line("")
 	}
 	if len(b.Worth.Unseen) > 0 {
@@ -349,8 +356,14 @@ type jsonFinding struct {
 	Subject  string            `json:"subject"`
 	Reason   string            `json:"reason"`
 	Advice   string            `json:"advice"`
-	Ref      string            `json:"ref"` // which fact it is about
+	Ref      string            `json:"ref"`              // which fact it is about
+	Attack   []jsonTechnique   `json:"attack,omitempty"` // the MITRE ATT&CK techniques it is a trace of
 	Evidence map[string]string `json:"evidence,omitempty"`
+}
+
+type jsonTechnique struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type jsonLight struct {
@@ -384,6 +397,7 @@ func JSON(b *view.Book, version string) []byte {
 	document := struct {
 		Tool          string          `json:"tool"`
 		Generated     string          `json:"generated"`
+		AttackVersion string          `json:"attackVersion"` // the version of MITRE ATT&CK the technique numbers are from
 		TookMillis    int64           `json:"tookMilliseconds"`
 		Computer      string          `json:"computer"`
 		User          string          `json:"user"`
@@ -396,7 +410,7 @@ func JSON(b *view.Book, version string) []byte {
 		Comparison    *jsonComparison `json:"comparison,omitempty"`
 		Facts         jsonFacts       `json:"facts"`
 	}{
-		Tool: "LazaScope " + version, Generated: stamp(s.Taken), TookMillis: s.Took.Milliseconds(),
+		Tool: "LazaScope " + version, AttackVersion: rules.AttackVersion, Generated: stamp(s.Taken), TookMillis: s.Took.Milliseconds(),
 		Computer: s.Computer, User: s.User, Windows: s.Windows, Administrator: s.Elevated, Summary: b.Summary,
 		Lights: []jsonLight{}, Findings: []jsonFinding{}, CouldNotRead: append([]string{}, b.Worth.Unseen...), Comparison: comparison, Facts: facts(s),
 	}
@@ -404,7 +418,10 @@ func JSON(b *view.Book, version string) []byte {
 		document.Lights = append(document.Lights, jsonLight{glance.Area.String(), lamp(glance.Light), glance.Verdict, glance.Facts})
 	}
 	for _, f := range b.Findings {
-		finding := jsonFinding{f.Rule, strings.ToLower(f.Severity.String()), f.Area.String(), f.Title, f.Subject, f.Reason, f.Advice, f.Ref, map[string]string{}}
+		finding := jsonFinding{Rule: f.Rule, Severity: strings.ToLower(f.Severity.String()), Area: f.Area.String(), Title: f.Title, Subject: f.Subject, Reason: f.Reason, Advice: f.Advice, Ref: f.Ref, Evidence: map[string]string{}}
+		for _, technique := range rules.Techniques(f.Attack) {
+			finding.Attack = append(finding.Attack, jsonTechnique{technique.ID, technique.Name})
+		}
 		for _, fact := range withPrints(b.Snapshot, f.Facts) {
 			if have, ok := finding.Evidence[fact.Label]; ok {
 				finding.Evidence[fact.Label] = have + "; " + fact.Value

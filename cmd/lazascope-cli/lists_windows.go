@@ -297,6 +297,9 @@ func scanAll(details, demo bool) error {
 	for _, f := range findings {
 		fmt.Printf("\n[%s] %s\n    %s  (%s, rule %s)\n", f.Severity, f.Title, f.Subject, f.Area, f.Rule)
 		fmt.Printf("    Why:  %s\n    Do:   %s\n", f.Reason, f.Advice)
+		if attack := rules.Attack(f.Attack); attack != "" {
+			fmt.Printf("    ATT&CK: %s\n", attack)
+		}
 		if details {
 			for _, fact := range f.Facts {
 				fmt.Printf("      %-22s %s\n", fact.Label+":", fact.Value)
@@ -352,15 +355,22 @@ func saveReport(path string, demo bool) error {
 func ruleList(markdown bool) {
 	all := rules.All()
 	if markdown {
-		fmt.Println("| Rule | Area | Usually | What it flags | Why it matters |")
-		fmt.Println("| --- | --- | --- | --- | --- |")
+		fmt.Println("| Rule | Area | Usually | What it flags | Why it matters | MITRE ATT&CK |")
+		fmt.Println("| --- | --- | --- | --- | --- | --- |")
 		for _, rule := range all {
-			fmt.Printf("| `%s` | %s | %s | %s | %s |\n", rule.ID, rule.Area, rule.Severity, rule.Title, rule.Why)
+			attack := rules.AttackNote(rule.ID)
+			if attack == "" {
+				attack = "None: it flags a weakness, not a trace"
+			}
+			fmt.Printf("| `%s` | %s | %s | %s | %s | %s |\n", rule.ID, rule.Area, rule.Severity, rule.Title, rule.Why, attack)
 		}
 		return
 	}
 	fmt.Printf("LazaScope has %d rules.\n", len(all))
 	for _, rule := range all {
 		fmt.Printf("\n%s  (%s, usually: %s)\n    %s\n    %s\n", rule.ID, rule.Area, strings.ToLower(rule.Severity.String()), rule.Title, rule.Why)
+		if attack := rules.AttackNote(rule.ID); attack != "" {
+			fmt.Printf("    ATT&CK %s: %s\n", rules.AttackVersion, attack)
+		}
 	}
 }

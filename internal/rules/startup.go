@@ -288,6 +288,7 @@ var startupRules = []Rule{
 				switch strings.ToLower(e.Subject) {
 				case "sethc.exe", "utilman.exe", "osk.exe", "magnify.exe", "narrator.exe", "displayswitch.exe", "atbroker.exe":
 					f.Severity = High
+					f.Attack = []string{"T1546.008"}
 					f.Reason = e.Subject + " can be opened from the sign-in screen before anyone has typed a password. A debugger set for it lets whoever sits at the PC run this in its place, with full rights: " + e.Command + ". This is a well-known back door."
 				}
 				found = append(found, f)

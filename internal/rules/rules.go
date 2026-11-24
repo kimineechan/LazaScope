@@ -45,12 +45,13 @@ type Finding struct {
 	Rule     string // the rule that made it, such as "startup-unsigned"
 	Severity Severity
 	Area     model.Area
-	Title    string // what was found, in a few words
-	Subject  string // what it is about: an entry, a program, a setting
-	Reason   string // why it matters
-	Advice   string // what the user can do about it
-	Facts    []Fact // the evidence
-	Ref      string // which item of the snapshot it is about, so that a list can mark that item
+	Title    string   // what was found, in a few words
+	Subject  string   // what it is about: an entry, a program, a setting
+	Reason   string   // why it matters
+	Advice   string   // what the user can do about it
+	Facts    []Fact   // the evidence
+	Ref      string   // which item of the snapshot it is about, so that a list can mark that item
+	Attack   []string // the numbers of the MITRE ATT&CK techniques it is a trace of, if any
 }
 
 // Rule is one written rule.
@@ -59,8 +60,9 @@ type Rule struct {
 	Area     model.Area
 	Severity Severity // the usual severity; a finding may be raised or lowered from it
 	Title    string
-	Why      string // why the rule exists, in one or two sentences
-	Topic    string // what its findings are about, when that is always the same setting
+	Why      string   // why the rule exists, in one or two sentences
+	Topic    string   // what its findings are about, when that is always the same setting
+	Attack   []string // the MITRE ATT&CK techniques its findings are a trace of, if any
 	check    func(s *model.Snapshot, r *Rule) []Finding
 	ref      string // what the finding being made is about
 }
@@ -114,6 +116,9 @@ func All() []Rule {
 	for _, group := range [][]Rule{protectionRules, historyRules, networkRules, startupRules, runningRules, connectionRules, accountRules, healthRules} {
 		all = append(all, group...)
 	}
+	for i := range all {
+		all[i].Attack = Named(all[i].ID)
+	}
 	return all
 }
 
@@ -123,7 +128,11 @@ func Check(s *model.Snapshot) []Finding {
 	var findings []Finding
 	for _, rule := range All() {
 		rule := rule
-		findings = append(findings, rule.check(s, &rule)...)
+		found := rule.check(s, &rule)
+		for i := range found {
+			tag(s, &rule, &found[i])
+		}
+		findings = append(findings, found...)
 	}
 	sort.SliceStable(findings, func(i, j int) bool {
 		a, b := findings[i], findings[j]

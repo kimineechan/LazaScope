@@ -811,6 +811,9 @@ func (b *builder) worth() Page {
 			}
 		}
 		lines = append(lines, Line{Aside, "Rule: " + f.Rule})
+		if attack := rules.Attack(f.Attack); attack != "" {
+			lines = append(lines, Line{Aside, "MITRE ATT&CK, the public catalogue of attackers' methods (version " + rules.AttackVersion + "): " + attack})
+		}
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
 	}
