@@ -35,6 +35,8 @@ Usage:
   lazascope-cli timeline [days] [--demo]    List what happened when, newest first (the last 7 days unless told)
   lazascope-cli protections [--demo]        List the protections this PC already has, whether each is on, and its backups
   lazascope-cli devices [--demo]            List which programs used the camera and the microphone, and when
+  lazascope-cli live [seconds]              Watch programs start, live, and check each against the detections (60 seconds unless told)
+  lazascope-cli detections [--markdown]     List every detection the live watch uses (--markdown: as the table in docs/DETECTIONS.md)
   lazascope-cli swap-test                   Copy made-up wallet addresses for a few seconds and watch whether a program swaps them
   lazascope-cli find <search> [--details]   List the rows of every list that match a search, as in the window's
                                             search box (find ? explains how; --details: with the exact evidence)
@@ -61,6 +63,7 @@ var commands = map[string]struct {
 	"find":    {options: []string{"--details", "--demo"}, files: true},
 	"wallets": {options: []string{"--demo"}}, "swap-test": {}, "timeline": {options: []string{"--demo"}, files: true},
 	"protections": {options: []string{"--demo"}}, "devices": {options: []string{"--demo"}},
+	"live": {files: true}, "detections": {options: []string{"--markdown"}},
 }
 
 func main() {
@@ -140,6 +143,10 @@ func main() {
 		err = walletList(flags["--demo"])
 	case "timeline":
 		err = timelineList(strings.Join(args, " "), flags["--demo"])
+	case "live":
+		err = liveWatch(strings.Join(args, " "))
+	case "detections":
+		detectionList(flags["--markdown"])
 	case "protections":
 		err = printPage(func(b *view.Book) *view.Page { return &b.Defences }, flags["--demo"])
 	case "devices":

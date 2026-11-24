@@ -38,6 +38,15 @@ func (c *Control) Fill(rows [][]string, tints []Colour) {
 	c.redraw()
 }
 
+// Append adds a row at the end of a table and keeps the chosen row and the
+// place scrolled to, for a list that grows while it is being read.
+func (c *Control) Append(row []string, tint Colour) {
+	t := c.table
+	t.rows = append(t.rows, row)
+	t.tints = append(t.tints, tint)
+	c.redraw()
+}
+
 // SetCell changes the text of one cell of a table.
 func (c *Control) SetCell(row, column int, text string) {
 	t := c.table

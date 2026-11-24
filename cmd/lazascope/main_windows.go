@@ -48,6 +48,7 @@ const (
 	pageTimeline // reached from the Overview
 	pageDefences
 	pageDevices
+	pageLive
 )
 
 // areaPage is the page that shows an area's list.
@@ -375,6 +376,7 @@ func main() {
 	w.Button("Timeline...", left, 676, 150, 36, func() { w.ShowPage(pageTimeline) })
 	w.Button("Protections to switch on...", left+162, 676, 262, 36, func() { w.ShowPage(pageDefences) })
 	w.Button("Camera and microphone...", left+436, 676, 240, 36, func() { w.ShowPage(pageDevices) })
+	w.Button("Watch programs start...", left+688, 676, 230, 36, func() { w.ShowPage(pageLive) })
 
 	// lookUp works out the fingerprint of the file a row is about and, on
 	// a yes, opens VirusTotal's page for that fingerprint in the user's own
@@ -584,6 +586,9 @@ func main() {
 	wp.book = func() *view.Book { return book }
 	wp.busy = func() bool { return busy }
 	lists[pageWallets] = wp.list
+
+	// The live watch, which keeps its own list.
+	live := newLive(w, status, demo)
 	for _, l := range lists {
 		l.memory = vt.memory
 	}
@@ -603,6 +608,7 @@ func main() {
 		for _, l := range lists {
 			l.fill()
 		}
+		live.refill()
 		if book != nil {
 			vt.shown(book)
 		}
@@ -614,7 +620,13 @@ func main() {
 	})
 	analyst.Do(func() {
 		analystMode = analyst.On()
-		for _, l := range lists {
+		for _, l := range append(func() []*list {
+			var all []*list
+			for _, l := range lists {
+				all = append(all, l)
+			}
+			return all
+		}(), live.list) {
 			if l.picked >= 0 && l.picked < len(l.shown) {
 				l.pick(l.picked)
 			}

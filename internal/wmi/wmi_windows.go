@@ -21,6 +21,7 @@ import (
 var (
 	locatorClass = com.ID("{4590F811-1D3A-11D0-891F-00AA004B2E24}") // WbemLocator
 	locatorFace  = com.ID("{DC12A687-737F-11CF-884D-00AA004B2E24}") // IWbemLocator
+	objectFace   = com.ID("{DC12A681-737F-11CF-884D-00AA004B2E24}") // IWbemClassObject
 	setBlanket   = sysdll.Load("ole32.dll").NewProc("CoSetProxyBlanket")
 	variantClear = sysdll.Load("oleaut32.dll").NewProc("VariantClear")
 	stringLength = sysdll.Load("oleaut32.dll").NewProc("SysStringLen")
@@ -30,6 +31,7 @@ var (
 const (
 	connectServer = 3  // IWbemLocator::ConnectServer
 	execQuery     = 20 // IWbemServices::ExecQuery
+	execNotify    = 22 // IWbemServices::ExecNotificationQuery
 	next          = 4  // IEnumWbemClassObject::Next
 	get           = 4  // IWbemClassObject::Get
 )
@@ -123,6 +125,96 @@ func query(namespace, wql string, properties []string) ([]map[string]any, error)
 		rows = append(rows, row)
 	}
 	return rows, nil
+}
+
+// Watch asks WMI to report the events a query in WQL describes, and calls
+// each with the named properties of the object each event is about (its
+// TargetInstance), until stop is closed. It runs on a thread of its own and
+// returns when stopped, or when WMI fails.
+func Watch(namespace, wql string, properties []string, stop <-chan struct{}, each func(map[string]any)) error {
+	failed := make(chan error, 1)
+	go func() {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+		leave, err := com.Enter()
+		if err != nil {
+			failed <- err
+			return
+		}
+		defer leave()
+		failed <- watch(namespace, wql, properties, stop, each)
+	}()
+	return <-failed
+}
+
+func watch(namespace, wql string, properties []string, stop <-chan struct{}, each func(map[string]any)) error {
+	locator, err := com.Create(locatorClass, locatorFace)
+	if err != nil {
+		return err
+	}
+	defer locator.Release()
+	ns := com.String(namespace)
+	defer com.Free(ns)
+	var services unsafe.Pointer
+	if r := locator.Call(connectServer, ns, 0, 0, 0, 0, 0, 0, uintptr(unsafe.Pointer(&services))); com.Failed(r) || services == nil {
+		return fmt.Errorf("WMI did not open %s (0x%08X)", namespace, uint32(r))
+	}
+	svc := com.Wrap(services)
+	defer svc.Release()
+	setBlanket.Call(uintptr(services), 10, 0, 0, 3, 3, 0, 0)
+	language, text := com.String("WQL"), com.String(wql)
+	defer com.Free(language)
+	defer com.Free(text)
+	var enumerator unsafe.Pointer
+	const forwardOnly, returnAtOnce = 0x20, 0x10
+	if r := svc.Call(execNotify, language, text, forwardOnly|returnAtOnce, 0, uintptr(unsafe.Pointer(&enumerator))); com.Failed(r) || enumerator == nil {
+		return fmt.Errorf("WMI refused to report the events (0x%08X)", uint32(r))
+	}
+	list := com.Wrap(enumerator)
+	defer list.Release()
+	target, _ := syscall.UTF16PtrFromString("TargetInstance")
+	for {
+		select {
+		case <-stop:
+			return nil
+		default:
+		}
+		var object unsafe.Pointer
+		var returned uint32
+		r := list.Call(next, 500, 1, uintptr(unsafe.Pointer(&object)), uintptr(unsafe.Pointer(&returned)))
+		if returned == 0 || object == nil {
+			if com.Failed(r) {
+				return fmt.Errorf("WMI stopped reporting (0x%08X)", uint32(r))
+			}
+			continue // half a second with nothing to report
+		}
+		event := com.Wrap(object)
+		row := map[string]any{}
+		var v com.Variant
+		if r := event.Call(get, uintptr(unsafe.Pointer(target)), 0, uintptr(unsafe.Pointer(&v)), 0, 0); !com.Failed(r) && v.Kind == 13 && v.Value != 0 {
+			address := uintptr(v.Value)
+			inner := com.Wrap(*(*unsafe.Pointer)(unsafe.Pointer(&address)))
+			if item, err := inner.Ask(objectFace); err == nil {
+				for _, name := range properties {
+					wide, err := syscall.UTF16PtrFromString(name)
+					if err != nil {
+						continue
+					}
+					var p com.Variant
+					if r := item.Call(get, uintptr(unsafe.Pointer(wide)), 0, uintptr(unsafe.Pointer(&p)), 0, 0); !com.Failed(r) {
+						if value, ok := read(&p); ok {
+							row[name] = value
+						}
+						variantClear.Call(uintptr(unsafe.Pointer(&p)))
+					}
+				}
+				item.Release()
+			}
+		}
+		variantClear.Call(uintptr(unsafe.Pointer(&v)))
+		event.Release()
+		each(row)
+	}
 }
 
 // read takes the value out of a VARIANT, for the kinds WMI uses for
