@@ -174,11 +174,18 @@ LazaScope sees that a connection exists and which program opened it. It does not
 
 | Kind | For |
 | --- | --- |
-| Web page (`.html`) | Reading, printing, or sending to someone who is helping you. It opens in any browser, holds no scripts and loads nothing from the internet |
+| Web page (`.html`) | Reading, printing, or sending to someone who is helping you. It looks like LazaScope's window, opens in any browser, holds no scripts and loads nothing from the internet. Printed, it comes out dark on white |
 | Plain text (`.txt`) | Pasting into a message or a forum post |
 | Data (`.json`) | Other tools, and **Compare with a report...**. It holds the findings and, under `facts`, every start-up entry, running program, connection, protection setting and health record as it was read. Each finding has a `ref` that names the fact it is about |
 
-The report starts with the six lights and everything worth a look, then lists every fact LazaScope read. In the web page, select any row to open its details. If the look was compared or watched, the report says what that showed.
+The web page and the text are laid out the same way:
+
+1. **This PC at a glance:** which PC, when, and the six lights of the Overview.
+2. **What is worth a second look:** everything the rules flagged, the most serious first. Findings about the same thing are gathered under it, so a start-up entry flagged for three reasons appears once, with its three reasons, what you can do, and its details. In the web page the details are folded away under **Details**.
+3. **What could not be read**, if anything.
+4. **Everything LazaScope read:** the lists 02 Protection to 07 Health, named and numbered as in the window. In the web page each list starts closed; open one to see its rows, and select a row to see its details.
+
+If the look was compared or watched, the report says what that showed.
 
 **Read the report before you send it.** It names the PC, the account in use, the programs it runs, the browser extensions, and the sites and addresses they talk to. The lines LazaScope copied out of scripts are not in it.
 

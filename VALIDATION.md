@@ -24,6 +24,13 @@ BIP 39's English list was downloaded from the Bitcoin BIPs repository on GitHub 
 - The history package's tests did not build on Linux (a live test called a Windows-only function), and the browsers package's tests judge Windows paths, which Linux joins differently. Both now run on Windows only.
 - A document's place was called a line; it is now a paragraph. A column was cut short, and a message said "1 file(s)".
 
+### The saved report
+
+The web page was given the look of the window: its colours, its lights and its lettering, on a dark sheet that turns dark on white when printed. Findings about the same thing are now gathered under it, the long lists follow the window's sections and start closed, and the text report follows the same order.
+
+- **How it was checked.** The tests hold the order of the lists, that nothing starts open, that an item flagged three times shows its facts and its way of switching off once, that two hardware errors in the same minute stay two, and that the page still holds no script, link or address. The made-up PC's report was read in full in all three forms. This PC's report was searched by a script for formatting faults, empty values, dates that were never filled in, doubled words and garbled letters, and none were found. The web page was looked at in Edge at full width, at the width of a phone (500 pixels, the narrowest window Edge makes without a screen) and with the print style.
+- **Faults found in the reports, all fixed.** The lists came in another order than the window's sections, and under three kinds of names. An item flagged for several reasons repeated all its facts each time. Two facts gave dates as numbers where the rest of the report uses words. "Is not encrypted (off)" said the same thing twice, and "These protections are on this PC and switched off" read as on and off at once. The data form wrote apostrophes and the > sign as escape codes.
+
 ### Where the fifth round stops
 
 - A phrase in a picture, a PDF, an email, a password manager or a note app's own storage is not found, nor one written in another language's list. Sticky Notes keeps its notes in a database of its own; it has never been used on this PC, so reading it could not be tested, and it is not read.

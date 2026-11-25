@@ -30,7 +30,7 @@ First version.
 - A timeline of what happened when, with where downloaded files came from and Windows' records of what ran (UserAssist, and BAM with administrator rights).
 - The protections the PC already has and whether each is on, how ready the PC is for ransomware, and which programs used the camera and the microphone.
 - A live watch of programs starting, checked against fifteen detections written as code.
-- Save a report as one self-contained web page, as plain text, or as JSON that carries every fact as it was read, with a reference from each finding to the fact it is about.
+- Save a report as one self-contained web page in the window's dark look, as plain text, or as JSON that carries every fact as it was read, with a reference from each finding to the fact it is about. The web page and the text gather the findings about one thing under it, and keep the long lists in the window's order; the web page keeps them closed until opened.
 - Say so in words when something could not be read, when a view of a list matches nothing, and when a fault inside LazaScope stopped one part of a look. The rest of the look carries on.
 - Show a made-up PC with `--demo`.
 - Include a command-line tool, a check that plants twelve harmless items and confirms that eleven are flagged and one is left alone, Windows build and release automation, and tests.
