@@ -246,11 +246,33 @@ The command-line tool asks with `lazascope-cli virustotal`, with the saved key o
 
 ## Wallets
 
-**Wallets...** lists the cryptocurrency wallets LazaScope found: wallet extensions in the browsers, wallet programs, and folders of wallet files in their usual places. It only notes where they are. It never opens a wallet, reads a key or sends anything about them. The list is kept out of saved reports: a list of someone's wallets is not for sending.
+**Wallets...** lists the cryptocurrency wallets LazaScope found: wallet extensions in the browsers, wallet programs, and folders of wallet files in their usual places. It only notes where they are. It never opens a wallet, shows a key or a phrase, or sends anything about them. The page is kept out of saved reports: a list of someone's wallets is not for sending.
 
 - **A fake wallet extension** takes a real wallet's name, then sends the recovery phrase typed into it to a thief. LazaScope compares an extension's number with the ones the wallet's makers publish. It knows MetaMask's and Phantom's for Chrome, Edge, Brave and Vivaldi, and those of several more wallets for Firefox. It never calls an extension a fake for a wallet whose real number it does not know.
 - **Test for address swapping** looks for clipboard-stealing malware, which swaps a copied wallet address for the thief's. It copies three made-up addresses, a Bitcoin one, a newer bc1 Bitcoin one and an Ethereum one, for two seconds each and watches whether anything changes them. Their checksums are wrong on purpose, so no wallet would send coins to one, and Windows is told to keep them out of the clipboard history. Afterwards LazaScope puts back the text that was on the clipboard, and says so plainly if it could not. A picture or files on the clipboard cannot be put back, and LazaScope says so before it starts.
 - **Check a download...** compares a wallet installer with the fingerprint (SHA-256) its maker publishes. Paste the fingerprint into the box first.
+- **Find recovery phrases...** looks for a recovery phrase saved in a file. More on this below.
+
+### Recovery phrases in files
+
+A recovery phrase (or seed phrase) is the 12 to 24 words a wallet gives you to write down when it is made. Whoever has the words has the coins, from anywhere, so a phrase saved in a file can be taken by any program that reads the file. Malware that steals passwords looks for exactly that.
+
+**Find recovery phrases...** says what it will read and asks first. It then reads the text files and documents in the account's Desktop, Documents and Downloads folders and in OneDrive: plain text, Markdown, rich text, Word and LibreOffice documents, and settings files such as `.env`, `.json` and `.ini`. It looks for 12 or more words in a row from the list of 2,048 words that phrases are made from (BIP 39's English list, which Electrum's seeds use too). Numbers and line breaks between the words, as in "1. word 2. word", do not matter.
+
+A run of such words is then checked:
+
+| What LazaScope found | How it shows |
+| --- | --- |
+| A complete phrase whose own check holds. The last word of a BIP 39 phrase is partly a check on the others, and Electrum builds a check of its own into its seeds. Random words pass one of these checks rarely (about 1 time in 16 for 12 words, and 1 in 216 for Electrum's) | **Look first**, as a recovery phrase or an Electrum seed |
+| A run of the words in a file named like a phrase, such as `seed.txt` or `my wallet.docx` | **Look first** |
+| A run of the words that could not be confirmed as a phrase | **Worth a look**: open the file and see |
+| The word list itself, in its own order, as wallet programs carry it | Listed, with nothing to do |
+
+Program code is kept from passing for a phrase: names such as `canvas.width`, marks such as `=` and `{`, and words repeated the way code repeats them all break a run, while the words of a real phrase are nearly all different. Files kept only in OneDrive are not read, because reading one would download it, and neither are folders of program code such as `node_modules` or files larger than 4 MB. The search stops after 40,000 files and can be stopped at any time with the same button.
+
+LazaScope never shows, keeps or sends the words. Each file found is listed with the line (or, in a document, the paragraph) where the words start, and what to do: if the phrase belongs to a wallet that holds coins, make a new wallet on a device you trust and move the coins into it before deleting the file, because the phrase may have been copied already.
+
+A phrase can still hide where the search does not look: in a photo or a screenshot, a PDF, an email, a password manager, a note app's own storage, or written in another language.
 
 The rules also look at wallet files in a folder OneDrive, Dropbox or iCloud copies, wallet files on a disk that is not encrypted, clipboard history on a PC with a wallet, hosts-file lines that send a cryptocurrency site somewhere else, connections to names built from such a site's name, such as metamask-login.com, and programs that mine cryptocurrency.
 
@@ -318,6 +340,7 @@ Windows reports new programs once a second, so one that starts and ends within t
 | `virustotal [files or fingerprints]` | Asks VirusTotal about files by fingerprint, or with none named, about the programs that start or run. Needs your own key |
 | `wallets` | Lists the cryptocurrency wallets on the PC and what stood out about them |
 | `swap-test` | Runs the address-swap test |
+| `phrases [folder]...` | Looks for recovery phrases written in files, in the folders named or in Desktop, Documents, Downloads and OneDrive. Prints each file and line, never the words |
 | `timeline [days]` | Lists what happened when, newest first (the last 7 days unless told) |
 | `protections` | Lists the protections the PC already has, whether each is on, and its backups |
 | `devices` | Lists which programs used the camera and the microphone, and when |
@@ -345,6 +368,7 @@ A command that is given an option or a file name it does not take says so and do
 | A watch | Reads once a second. What lives for less than a second can be missed, and what a connection carries is not read. The live watch has the same limit |
 | VirusTotal | Needs a free key of your own, and allows 4 lookups a minute. A file VirusTotal has never seen is not a bad sign in itself |
 | Wallets | Fake extensions are told apart only for wallets whose real numbers LazaScope knows |
+| Recovery phrases | Found in text files and documents only, and only in English. A phrase in a picture, a PDF or another program's own storage is not found |
 | One moment | A look is a snapshot. Without a watch, a program that ran and closed a minute earlier is not in it |
 | Storage | Nothing is kept, except what you set up: a saved report, and with VirusTotal, the key (sealed for your account) and its answers, in LazaScope's folder inside AppData. Forget on the VirusTotal page removes both |
 

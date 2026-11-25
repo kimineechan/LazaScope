@@ -26,6 +26,7 @@ First version.
 - A search box over every list, and an analyst mode that adds the exact evidence behind each row.
 - VirusTotal's verdicts in the window, with a key of the user's own: fingerprints only, at the pace a free key allows, the key sealed for the user's account.
 - Cryptocurrency wallets: the wallets found, fake wallet extensions told apart by their numbers, wallet files left where they can be copied, a test for clipboard-stealing malware, and a check of a wallet download against its published fingerprint.
+- Find recovery phrases saved in text files and documents, confirmed by BIP 39's check or Electrum's, and say where each is without ever showing the words. Carries BIP 39's English word list (MIT licence).
 - A timeline of what happened when, with where downloaded files came from and Windows' records of what ran (UserAssist, and BAM with administrator rights).
 - The protections the PC already has and whether each is on, how ready the PC is for ransomware, and which programs used the camera and the microphone.
 - A live watch of programs starting, checked against fifteen detections written as code.

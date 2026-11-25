@@ -1,5 +1,35 @@
 # Validation
 
+## Checks completed on 25 November 2026
+
+The fifth round added the recovery-phrase finder, on the same PC (Windows 10 Pro 22H2, build 19045). The full automated tests pass and `go vet` is clean.
+
+### The word list
+
+BIP 39's English list was downloaded from the Bitcoin BIPs repository on GitHub (`bip-0039/english.txt`), with the owner's yes. It holds 2,048 words in alphabetical order, each of 3 to 8 small letters, and no two start with the same four letters. A test pins its SHA-256 (`2f5eed53...b24dbda`), and Git is told to keep the file byte for byte, so a copy with changed line endings cannot slip in. BIP 39 is under the MIT licence, which is in `THIRD-PARTY-NOTICES.txt`.
+
+### How the finder was checked
+
+- **The checks of a phrase.** BIP 39's check was tested on the published test vectors (Trezor's, nine of them in English) and on phrases of every length made in the test by a second, separate implementation. Electrum's check was tested on four seeds from Electrum's own tests, one of each kind (standard, SegWit, two-factor, two-factor SegWit), each of which gave exactly the version number Electrum gives it. Altered phrases fail: a word changed, two swapped, one short, one too many.
+- **Reading files.** Plain text in UTF-8 and UTF-16 (with and without the mark Notepad writes), rich text, Word and LibreOffice documents. The documents were made by LibreOffice itself from the same text, and each named the right paragraph.
+- **Planted files.** A folder of twelve files, every phrase in it a published test phrase: a numbered phrase, a UTF-16 file, a 24-word phrase in a `.env` file, two Electrum seeds (one in a file named like one, one not), the three documents, twelve list words that are not a phrase, the word list as JSON, a phrase in program code and one in `node_modules` (both rightly not read), ordinary writing, and a file marked as kept only in the cloud (counted, and not read). Every one came out as it should, from the terminal.
+- **This PC.** The search read 1,782 files in the account's Desktop, Documents, Downloads and OneDrive folders: 21 seconds the first time, under 2 seconds once Windows had the folders in memory.
+- **The window.** The question before the search, the search, the message after it and the rows on the Wallets page, on this PC and on the made-up one. **Stop the search** was pressed during two searches, which stopped after 234 and 331 files and said that not every file was read.
+- **Linux.** GitHub's core job runs the tests on Linux, which had never been tried. The 22 core packages with tests were built for Linux here and run in Ubuntu under WSL: all pass.
+
+### Faults found while building this round
+
+- **Program code passed for a phrase.** The first version flagged three lines of JavaScript in saved web pages (`canvas.width !== client.width ...`, where one 12-word stretch of a longer run passed BIP 39's check by chance) and ten runs of program code in Markdown notes. A phrase must now make up its run, with at most three other words each, and its words must be nearly all different, as random words are and code is not. Names in code such as `canvas.width` and marks such as `=` and `{` break a run. Over the same 1,782 files, none of the thirteen false alarms remains.
+- **Electrum's seeds were only worth a look.** Electrum uses the same words with a check of its own, which LazaScope now knows.
+- The history package's tests did not build on Linux (a live test called a Windows-only function), and the browsers package's tests judge Windows paths, which Linux joins differently. Both now run on Windows only.
+- A document's place was called a line; it is now a paragraph. A column was cut short, and a message said "1 file(s)".
+
+### Where the fifth round stops
+
+- A phrase in a picture, a PDF, an email, a password manager or a note app's own storage is not found, nor one written in another language's list. Sticky Notes keeps its notes in a database of its own; it has never been used on this PC, so reading it could not be tested, and it is not read.
+- Electrum's seeds from before version 2.0 use another word list and carry no check. They are not recognised.
+- Tested on Windows 10 only.
+
 ## Checks completed on 24 November 2026
 
 The fourth round added the parts below, on Windows 10 Pro 22H2 (build 19045), with and without administrator rights. Each part was tested with made-up data first, then on this PC. The full automated tests pass, `go vet` is clean, and both programs build twice to the same bytes.
@@ -32,7 +62,7 @@ The fourth round added the parts below, on Windows 10 Pro 22H2 (build 19045), wi
 ### Where the fourth round stops
 
 - A live VirusTotal lookup with a real key, and "Check a download..." with a real wallet installer, wait for the PC's owner.
-- The recovery-phrase finder is not built: it needs the public list of 2,048 recovery words, which is not downloaded without the owner's yes.
+- The recovery-phrase finder is not built: it needs the public list of 2,048 recovery words, which is not downloaded without the owner's yes. (It was given, and the finder was built on 25 November.)
 - Prefetch, the third record of what ran, is not read.
 - The comparison of every list with Windows' own tools was done in the third round; this round changed none of those lists and did not repeat it.
 - Tested on Windows 10 only, with Microsoft Defender as the antivirus.
@@ -247,7 +277,9 @@ The made-up PC's report was read from the first line to the last in its plain-te
 
 The included workflow runs the platform-neutral tests on Linux with the race detector, builds both programs on Windows, runs all the tests and the planted-items check there, checks that the committed icon and resources match what `tools/mkres` generates, and packages a ZIP with SHA-256 checksums. A version tag publishes the release only after both jobs succeed.
 
-## Where the testing stops
+## Where the testing stopped on 22 November 2026
+
+This is where the first round stopped. Later rounds lifted some of it: the third round ran LazaScope with administrator rights.
 
 - Tested on one PC, with Windows 10 in English. It was not run on Windows 11, on a PC joined to a work domain, or on Windows in another language.
 - It was not run with administrator rights. What it then reads in addition (Defender's exclusions, other accounts' command lines, protected services) has not been seen working, and neither has the button that starts it again with those rights.
