@@ -1,3 +1,8 @@
+//go:build windows
+
+// The browsers' record files hold Windows paths, and this package joins and
+// judges them the way Windows does, so its tests run on Windows only.
+
 package browsers
 
 import (
