@@ -331,7 +331,7 @@ func (b *builder) running() Page {
 			lines = fact(lines, "Started by", names[p.Parent]+" (number "+strconv.Itoa(int(p.Parent))+")")
 		}
 		if !p.Started.IsZero() {
-			lines = fact(lines, "Running since", p.Started.Format("2 January 2006, 15:04"))
+			lines = fact(lines, "Running since", p.Started.Format("2 January 2006 at 15:04"))
 		}
 		lines = fact(lines, "Runs as", p.User)
 		lines = fact(lines, "Services inside it", strings.Join(p.Services, ", "))

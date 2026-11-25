@@ -29,7 +29,7 @@ func aboutProcess(s *model.Snapshot, p model.Process) []Fact {
 	}
 	add("Runs as", p.User)
 	if !p.Started.IsZero() {
-		add("Running since", p.Started.Format("2006-01-02 15:04"))
+		add("Running since", p.Started.Format("2 January 2006 at 15:04"))
 	}
 	if len(p.Services) > 0 {
 		add("Services inside it", strings.Join(p.Services, ", "))

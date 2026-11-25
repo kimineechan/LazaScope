@@ -231,7 +231,7 @@ var protectionRules = []Rule{
 			f := r.find("Windows Update",
 				"The last update Windows installed was on "+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
 				"Open Settings, go to Windows Update and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates.",
-				Fact{"Windows", strings.TrimSpace(s.Windows + " build " + g.Build)}, Fact{"Last update installed", g.LastUpdate.Format("2006-01-02")})
+				Fact{"Windows", strings.TrimSpace(s.Windows + " build " + g.Build)}, Fact{"Last update installed", g.LastUpdate.Format("2 January 2006")})
 			if days > 180 {
 				f.Severity = High
 			}
@@ -309,8 +309,14 @@ var protectionRules = []Rule{
 			for _, volume := range s.Guard.Volumes {
 				r.at(DiskRef(volume.Drive))
 				if volume.Encrypted == model.No && s.Folders.Windows != "" && strings.EqualFold(volume.Drive, s.Folders.Windows[:2]) {
+					// The state is worth saying only when it is more than "off",
+					// such as encryption that was started and is paused.
+					state := ""
+					if st := strings.ToLower(volume.State); st != "" && st != "off" {
+						state = " (" + st + ")"
+					}
 					found = append(found, r.find("Drive "+volume.Drive,
-						"Drive "+volume.Drive+", which holds Windows and your files, is not encrypted ("+strings.ToLower(volume.State)+"). If the PC is lost or stolen, its files can be read without your password.",
+						"Drive "+volume.Drive+", which holds Windows and your files, is not encrypted"+state+". If the PC is lost or stolen, its files can be read without your password.",
 						"Search the Start menu for BitLocker or for Device encryption and switch it on. Save the recovery key somewhere other than this PC first: without it, a fault can lock you out of your own files.",
 						Fact{"Drive", volume.Drive}, Fact{"Encryption", volume.State}))
 				}

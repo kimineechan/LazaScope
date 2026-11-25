@@ -167,7 +167,7 @@ func TestRowsOfAHealthyPC(t *testing.T) {
 		t.Errorf("the tree: %q", got)
 	}
 	notes := find(t, book.Running, "notes.exe")
-	for _, want := range []string{"Started by: explorer.exe (number 3000)", "Running since: 22 November 2026, 14:01", `"C:\Program Files\Notes\notes.exe"`, "The file says it is: A program, by Notes Ltd"} {
+	for _, want := range []string{"Started by: explorer.exe (number 3000)", "Running since: 22 November 2026 at 14:01", `"C:\Program Files\Notes\notes.exe"`, "The file says it is: A program, by Notes Ltd"} {
 		if !strings.Contains(words(notes.Detail), want) {
 			t.Errorf("the detail of notes.exe lacks %q:\n%s", want, words(notes.Detail))
 		}
