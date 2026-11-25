@@ -27,7 +27,7 @@ go test ./internal/...
 
 Format Go changes with `gofmt`. On Windows, run `build.cmd` before submitting a change. It regenerates the resources, runs `go vet` and all the tests, builds both programs and runs `cmd/verify`.
 
-`cmd/verify` plants eleven harmless items in your own account (lines in your `Run` and `RunOnce` lists, files in your temporary and Downloads folders, a shortcut and a batch file in your Startup folder and two waiting programs), checks that ten are flagged for the right reason and the eleventh is left alone, and removes them again. It touches nothing outside your account and needs no administrator rights.
+`cmd/verify` plants twelve harmless items in your own account (lines in your `Run` and `RunOnce` lists, files in your temporary and Downloads folders, a shortcut and a batch file in your Startup folder and two waiting programs), checks that eleven are flagged for the right reason and the twelfth is left alone, and removes them again. One of the eleven is a `Run` line that holds the standard harmless test line every antivirus agrees to call harmful, so that the antivirus is asked and answers; where no antivirus answers, that item is left out. It touches nothing outside your account and needs no administrator rights.
 
 ### Layout
 
