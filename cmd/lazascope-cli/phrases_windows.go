@@ -37,8 +37,14 @@ func phraseSearch(folders []string) error {
 		fmt.Println("  " + folder)
 	}
 	fmt.Println("Only where they are is noted. The words are never shown, kept or sent.")
-	result := phrase.Search(folders, nil, func(read int) { fmt.Fprintf(os.Stderr, "  %d files read...\r", read) })
-	fmt.Fprint(os.Stderr, "                              \r")
+	noted := false
+	result := phrase.Search(folders, nil, func(read int) {
+		noted = true
+		fmt.Fprintf(os.Stderr, "  %d files read...\r", read)
+	})
+	if noted {
+		fmt.Fprint(os.Stderr, "                              \r")
+	}
 
 	fmt.Printf("\nRead %d files.", result.Read)
 	var unread []string
@@ -70,17 +76,23 @@ func phraseSearch(folders []string) error {
 		for _, line := range f.Lines {
 			lines = append(lines, strconv.Itoa(line))
 		}
-		at := "line " + strings.Join(lines, ", ")
+		at := phrase.Unit(f.Path) + " " + strings.Join(lines, ", ")
 		if len(lines) > 1 {
-			at = "lines " + strings.Join(lines, ", ")
+			at = phrase.Unit(f.Path) + "s " + strings.Join(lines, ", ")
 		}
-		label, about := "LOOK", fmt.Sprintf("%s: %d recovery words in a row, without a complete phrase whose check holds", at, f.Words)
+		label, about := "LOOK", fmt.Sprintf("%s: %d recovery words in a row, not confirmed as a phrase", at, f.Words)
 		switch {
 		case f.List:
 			label, about = "LIST", "the recovery word list itself, in its own order: not a phrase"
+		case f.Phrase > 0 && f.Electrum:
+			phrases++
+			label, about = "FIRST", fmt.Sprintf("%s: a complete %d-word Electrum seed whose check holds", at, f.Phrase)
 		case f.Phrase > 0:
 			phrases++
 			label, about = "FIRST", fmt.Sprintf("%s: a complete %d-word recovery phrase whose check holds", at, f.Phrase)
+		case f.Named:
+			phrases++
+			label, about = "FIRST", fmt.Sprintf("%s: %d recovery words in a row, in a file whose name points to a phrase", at, f.Words)
 		}
 		if synced := wallets.Synced(f.Path, clouds); synced != "" && !f.List {
 			about += "; " + synced + " copies this file off the PC"

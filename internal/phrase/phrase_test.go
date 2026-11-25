@@ -116,6 +116,11 @@ func TestValidRefusesWhatIsNotAPhrase(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	twelve := vectors[1].phrase
+	entropy := make([]byte, 32)
+	for i := range entropy {
+		entropy[i] = byte(i*73 + 11)
+	}
+	long := phraseOf(entropy)
 	numbered := func(phrase string) string {
 		var b strings.Builder
 		for i, w := range strings.Fields(phrase) {
@@ -132,9 +137,25 @@ func TestFind(t *testing.T) {
 		{"numbered, one word a line", "Wallet backup\r\n\r\n" + numbered(twelve), []Hit{{Line: 3, Words: 12, Phrase: 12}}},
 		{"in capitals, with commas", strings.ToUpper(strings.ReplaceAll(twelve, " ", ", ")), []Hit{{Line: 1, Words: 12, Phrase: 12}}},
 		{"after a heading made of list words", "Seed phrase: " + twelve, []Hit{{Line: 1, Words: 14, Phrase: 12}}},
-		{"a 24-word phrase", vectors[4].phrase, []Hit{{Line: 1, Words: 24, Phrase: 24}}},
+		{"a 24-word phrase", long, []Hit{{Line: 1, Words: 24, Phrase: 24}}},
 		{"two phrases", twelve + "\nand\n" + vectors[6].phrase, []Hit{{Line: 1, Words: 12, Phrase: 12}, {Line: 3, Words: 12, Phrase: 12}}},
+		{"two phrases with nothing between", vectors[6].phrase + "\n" + vectors[7].phrase, []Hit{{Line: 1, Words: 24, Phrase: 12}}},
+		{"an Electrum seed", electrumSeeds[0], []Hit{{Line: 1, Words: 12, Phrase: 12, Electrum: true}}},
+		{"an Electrum seed, numbered", "Electrum\n" + numbered(electrumSeeds[1]), []Hit{{Line: 2, Words: 12, Phrase: 12, Electrum: true}}},
 		{"twelve list words that are not a phrase", strings.Repeat("abandon ", 12), []Hit{{Line: 1, Words: 12}}},
+		// Real phrases almost never repeat a word three times. The published
+		// vectors made from repeated bytes do, and so does program code.
+		{"a phrase-shaped run that repeats its words", vectors[0].phrase, []Hit{{Line: 1, Words: 12}}},
+		{"a 24-word vector that repeats its words", vectors[4].phrase, []Hit{{Line: 1, Words: 24}}},
+		{"a phrase inside a long run of other words", "zoo zone zero youth young yellow year wrong write wrist wrestle wreck wrap worth worry world work wool " + vectors[6].phrase, []Hit{{Line: 1, Words: 30}}},
+		{"program code", "if (canvas.width !== client.width || canvas.height !== client.height) { canvas.width = client.width; seed_words = word_list.slice(); }", nil},
+		{"a table in program code", "local names = { [101] = legal, [102] = winner, [103] = thank, [104] = year, [105] = wave, [106] = sausage,\n[107] = worth, [108] = useful, [109] = legal, [110] = winner, [111] = thank, [112] = yellow }", nil},
+		{"a type in program code", "export type Shape = { _cache: { any }, build: (self, item) -> boolean, clean: (self) -> () }", nil},
+		{"a phrase in JSON, with escaped line breaks", `{"name": "backup", "words": "` + strings.ReplaceAll(vectors[6].phrase, " ", `\n`) + `"}`, []Hit{{Line: 1, Words: 12, Phrase: 12}}},
+		{"a phrase in a JSON list", `["` + strings.ReplaceAll(vectors[6].phrase, " ", `", "`) + `"]`, []Hit{{Line: 1, Words: 12, Phrase: 12}}},
+		{"a phrase in a settings file", "MNEMONIC=\"" + vectors[6].phrase + "\"\nRPC_URL=http://localhost:8545", []Hit{{Line: 1, Words: 12, Phrase: 12}}},
+		// The heading's "Word" is on the list too, and counts as a word to spare.
+		{"a phrase in a Markdown table", table(vectors[6].phrase), []Hit{{Line: 1, Words: 13, Phrase: 12}}},
 		{"eleven words", strings.Join(strings.Fields(twelve)[:11], " "), nil},
 		{"broken by another word", strings.Join(strings.Fields(twelve)[:6], " ") + " wallet " + strings.Join(strings.Fields(twelve)[6:], " "), nil},
 		{"broken by an accented word", strings.Join(strings.Fields(twelve)[:6], " ") + " café " + strings.Join(strings.Fields(twelve)[6:], " "), nil},
@@ -149,6 +170,45 @@ func TestFind(t *testing.T) {
 		if fmt.Sprint(got) != fmt.Sprint(c.want) {
 			t.Errorf("%s: got %+v, want %+v", c.name, got, c.want)
 		}
+	}
+}
+
+// table writes a phrase as a Markdown table, a numbered word on each row.
+func table(phrase string) string {
+	text := "| No. | Word |\n| --- | --- |\n"
+	for i, w := range strings.Fields(phrase) {
+		text += fmt.Sprintf("| %d | %s |\n", i+1, w)
+	}
+	return text
+}
+
+// Seeds from Electrum's own tests (electrum/tests/test_wallet_vertical.py),
+// one of each kind: standard, SegWit, two-factor, and two-factor SegWit.
+var electrumSeeds = []string{
+	"cycle rocket west magnet parrot shuffle foot correct salt library feed song",
+	"bitter grass shiver impose acquire brush forget axis eager alone wine silver",
+	"kiss live scene rude gate step hip quarter bunker oxygen motor glove",
+	"universe topic remind silver february ranch shine worth innocent cattle enhance wise",
+}
+
+func TestElectrum(t *testing.T) {
+	for _, seed := range electrumSeeds {
+		words := strings.Fields(seed)
+		if !Electrum(words) {
+			t.Errorf("Electrum(%q) = false", seed)
+		}
+		// Electrum makes sure its seeds are not BIP 39 phrases as well.
+		if Valid(words) {
+			t.Errorf("Valid(%q) = true", seed)
+		}
+	}
+	for _, v := range vectors {
+		if words := strings.Fields(v.phrase); len(words) == 12 && Electrum(words) {
+			t.Errorf("the BIP 39 vector %q passes Electrum's check", v.phrase)
+		}
+	}
+	if Electrum(strings.Fields(electrumSeeds[0])[:11]) || Electrum(append(strings.Fields(electrumSeeds[0])[:11], "wallet")) {
+		t.Error("Electrum accepts a seed that is short or holds a word not on the list")
 	}
 }
 

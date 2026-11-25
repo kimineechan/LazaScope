@@ -225,7 +225,7 @@ func (p *walletPanel) findPhrases() {
 		result := phrase.Search(places, stop, func(read int) {
 			p.w.Post(func() {
 				if p.stop == stop {
-					p.status.SetText(fmt.Sprintf("Searching for recovery phrases: %d files read so far...", read))
+					p.status.SetText("Searching for recovery phrases: " + fileCount(read) + " read so far...")
 				}
 			})
 		})
@@ -256,35 +256,51 @@ func (p *walletPanel) phrasesFound(title string, result model.PhraseSearch) {
 	var phrases, others []string
 	for _, f := range result.Found {
 		switch {
-		case f.Phrase > 0:
+		case f.Phrase > 0 || f.Named && !f.List:
 			phrases = append(phrases, f.Path)
 		case !f.List:
 			others = append(others, f.Path)
 		}
 	}
-	read := fmt.Sprintf("%d files read", result.Read)
+	read := fileCount(result.Read) + " read"
 	if result.Stopped {
 		read += ", stopped before the end"
 	}
+	// A search that did not read every file gives only part of the answer.
+	part := ""
+	if result.Stopped || result.Full {
+		part = "\r\n\r\nThe search did not read every file, so there may be more."
+	}
 	switch {
 	case len(phrases) > 0:
-		p.status.SetText(fmt.Sprintf("Found what is very likely a recovery phrase in %d file(s) (%s). See the rows above.", len(phrases), read))
+		p.status.SetText(fmt.Sprintf("Found what is very likely a recovery phrase in %s (%s). See the rows above.", fileCount(len(phrases)), read))
 		text := "LazaScope found what is very likely a recovery phrase in:\r\n\r\n" + strings.Join(phrases, "\r\n") + "\r\n\r\n" +
 			"Whoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and only then delete the file and empty the Recycle Bin. If it is a test phrase that never held coins, there is nothing to move."
-		if len(others) > 0 {
-			text += fmt.Sprintf("\r\n\r\n%d other file(s) hold runs of recovery words without a complete phrase. They are on the list too.", len(others))
+		if len(others) == 1 {
+			text += "\r\n\r\nOne more file holds a run of recovery words that LazaScope could not confirm as a phrase. It is on the list too."
+		} else if len(others) > 1 {
+			text += fmt.Sprintf("\r\n\r\n%d more files hold runs of recovery words that LazaScope could not confirm as a phrase. They are on the list too.", len(others))
 		}
-		p.w.Alert(title, text+"\r\n\r\nThe words were not shown, kept or sent. Select a row on the Wallets page to read more.")
+		p.w.Alert(title, text+part+"\r\n\r\nThe words were not shown, kept or sent. Select a row on the Wallets page to read more.")
 	case len(others) > 0:
-		p.status.SetText(fmt.Sprintf("Found recovery words in %d file(s), with no complete phrase (%s). See the rows above.", len(others), read))
-		p.w.Info(title, "No complete recovery phrase was found, but these files hold 12 or more words in a row from the list phrases are made from:\r\n\r\n"+strings.Join(others, "\r\n")+
-			"\r\n\r\nIt may be a phrase written down with a slip or in another order, part of one, or something else. Open them and see.")
+		p.status.SetText(fmt.Sprintf("Found recovery words in %s, not confirmed as a phrase (%s). See the rows above.", fileCount(len(others)), read))
+		p.w.Info(title, "No complete recovery phrase was found, but 12 or more words in a row from the list phrases are made from are in:\r\n\r\n"+strings.Join(others, "\r\n")+
+			"\r\n\r\nIt may be a phrase written down with a slip or in another order, part of one, an example phrase, or something else. Open the file and see."+part)
 	default:
 		p.status.SetText(fmt.Sprintf("No recovery phrase found (%s).", read))
-		text := fmt.Sprintf("No recovery phrase was found in the %d files read.", result.Read)
-		if result.Stopped || result.Full {
-			text += " The search did not read every file, so that is only part of the answer."
-		}
-		p.w.Info(title, text+"\r\n\r\nA phrase can still hide where this search does not look: in a photo or a screenshot, a PDF, an email, a password manager, or written in another language. The safest place for a phrase is on paper, kept somewhere safe.")
+		text := fmt.Sprintf("No recovery phrase was found in the %s read.", fileCount(result.Read))
+		p.w.Info(title, text+part+"\r\n\r\nA phrase can still hide where this search does not look: in a photo or a screenshot, a PDF, an email, a password manager, or written in another language. The safest place for a phrase is on paper, kept somewhere safe.")
 	}
+}
+
+// fileCount writes a number of files, as "1 file" or "1,873 files".
+func fileCount(n int) string {
+	if n == 1 {
+		return "1 file"
+	}
+	text := strconv.Itoa(n)
+	for i := len(text) - 3; i > 0; i -= 3 {
+		text = text[:i] + "," + text[i:]
+	}
+	return text + " files"
 }

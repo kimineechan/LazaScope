@@ -700,12 +700,14 @@ type PhraseSearch struct {
 
 // PhraseFile is a file that holds a run of recovery words.
 type PhraseFile struct {
-	Path   string
-	Runs   int   // how many runs of recovery words it holds
-	Lines  []int // the line each run starts on, for the first twenty runs
-	Words  int   // the most recovery words in a row, outside the word list itself
-	Phrase int   // the length of a complete phrase whose checksum holds, or 0 for none
-	List   bool  // every run is the word list itself, in the list's own order: not a phrase
+	Path     string
+	Runs     int   // how many runs of recovery words it holds
+	Lines    []int // the line each run starts on, for the first twenty runs
+	Words    int   // the most recovery words in a row, outside the word list itself
+	Phrase   int   // the length of the longest complete phrase whose check holds, or 0 for none
+	Electrum bool  // that phrase is an Electrum seed, which only Electrum's own check confirms
+	Named    bool  // the file's name points to a phrase too, such as "seed" or "wallet"
+	List     bool  // every run is the word list itself, in the list's own order: not a phrase
 }
 
 // Gap is something that could not be read, so that the report can say so

@@ -158,19 +158,43 @@ func judge(path string, hits []Hit) (model.PhraseFile, bool) {
 		}
 		f.List = false
 		f.Words = max(f.Words, h.Words)
-		f.Phrase = max(f.Phrase, h.Phrase)
+		if h.Phrase > f.Phrase {
+			f.Phrase, f.Electrum = h.Phrase, h.Electrum
+		}
 	}
+	f.Named = !f.List && Named(path)
 	return f, true
 }
 
 func rank(f model.PhraseFile) int {
 	switch {
 	case f.Phrase > 0:
+		return 3
+	case f.Named && !f.List:
 		return 2
 	case !f.List:
 		return 1
 	}
 	return 0
+}
+
+// hints are words in a file's name that point to a recovery phrase.
+var hints = regexp.MustCompile(`seed|phrase|mnemonic|recovery|wallet|crypto|bitcoin|electrum|metamask|exodus|phantom|trezor|keystore|(12|24) ?words|(^|[^a-z])(btc|eth|ledger|secrets?)([^a-z]|$)`)
+
+// Named reports whether a file's name points to a recovery phrase, such as
+// "seed.txt" or "my wallet.docx". Only the name counts, not the folders.
+func Named(path string) bool {
+	return hints.MatchString(strings.ToLower(filepath.Base(path)))
+}
+
+// Unit is what Find's line numbers count in a file: lines in a text file,
+// and paragraphs in a document, where Text makes each paragraph a line.
+func Unit(path string) string {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".docx", ".odt", ".rtf":
+		return "paragraph"
+	}
+	return "line"
 }
 
 // Text reads a file as text: the words of a Word or OpenDocument file, a

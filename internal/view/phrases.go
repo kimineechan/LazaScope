@@ -14,19 +14,9 @@ import (
 // row for each file found, and a row for the search itself. Like the rest
 // of that page, it is never part of a saved report.
 
-// unit is what a file's places are counted in: lines in a text file, and
-// paragraphs in a document.
-func unit(path string) string {
-	switch strings.ToLower(path[strings.LastIndex(path, ".")+1:]) {
-	case "docx", "odt", "rtf":
-		return "paragraph"
-	}
-	return "line"
-}
-
 // places names where a file's runs start, as "line 4" or "lines 4, 9 and 30".
 func places(f model.PhraseFile) string {
-	u := unit(f.Path)
+	u := phrase.Unit(f.Path)
 	if len(f.Lines) == 1 {
 		return u + " " + strconv.Itoa(f.Lines[0])
 	}
@@ -65,18 +55,30 @@ func (b *builder) phraseRow(i int, f model.PhraseFile) Row {
 		name, kind = "Recovery word list", "The list itself, not a phrase"
 		lines = []Line{{Heading, "The recovery word list, not a phrase"},
 			{Text, "This file holds the list of 2,048 words that recovery phrases are made from, or part of it, in the list's own order. Wallet programs and the code that makes them carry this list. It is not anyone's phrase, and there is nothing to do."}}
+	case f.Phrase > 0 && f.Electrum:
+		row.Level = First
+		name, kind = "Electrum seed", "In a file"
+		lines = []Line{{Heading, "An Electrum recovery seed written in a file"},
+			{Text, "Recovery phrases are made from a list of 2,048 words. " + start + fmt.Sprintf("%d of them in a row, and they hold a complete %d-word seed made by the Electrum wallet: Electrum builds a check of its own into its seeds, and random words pass it only about one time in 216.", f.Words, f.Phrase)},
+			{Text, "Ordinary writing almost never has 12 words from that list in a row, so this is very likely a real Electrum seed." + named(f)}}
 	case f.Phrase > 0:
 		row.Level = First
-		name, kind = "Recovery phrase", "Written in a file"
+		name, kind = "Recovery phrase", "In a file"
 		lines = []Line{{Heading, "A recovery phrase written in a file"},
 			{Text, "Recovery phrases are made from a list of 2,048 words. " + start + fmt.Sprintf("%d of them in a row, and they hold a complete %d-word phrase whose check holds: the last word of every phrase is partly a check on the others, and random words pass it only about one time in %s.", f.Words, f.Phrase, odds(f.Phrase))},
-			{Text, "Ordinary writing almost never has 12 words from that list in a row, so this is very likely a real recovery phrase."}}
+			{Text, "Ordinary writing almost never has 12 words from that list in a row, so this is very likely a real recovery phrase." + named(f)}}
+	case f.Named:
+		row.Level = First
+		name, kind = "Recovery phrase", "In a file named like one"
+		lines = []Line{{Heading, "Recovery words in a file named like a phrase"},
+			{Text, "Recovery phrases are made from a list of 2,048 words. " + start + fmt.Sprintf("%d of them in a row, and the file's name, %s, points to a recovery phrase too.", f.Words, quote(f.Path))},
+			{Text, "LazaScope could not confirm a complete phrase with a phrase's own check. It may have been written down with a slip or in another order, or come from a wallet whose check LazaScope does not know. Treat it as a phrase until you have looked."}}
 	default:
 		row.Level = Look
-		name, kind = "Recovery words", "Written in a file"
+		name, kind = "Recovery words", "In a file"
 		lines = []Line{{Heading, "Words from the recovery list, written in a file"},
 			{Text, "Recovery phrases are made from a list of 2,048 words. " + start + fmt.Sprintf("%d of them in a row.", f.Words)},
-			{Text, "They do not hold a complete phrase whose check holds. It may be a phrase written down with a slip or in another order, part of one, or something else that happens to use these words. Open the file and see."}}
+			{Text, "LazaScope could not confirm them as a complete phrase: they do not pass a phrase's own check, or they repeat words the way a real phrase almost never does. It may be a phrase written down with a slip or in another order, part of one, an example phrase, or text that happens to use these words. Open the file and see."}}
 	}
 	if !f.List {
 		lines = append(lines,
@@ -85,10 +87,10 @@ func (b *builder) phraseRow(i int, f model.PhraseFile) Row {
 			Line{Text, "If the words are the phrase of a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and write the new phrase on paper kept somewhere safe. Moving the coins is what counts: the phrase may have been copied already, and deleting the file does not take a copy back. Then delete this file and empty the Recycle Bin."},
 			Line{Text, "If it is a test phrase that never held coins, there is nothing to move."})
 		if synced := wallets.Synced(f.Path, b.s.Clouds); synced != "" {
-			kind += ", copied by " + synced
+			kind = "In a file, copied by " + synced // the copying matters more than the name
 			lines = append(lines, Line{Text, synced + " copies this file off the PC, so it is on " + synced + "'s servers too. Delete it there as well, and from " + synced + "'s own recycle bin and the file's earlier versions."})
 		}
-		lines = append(lines, Line{Aside, "LazaScope did not show, keep or send the words. It noted only the file and the " + unit(f.Path) + "."})
+		lines = append(lines, Line{Aside, "LazaScope did not show, keep or send the words. It noted only the file and the " + phrase.Unit(f.Path) + "."})
 	}
 	lines = append(lines, Line{Text, "File:"}, Line{Command, f.Path})
 	check := row.Level.String()
@@ -99,6 +101,23 @@ func (b *builder) phraseRow(i int, f model.PhraseFile) Row {
 	row.Detail = lines
 	return row
 }
+
+// named adds that a file's name points to a phrase as well.
+func named(f model.PhraseFile) string {
+	if !f.Named {
+		return ""
+	}
+	return " Its name, " + quote(f.Path) + ", points to one as well."
+}
+
+// quote gives a file's name, without its folders, in quotation marks.
+func quote(path string) string {
+	return "\u201c" + path[strings.LastIndexAny(path, `\/`)+1:] + "\u201d"
+}
+
+// likely reports whether a file very likely holds a recovery phrase: a
+// complete one, or a run of its words in a file named like one.
+func likely(f model.PhraseFile) bool { return f.Phrase > 0 || f.Named && !f.List }
 
 // phraseTopic is the row for the search itself: whether it has run, what
 // it read and what it could not.
@@ -111,7 +130,7 @@ func (b *builder) phraseTopic() Row {
 	phrases, others := 0, 0
 	for _, f := range p.Found {
 		switch {
-		case f.Phrase > 0:
+		case likely(f):
 			phrases++
 		case !f.List:
 			others++
@@ -120,7 +139,7 @@ func (b *builder) phraseTopic() Row {
 	state := fmt.Sprintf("Searched %s at %s: none found", several(p.Read, "file", "files"), p.When.Format("15:04"))
 	switch {
 	case phrases > 0:
-		state = fmt.Sprintf("Found a recovery phrase in %s", several(phrases, "file", "files"))
+		state = fmt.Sprintf("Found a likely recovery phrase in %s", several(phrases, "file", "files"))
 		if others > 0 {
 			state += fmt.Sprintf(", and recovery words in %s more", thousands(others))
 		}

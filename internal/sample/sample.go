@@ -84,7 +84,7 @@ func Phrases() *model.PhraseSearch {
 		When: time.Now(), Folders: []string{profile + `\Desktop`, profile + `\OneDrive\Documents`, profile + `\Downloads`},
 		Read: 1873, Cloud: 41, Big: 2,
 		Found: []model.PhraseFile{
-			{Path: profile + `\OneDrive\Documents\wallet backup.txt`, Runs: 1, Lines: []int{3}, Words: 12, Phrase: 12},
+			{Path: profile + `\OneDrive\Documents\wallet backup.txt`, Runs: 1, Lines: []int{3}, Words: 12, Phrase: 12, Named: true},
 			{Path: profile + `\Desktop\stream notes.md`, Runs: 1, Lines: []int{14}, Words: 13},
 			{Path: profile + `\Downloads\WalletKit\assets\english.txt`, Runs: 1, Lines: []int{1}, List: true},
 		},

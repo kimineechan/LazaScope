@@ -122,26 +122,31 @@ func TestSearch(t *testing.T) {
 	}
 	write(t, filepath.Join(deep, "deep.txt"), []byte(twelve)) // further down than a search goes
 	write(t, filepath.Join(root, "d", "shallow.txt"), []byte(twelve))
+	write(t, filepath.Join(root, "Notes", "old seed copy.txt"), []byte(electrumSeeds[1]))
+	write(t, filepath.Join(root, "Notes", "my seed words.txt"), []byte(strings.Repeat("abandon ", 12))) // no phrase, but its name points to one
 
 	result := Search([]string{root}, nil, func(int) {})
 	if result.Stopped || result.Full || result.Big != 1 || result.Locked != 0 || result.Cloud != 0 {
 		t.Errorf("stopped %v, full %v, big %d, locked %d, cloud %d", result.Stopped, result.Full, result.Big, result.Locked, result.Cloud)
 	}
-	// wallet.txt, odd words.md, bip39.json, wallet.env, letter.txt, shallow.txt
-	if result.Read != 6 {
-		t.Errorf("read %d files, want 6", result.Read)
+	// wallet.txt, old seed copy.txt, my seed words.txt, odd words.md,
+	// bip39.json, wallet.env, letter.txt, shallow.txt
+	if result.Read != 8 {
+		t.Errorf("read %d files, want 8", result.Read)
 	}
 	got := map[string]string{}
 	for _, f := range result.Found {
 		rel, _ := filepath.Rel(root, f.Path)
-		got[rel] = fmt.Sprintf("lines %v, words %d, phrase %d, list %v", f.Lines, f.Words, f.Phrase, f.List)
+		got[rel] = fmt.Sprintf("lines %v, words %d, phrase %d, electrum %v, named %v, list %v", f.Lines, f.Words, f.Phrase, f.Electrum, f.Named, f.List)
 	}
 	want := map[string]string{
-		filepath.Join("Notes", "wallet.txt"):                     "lines [3], words 12, phrase 12, list false",
-		filepath.Join("Projects", "app", "wallet.env"):           "lines [1], words 12, phrase 12, list false",
-		filepath.Join("d", "shallow.txt"):                        "lines [1], words 12, phrase 12, list false",
-		filepath.Join("Notes", "odd words.md"):                   "lines [3], words 12, phrase 0, list false",
-		filepath.Join("Projects", "app", "assets", "bip39.json"): "lines [1], words 0, phrase 0, list true",
+		filepath.Join("Notes", "wallet.txt"):                     "lines [3], words 12, phrase 12, electrum false, named true, list false",
+		filepath.Join("Projects", "app", "wallet.env"):           "lines [1], words 12, phrase 12, electrum false, named true, list false",
+		filepath.Join("d", "shallow.txt"):                        "lines [1], words 12, phrase 12, electrum false, named false, list false",
+		filepath.Join("Notes", "old seed copy.txt"):              "lines [1], words 12, phrase 12, electrum true, named true, list false",
+		filepath.Join("Notes", "my seed words.txt"):              "lines [1], words 12, phrase 0, electrum false, named true, list false",
+		filepath.Join("Notes", "odd words.md"):                   "lines [3], words 12, phrase 0, electrum false, named false, list false",
+		filepath.Join("Projects", "app", "assets", "bip39.json"): "lines [1], words 0, phrase 0, electrum false, named false, list true",
 	}
 	if len(got) != len(want) {
 		t.Errorf("found %d files, want %d: %v", len(got), len(want), got)
@@ -165,7 +170,7 @@ func TestSearch(t *testing.T) {
 		bare.Found[i].Path = ""
 	}
 	all := strings.ToLower(jsonOf(bare))
-	for _, w := range append(strings.Fields(twelve), strings.Fields(vectors[6].phrase)...) {
+	for _, w := range append(append(strings.Fields(twelve), strings.Fields(vectors[6].phrase)...), strings.Fields(electrumSeeds[1])...) {
 		if strings.Contains(all, w) {
 			t.Errorf("the result holds the word %q: %s", w, all)
 		}
@@ -198,5 +203,21 @@ func TestDepth(t *testing.T) {
 		if got := depth(root, path); got != want {
 			t.Errorf("depth(%q) = %d, want %d", path, got, want)
 		}
+	}
+}
+
+func TestNamed(t *testing.T) {
+	for name, want := range map[string]bool{
+		"old seed copy.txt": true, "My Wallet.docx": true, "metamask backup.md": true, "24 words.txt": true, "eth keys.txt": true,
+		"secrets.txt": true, "BTC.txt": true, "ledger_nano.txt": true,
+		"methods.md": false, "together.txt": false, "notes.txt": false, "general ledgers.csv": false, "shopping list.txt": false,
+	} {
+		if got := Named(filepath.Join("C:", "Users", "sam", name)); got != want {
+			t.Errorf("Named(%q) = %v, want %v", name, got, want)
+		}
+	}
+	// Only the file's own name counts, not the folders it is in.
+	if Named(filepath.Join("C:", "Users", "sam", "Wallet stuff", "notes.txt")) {
+		t.Error("a folder's name counted")
 	}
 }

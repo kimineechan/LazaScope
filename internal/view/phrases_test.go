@@ -42,18 +42,18 @@ func TestPhraseRows(t *testing.T) {
 	s.Phrases = sample.Phrases()
 	b = Build(s, rules.Check(s))
 	found := walletRow(t, b, "Recovery phrase")
-	if found.Level != First || found.Cells[2] != "Written in a file, copied by OneDrive" || !strings.HasSuffix(found.Cells[3], `wallet backup.txt, line 3`) {
+	if found.Level != First || found.Cells[2] != "In a file, copied by OneDrive" || !strings.HasSuffix(found.Cells[3], `wallet backup.txt, line 3`) {
 		t.Errorf("the phrase: %v %q", found.Level, found.Cells)
 	}
 	text := detailOf(found)
-	for _, want := range []string{"Line 3 of this file starts 12 of them in a row", "complete 12-word phrase", "one time in 16", "move the coins", "empty the Recycle Bin",
-		"OneDrive copies this file off the PC", "did not show, keep or send the words"} {
+	for _, want := range []string{"Line 3 of this file starts 12 of them in a row", "complete 12-word phrase", "one time in 16", "Its name, “wallet backup.txt”, points to one as well.",
+		"move the coins", "empty the Recycle Bin", "OneDrive copies this file off the PC", "did not show, keep or send the words"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the phrase's details lack %q:\n%s", want, text)
 		}
 	}
 	words := walletRow(t, b, "Recovery words")
-	if words.Level != Look || !strings.Contains(detailOf(words), "do not hold a complete phrase") {
+	if words.Level != Look || !strings.Contains(detailOf(words), "could not confirm them as a complete phrase") {
 		t.Errorf("the run of words: %v\n%s", words.Level, detailOf(words))
 	}
 	list := walletRow(t, b, "Recovery word list")
@@ -61,7 +61,7 @@ func TestPhraseRows(t *testing.T) {
 		t.Errorf("the word list: %v %q\n%s", list.Level, list.Cells, detailOf(list))
 	}
 	after := walletRow(t, b, "Recovery phrases in files")
-	if after.Level != First || after.Cells[3] != "Found a recovery phrase in 1 file, and recovery words in 1 more" {
+	if after.Level != First || after.Cells[3] != "Found a likely recovery phrase in 1 file, and recovery words in 1 more" {
 		t.Errorf("after the search: %v %q", after.Level, after.Cells)
 	}
 	if text := detailOf(after); !strings.Contains(text, "1,873 files read") || !strings.Contains(text, "41 files kept only in the cloud") || !strings.Contains(text, "2 files larger than 4 MB") {
@@ -70,6 +70,25 @@ func TestPhraseRows(t *testing.T) {
 	// The search and the analyst's evidence find the rows.
 	if got := found.Fields["kind"]; len(got) == 0 || got[len(got)-1] != "recovery phrase" {
 		t.Errorf("the phrase row's kinds: %q", got)
+	}
+
+	// An Electrum seed, and a run of words in a file named like a phrase.
+	s.Phrases.Found = []model.PhraseFile{
+		{Path: `C:\Users\sam\Desktop\old seed copy.txt`, Runs: 1, Lines: []int{1}, Words: 12, Phrase: 12, Electrum: true, Named: true},
+		{Path: `C:\Users\sam\Desktop\my seed.docx`, Runs: 1, Lines: []int{2}, Words: 12, Named: true},
+	}
+	b = Build(s, rules.Check(s))
+	seed := walletRow(t, b, "Electrum seed")
+	if seed.Level != First || !strings.Contains(detailOf(seed), "a complete 12-word seed made by the Electrum wallet") || !strings.Contains(detailOf(seed), "one time in 216") {
+		t.Errorf("the Electrum seed: %v\n%s", seed.Level, detailOf(seed))
+	}
+	byName := walletRow(t, b, "Recovery phrase")
+	if byName.Level != First || byName.Cells[2] != "In a file named like one" || !strings.Contains(detailOf(byName), "Paragraph 2 of this file starts 12 of them") ||
+		!strings.Contains(detailOf(byName), "could not confirm a complete phrase") {
+		t.Errorf("the file named like a phrase: %v %q\n%s", byName.Level, byName.Cells, detailOf(byName))
+	}
+	if row := walletRow(t, b, "Recovery phrases in files"); row.Cells[3] != "Found a likely recovery phrase in 2 files" {
+		t.Errorf("two likely phrases: %q", row.Cells[3])
 	}
 
 	// A search with nothing found is good news, unless it was cut short.
