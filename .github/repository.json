@@ -14,9 +14,9 @@
     "digital-signature",
     "incident-response",
     "triage",
-    "portable-app",
+    "portable-applications",
     "win32",
-    "windows-utility"
+    "windows-utilities"
   ],
   "default_branch": "main",
   "license": "MIT",

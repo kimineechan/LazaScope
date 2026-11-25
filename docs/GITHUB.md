@@ -21,7 +21,7 @@ Portable Windows utility that shows what a PC is doing (start-up items, running 
 **Topics**
 
 ```text
-windows, golang, desktop-app, security, security-tools, autoruns, process-monitor, digital-signature, incident-response, triage, portable-app, win32, windows-utility
+windows, golang, desktop-app, security, security-tools, autoruns, process-monitor, digital-signature, incident-response, triage, portable-applications, win32, windows-utilities
 ```
 
 These settings are also stored in `.github/repository.json` for reference. GitHub does not apply that file automatically.
