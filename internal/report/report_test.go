@@ -2,9 +2,12 @@ package report
 
 import (
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"lazascope/internal/model"
 	"lazascope/internal/rules"
@@ -12,6 +15,9 @@ import (
 	"lazascope/internal/sigcheck"
 	"lazascope/internal/view"
 )
+
+// opened finds a box of the web page that starts open.
+var opened = regexp.MustCompile(`<details[^>]*\sopen[\s>=]`)
 
 func book(change func(s *model.Snapshot)) *view.Book {
 	s := sample.PC()
@@ -24,11 +30,14 @@ func book(change func(s *model.Snapshot)) *view.Book {
 func TestHTML(t *testing.T) {
 	b := book(nil)
 	page := string(HTML(b, "1.0.0"))
+	things := len(items(b.Findings))
 	for _, want := range []string{
-		"<!doctype html>", "<title>LazaScope report: STUDY-PC, ", "STUDY-PC, Windows 11 Home 24H2. Looked at on ",
-		"Read it before you send it to anyone.", "At a glance", "What is worth a second look", "What could not be read", "The facts",
-		"Named like a part of Windows, but not where Windows keeps it", "Starts a scripting tool with a scrambled command", "<b>What you can do:</b>",
-		"Rule: startup-system-name", "How this PC is protected", "Who can get into this PC", "What starts by itself", "What is running now", "What is talking to the network",
+		"<!doctype html>", "<title>LazaScope report: STUDY-PC, ", "<h1>LazaScope</h1>", "What starts. What runs. What is worth a second look.",
+		"<h2>This PC at a glance</h2>", "STUDY-PC, Windows 11 Home 24H2. Looked at on ", "Read it before you send it to anyone.",
+		"<h2>What is worth a second look (25)</h2>", "25 findings about " + strconv.Itoa(things) + " things.</p>",
+		"<h2>What could not be read</h2>", "<h2>Everything LazaScope read</h2>",
+		"Named like a part of Windows, but not where Windows keeps it", "Starts a scripting tool with a scrambled command", `<span class="label">What you can do:</span>`,
+		"Rule: startup-system-name. MITRE ATT&amp;CK", "How this PC is protected", "Who can get into this PC", "What starts by itself", "What is running now", "What is talking to the network",
 		"LazaScope is not an antivirus", "Made by LazaScope 1.0.0 on ", "This page holds no scripts and loads nothing from the internet.",
 	} {
 		if !strings.Contains(page, want) {
@@ -39,6 +48,35 @@ func TestHTML(t *testing.T) {
 		if !strings.Contains(page, "<b>"+glance.Area.String()+"</b>") {
 			t.Errorf("the web page lacks the light for %s", glance.Area)
 		}
+	}
+	// It wears the colours of the window, dark, and turns light only on paper.
+	for _, colour := range []string{"color-scheme:dark", "--sheet:#121212", "--ink:#f3f3f3", "--good:#5fcb80", "--warn:#f2b33d", "--bad:#ff5449", "@media print"} {
+		if !strings.Contains(page, colour) {
+			t.Errorf("the web page's style lacks %q", colour)
+		}
+	}
+	// The lists follow the window's section buttons, numbered as there, and
+	// start closed so that the page is short until a list is opened.
+	last := 0
+	for i, name := range []string{"Protection", "Start-up", "Running", "Connections", "Accounts", "Health"} {
+		at := strings.Index(page, fmt.Sprintf(`<span class="num">%02d</span><b>%s</b>`, i+2, name))
+		if at < last {
+			t.Errorf("the list %02d %s is missing or out of order", i+2, name)
+		}
+		last = at
+	}
+	if opened.MatchString(page) {
+		t.Error("something in the web page starts open")
+	}
+	// One item flagged three times is shown once: its facts once, and the way
+	// to switch it off once.
+	host := strings.Index(page, "<h3>Windows Host Service<")
+	if host < 0 {
+		t.Fatal("the web page lacks the item Windows Host Service")
+	}
+	block := page[host : host+strings.Index(page[host:], "</article>")]
+	if strings.Count(block, `<div class="finding">`) != 3 || strings.Count(block, "<dt>Command</dt>") != 1 || strings.Count(block, "To stop it starting, open Task Manager") != 1 || !strings.Contains(block, `<span class="where">03 Start-up</span>`) {
+		t.Errorf("the item Windows Host Service: %s", block)
 	}
 	// The page must be whole in itself: nothing run, nothing fetched.
 	for _, never := range []string{"<script", "<link", "<img", "<iframe", "src=", "href=", "url(", "@import", "http://", "https://", "onclick", "onload"} {
@@ -51,13 +89,80 @@ func TestHTML(t *testing.T) {
 	if got := strings.Count(page, "<details>"); got != rows {
 		t.Errorf("%d rows in the web page, want %d", got, rows)
 	}
-	for _, tag := range []string{"details", "summary", "div", "ul", "dl", "main", "h2", "h3", "h4", "p", "code", "span"} {
+	for _, tag := range []string{"details", "summary", "div", "ul", "li", "dl", "main", "header", "footer", "article", "h1", "h2", "h3", "h4", "p", "b", "code", "span"} {
 		if open, shut := strings.Count(page, "<"+tag+">")+strings.Count(page, "<"+tag+" "), strings.Count(page, "</"+tag+">"); open != shut {
 			t.Errorf("<%s> is opened %d times and closed %d times", tag, open, shut)
 		}
 	}
 	if strings.Count(page, `class="finding`) != len(b.Findings) {
 		t.Errorf("%d findings in the web page, want %d", strings.Count(page, `class="finding`), len(b.Findings))
+	}
+	// A look held against a report says what changed, and that too is closed.
+	compared := string(HTML(book(func(s *model.Snapshot) {
+		s.Compared = &model.Comparison{With: "earlier.json", When: s.Taken.Add(-time.Hour), Gone: []string{"Old Tool, which started by itself"}}
+	}), "1.0.0"))
+	if !strings.Contains(compared, `<details class="more"><summary>What has changed or gone</summary>`) || opened.MatchString(compared) {
+		t.Error("the changes of a comparison are not in a closed box of their own")
+	}
+}
+
+// Findings about the same thing are gathered, in the order of the most
+// serious finding about each, and none is lost.
+func TestItems(t *testing.T) {
+	b := book(nil)
+	all := items(b.Findings)
+	n := 0
+	for i, it := range all {
+		n += len(it.findings)
+		for _, f := range it.findings {
+			if f.Ref != it.findings[0].Ref {
+				t.Errorf("item %d mixes %s and %s", i, f.Ref, it.findings[0].Ref)
+			}
+		}
+		if i > 0 && it.findings[0].Severity > all[i-1].findings[0].Severity {
+			t.Errorf("item %d (%s) is more serious than the one before it", i, it.subject)
+		}
+	}
+	if n != len(b.Findings) || len(all) >= len(b.Findings) {
+		t.Errorf("%d items hold %d findings, of %d", len(all), n, len(b.Findings))
+	}
+	for _, it := range all {
+		if it.subject == "Windows Host Service" {
+			if len(it.findings) != 3 || it.findings[0].Severity != rules.High {
+				t.Errorf("Windows Host Service: %+v", it.findings)
+			}
+			seen := map[string]bool{}
+			for _, fact := range it.evidence(b.Snapshot) {
+				key := fact.Label + "=" + fact.Value
+				if seen[key] {
+					t.Errorf("the fact %s is given twice", key)
+				}
+				seen[key] = true
+			}
+			if !seen["Fingerprint of that file (SHA-256)=a952348c8cf60593a91c438276fc4a50315c1f8fe8249bdc08e53a9dd24b18f1"] || !seen["VirusTotal's label=trojan.fakesvc/example"] {
+				t.Errorf("the facts of Windows Host Service lack its fingerprint or what VirusTotal said: %v", seen)
+			}
+		}
+	}
+}
+
+// Advice that an earlier finding about the same thing already gave is not
+// given again, but a sentence that leans on the one before it keeps it.
+func TestFresh(t *testing.T) {
+	given := map[string]bool{}
+	for _, c := range []struct{ advice, want string }{
+		{"Scan it. To stop it starting, switch it off. That does not delete anything.", "Scan it. To stop it starting, switch it off. That does not delete anything."},
+		{"Do not open it. Choose Look up file... to read more. To stop it starting, switch it off. That does not delete anything.", "Do not open it. Choose Look up file... to read more."},
+		{"To stop it starting, switch it off. That keeps it from starting at sign-in.", "To stop it starting, switch it off. That keeps it from starting at sign-in."},
+		{"Scan it.", ""},
+		{"", ""},
+	} {
+		if got := fresh(c.advice, given); got != c.want {
+			t.Errorf("fresh(%q) = %q, want %q", c.advice, got, c.want)
+		}
+	}
+	if got := sentences("Open Windows 11 build 26100.2314 first. Then C:\\Windows\\MEMORY.DMP. Done!"); len(got) != 3 {
+		t.Errorf("sentences: %q", got)
 	}
 }
 
@@ -126,12 +231,37 @@ func TestText(t *testing.T) {
 	b := book(nil)
 	text := Text(b, "1.0.0")
 	for _, want := range []string{
-		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (25)\r\n", "[Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
-		"    Why: ", "    What you can do: ", "    Rule: startup-system-name\r\n", "WHAT COULD NOT BE READ\r\n", "WHAT STARTS BY ITSELF (", "Check | Name | Kind | Maker | VirusTotal | File\r\n",
+		"LazaScope report\r\n", "Made by LazaScope 1.0.0 on ", "AT A GLANCE\r\n", "WORTH A LOOK (25)\r\n", "25 findings about ",
+		"Windows Host Service, under 03 Start-up\r\n", "  [Look first] Named like a part of Windows, but not where Windows keeps it\r\n",
+		"      Why: ", "      What you can do: ", "  Details:\r\n", "      Rule: startup-system-name. MITRE ATT&CK 20.1: T1036.005", "      Rule: startup-virustotal-flags\r\n",
+		"WHAT COULD NOT BE READ\r\n", "Check | Name | Kind | Maker | VirusTotal | File\r\n",
 		"Look first | Windows Host Service | Registry Run | Not signed | 25 of 72 | C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n", "LazaScope is not an antivirus",
 	} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the text report lacks %q", want)
+		}
+	}
+	// The lists come in the order of the window's section buttons.
+	last := 0
+	for _, heading := range []string{"02 PROTECTION: HOW THIS PC IS PROTECTED (13)", "03 START-UP: WHAT STARTS BY ITSELF (", "04 RUNNING: WHAT IS RUNNING NOW (", "05 CONNECTIONS: WHAT IS TALKING TO THE NETWORK (", "06 ACCOUNTS: WHO CAN GET INTO THIS PC (", "07 HEALTH: HOW THIS PC IS HOLDING UP ("} {
+		at := strings.Index(text, heading)
+		if at < last {
+			t.Errorf("the list %q is missing or out of order", heading)
+		}
+		last = at
+	}
+	// An item flagged three times gives its facts once, but two hardware
+	// errors in the same minute stay two.
+	if n := strings.Count(text, "      Command: C:\\Users\\sam\\AppData\\Roaming\\svchost.exe\r\n"); n != 1 {
+		t.Errorf("the command of Windows Host Service is given %d times", n)
+	}
+	if n := strings.Count(text, ": A corrected hardware error has occurred."); n != len(b.Snapshot.Condition.Hardware) || n != 4 {
+		t.Errorf("%d hardware errors in the text report, want the 4 the made-up PC has", n)
+	}
+	// Dates are written the same way throughout, as words.
+	for _, number := range []string{"Last update installed: 2026-", "Running since: 2026-", "is not encrypted (off)"} {
+		if strings.Contains(text, number) {
+			t.Errorf("the text report says %q", number)
 		}
 	}
 	if strings.Contains(strings.ReplaceAll(text, "\r\n", ""), "\n") {
@@ -286,6 +416,16 @@ func TestJSON(t *testing.T) {
 	}
 	if !strings.HasSuffix(string(data), "}\n") {
 		t.Error("the data does not end with a line break")
+	}
+	// Written as people type it: an apostrophe and a > as themselves, not as
+	// escape codes (a backslash, a u and four digits).
+	for _, code := range []string{"0027", "003e", "003c", "0026"} {
+		if strings.Contains(string(data), "\\u"+code) {
+			t.Errorf("the data writes the escape code for %s", code)
+		}
+	}
+	if !strings.Contains(string(data), "Microsoft Defender's log") || !strings.Contains(string(data), "Virus and threat protection > Manage settings") {
+		t.Error("the data lacks an apostrophe or a > written as itself")
 	}
 	// A look that read nothing still gives well-formed data, with empty lists and not nulls.
 	empty := string(JSON(book(func(s *model.Snapshot) { *s = model.Snapshot{Taken: s.Taken, Computer: "PC"} }), "1.0.0"))

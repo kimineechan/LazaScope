@@ -3,10 +3,13 @@
 // for another tool.
 //
 // The web page is whole in itself. It has no scripts and loads nothing
-// from anywhere, so opening it tells nobody anything.
+// from anywhere, so opening it tells nobody anything. It wears the colours
+// of LazaScope's own window, and keeps the long lists closed until they are
+// opened.
 package report
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,55 +55,85 @@ const Careful = "This report names this PC, the account in use, the programs it 
 // Limits says what the report must not be taken for.
 const Limits = "LazaScope is not an antivirus. It reads what Windows reports and removes nothing. \"Worth a look\" means unusual, not harmful, and a clean report is not proof that nothing is wrong: software that hides inside the core of Windows can hide from this too."
 
+// tagline is the line under the name, as in the window.
+const tagline = "What starts. What runs. What is worth a second look."
+
+// style dresses the web page in the colours of the window (see theme.go in
+// internal/winui): a dark sheet with a thin light rim, Segoe UI, round lights,
+// and colour only where it means something. Printed, it turns light, as
+// paper needs.
 const style = `
-:root{color-scheme:light}
+:root{color-scheme:dark;--page:#070707;--sheet:#121212;--edge:rgba(255,255,255,.16);--ink:#f3f3f3;--soft:#c2c2c2;--quiet:#a9a9a9;
+--panel:rgba(0,0,0,.25);--panel-edge:rgba(255,255,255,.1);--rule:rgba(255,255,255,.1);--rule-faint:rgba(255,255,255,.05);
+--well:rgba(0,0,0,.32);--hover:rgba(255,255,255,.05);--chosen:rgba(255,255,255,.1);
+--good:#5fcb80;--warn:#f2b33d;--bad:#ff5449;--ring:rgba(255,255,255,.44);--red:#ff8f85;--amber:#f2b33d;--green:#6fd08c;--grey:#b8b8b8;
+--mono:"Cascadia Mono",Consolas,monospace}
 *{box-sizing:border-box}
-body{margin:0;background:#f4f4f2;color:#1b1b1b;font:15px/1.5 "Segoe UI",system-ui,sans-serif}
-main{max-width:1080px;margin:0 auto;padding:32px 24px 64px}
-h1{font-size:30px;margin:0 0 4px}
-h2{font-size:21px;margin:44px 0 6px}
-h2.part{margin-top:56px;padding-top:20px;border-top:2px solid #1b1b1b}
-h3{font-size:16px;margin:0 0 6px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:1060px;margin:24px auto;padding:28px 32px 18px;background:var(--sheet);border:1px solid var(--edge);border-radius:8px}
+h1,h2,h3,h4{margin:0;line-height:1.3}
+h1{font-size:26px}
+h2{font-size:19px;margin:36px 0 4px}
+h3{font-size:16px}
 p{margin:6px 0}
-.quiet{color:#5c5c5c}
-.careful{background:#fff6d6;border:1px solid #e3c85a;border-radius:8px;padding:10px 14px;margin:16px 0}
-.lights{list-style:none;margin:12px 0;padding:0;background:#fff;border:1px solid #dcdcd8;border-radius:10px}
-.lights li{display:grid;grid-template-columns:22px 230px 1fr;gap:4px 12px;padding:10px 14px;border-top:1px solid #ecece8;align-items:center}
-.lights li:first-child{border-top:0}
-.lights .facts{grid-column:2/4;color:#5c5c5c;font-size:14px}
-.lamp{width:14px;height:14px;border-radius:50%;border:2px solid #9a9a9a}
-.green .lamp{background:#2e9d57;border-color:#2e9d57}
-.amber .lamp{background:#e0a11b;border-color:#e0a11b}
-.red .lamp{background:#d43b30;border-color:#d43b30}
-.finding{background:#fff;border:1px solid #dcdcd8;border-left:6px solid #9a9a9a;border-radius:8px;padding:14px 16px;margin:12px 0}
-.finding.first{border-left-color:#d43b30}
-.finding.look{border-left-color:#e0a11b}
-.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:4px;padding:1px 7px;margin-right:6px;background:#e4e4e0;vertical-align:1px}
-.first .tag,.tag.first{background:#f9d6d2;color:#8c1d15}
-.look .tag,.tag.look{background:#fbe7b6;color:#6e4b00}
-.fine .tag,.tag.fine{background:#d5efdd;color:#17592f}
-dl{display:grid;grid-template-columns:170px 1fr;gap:2px 12px;margin:10px 0 0;font-size:14px}
-dt{color:#5c5c5c}
+ul{margin:6px 0;padding-left:20px}
+.tagline{margin:2px 0 0;color:var(--quiet);font-size:14px}
+.soft{color:var(--soft)}
+.quiet{color:var(--quiet);font-size:13px}
+.first{color:var(--red)}.look{color:var(--amber)}.fine{color:var(--green)}.info{color:var(--grey)}
+.glance{list-style:none;margin:12px 0 0;padding:8px 18px;background:var(--panel);border:1px solid var(--panel-edge);border-radius:8px}
+.glance li{display:grid;grid-template-columns:14px 230px minmax(0,1fr);column-gap:14px;align-items:baseline;padding:7px 0}
+.glance .facts{grid-column:2/4;color:var(--soft);font-size:13px}
+.lamp{width:12px;height:12px;border-radius:50%;align-self:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.lamp.red{background:var(--bad)}.lamp.amber{background:var(--warn)}.lamp.green{background:var(--good)}.lamp.grey{border:2px solid var(--ring)}
+.item{padding:16px 0 12px;border-top:1px solid var(--rule)}
+.item h3{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 16px;overflow-wrap:anywhere}
+.where{font-size:13px;font-weight:400;color:var(--quiet)}
+.finding{display:grid;grid-template-columns:112px minmax(0,1fr);column-gap:16px;margin:10px 0 0}
+.finding .check{margin:0;font-size:14px;font-weight:600}
+.finding .title{margin:0;font-weight:600}
+.finding p{overflow-wrap:anywhere}
+.label{color:var(--soft)}
+details.more{margin:10px 0 0 128px}
+details.more>summary{width:max-content;color:var(--soft);cursor:pointer}
+details.more>summary::marker{color:var(--quiet)}
+dl{display:grid;grid-template-columns:minmax(120px,220px) minmax(0,1fr);gap:3px 14px;margin:8px 0;font-size:13.5px}
+dt{color:var(--soft)}
 dd{margin:0;overflow-wrap:anywhere}
-.list{background:#fff;border:1px solid #dcdcd8;border-radius:10px;margin:12px 0;font-size:14px}
+.rule{margin:3px 0;color:var(--quiet);font-size:13px}
+details.section{border-top:1px solid var(--rule)}
+details.section:last-of-type{border-bottom:1px solid var(--rule)}
+details.section>summary{padding:10px 2px;cursor:pointer}
+details.section>summary::marker{color:var(--quiet)}
+.num{margin-right:6px;color:var(--quiet);font-variant-numeric:tabular-nums}
+.intro{margin:0 0 10px;color:var(--soft);font-size:14px}
+.list{margin:0 0 16px;font-size:13.5px;background:var(--panel);border:1px solid var(--panel-edge);border-radius:8px}
 .head,.list summary{display:grid;grid-template-columns:var(--columns);gap:10px;padding:6px 14px}
-.head{font-weight:600;color:#5c5c5c;border-bottom:1px solid #dcdcd8}
-.list details{border-top:1px solid #f0f0ec}
-.list details:first-of-type{border-top:0}
+.head{color:var(--soft);font-weight:600;border-bottom:1px solid var(--rule)}
+.list details+details{border-top:1px solid var(--rule-faint)}
 .list summary{cursor:pointer;list-style:none}
 .list summary::-webkit-details-marker{display:none}
-.list summary:hover,.list details[open] summary{background:#f6f6f3}
+.list summary:hover{background:var(--hover)}
+.list details[open]>summary{background:var(--chosen)}
 .list summary span{overflow-wrap:anywhere;white-space:pre-wrap}
-.detail{padding:6px 14px 14px 14px;border-top:1px dashed #e4e4e0;background:#fcfcfa}
-.detail h4{font-size:14px;margin:10px 0 2px}
+.detail{padding:8px 14px 12px;border-top:1px solid var(--rule-faint)}
+.detail h4{font-size:13.5px;margin:10px 0 2px}
 .detail p{margin:3px 0}
-.detail .aside{color:#5c5c5c;font-size:13px}
-code{font:13px/1.45 Consolas,"Cascadia Mono",monospace;background:#f0f0ec;border-radius:4px;padding:2px 6px;display:block;overflow-wrap:anywhere;white-space:pre-wrap}
-footer{margin-top:56px;padding-top:16px;border-top:1px solid #dcdcd8;color:#5c5c5c;font-size:14px}
-@media print{body{background:#fff}main{padding:0}.list summary:hover{background:none}.finding,.list,.lights{break-inside:avoid-page}}
+.detail .aside{color:var(--quiet);font-size:12.5px}
+code{display:block;margin:4px 0;padding:4px 8px;font:12.5px/1.45 var(--mono);background:var(--well);border:1px solid var(--panel-edge);border-radius:6px;overflow-wrap:anywhere;white-space:pre-wrap}
+footer{margin-top:36px;padding-top:12px;border-top:1px solid var(--rule);color:var(--quiet);font-size:13px}
+footer p{margin:4px 0}
+summary:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:760px){main{margin:0;padding:20px 16px;border:0;border-radius:0}.glance li{grid-template-columns:14px minmax(0,1fr)}.glance .verdict,.glance .facts{grid-column:2}
+.finding{grid-template-columns:minmax(0,1fr)}details.more{margin-left:0}dl{grid-template-columns:minmax(0,1fr)}dd{margin-bottom:6px}.list{overflow-x:auto}.head,.list summary{min-width:720px}}
+@media print{:root{color-scheme:light;--page:#fff;--sheet:#fff;--edge:#fff;--ink:#111;--soft:#444;--quiet:#555;--panel:#fff;--panel-edge:#bbb;--rule:#ccc;--rule-faint:#e6e6e6;
+--well:#f3f3f3;--hover:transparent;--chosen:#f3f3f3;--red:#b3261e;--amber:#8a5a00;--green:#1e7a3e;--grey:#555;--bad:#d43b30;--warn:#e0a11b;--good:#2e9d57;--ring:#888}
+main{max-width:none;margin:0;padding:0;border:0}.glance,.finding{break-inside:avoid}}
 `
 
-// class names the level of a row or a finding for the style sheet.
+// class names the level of a row or a finding for the style sheet: the
+// colour of its first word, as in the window's lists.
 func class(level view.Level) string {
 	switch level {
 	case view.First:
@@ -109,8 +142,10 @@ func class(level view.Level) string {
 		return "look"
 	case view.Fine:
 		return "fine"
+	case view.Info, view.Unknown:
+		return "info"
 	}
-	return "plain"
+	return ""
 }
 
 func severity(s rules.Severity) view.Level {
@@ -135,55 +170,219 @@ func lamp(light rules.Light) string {
 	return "grey"
 }
 
+// tone is the colour of a light's words, as on the window's overview.
+func tone(light rules.Light) string {
+	switch light {
+	case rules.Green:
+		return "fine"
+	case rules.Amber:
+		return "look"
+	case rules.Red:
+		return "first"
+	}
+	return "info"
+}
+
 // title names the report by its PC and its day.
 func title(b *view.Book) string {
 	return strings.TrimSpace("LazaScope report: " + b.Snapshot.Computer + ", " + b.Snapshot.Taken.Format("2 January 2006"))
 }
 
-// HTML writes the report as one web page that needs nothing else.
+// lists returns the six lists a report carries, in the order of the window's
+// section buttons, each with its number there: 02 Protection to 07 Health.
+func lists(b *view.Book) []*view.Page {
+	return b.Pages()[:model.Areas]
+}
+
+// tab names the list of an area as the window's section button does, such
+// as "03 Start-up". Advice that sends the reader to "03 Start-up" finds it
+// under that name in the report too.
+func tab(b *view.Book, area model.Area) string {
+	if area < model.Protection || area >= model.Areas {
+		return area.String()
+	}
+	return fmt.Sprintf("%02d %s", int(area)+2, lists(b)[area].Name)
+}
+
+// item is one thing the findings are about, such as a start-up entry or a
+// setting, with every finding about it, the most serious first.
+type item struct {
+	subject  string
+	area     model.Area
+	findings []rules.Finding
+}
+
+// items gathers the findings by what they are about. The findings come
+// most serious first, and each item keeps the place of its most serious
+// finding, so the order of the whole stays the same.
+func items(findings []rules.Finding) []item {
+	var list []item
+	at := map[string]int{}
+	for _, f := range findings {
+		key := f.Ref
+		if key == "" {
+			key = f.Area.String() + "\x00" + f.Subject
+		}
+		i, ok := at[key]
+		if !ok {
+			i = len(list)
+			at[key] = i
+			list = append(list, item{subject: f.Subject, area: f.Area})
+		}
+		list[i].findings = append(list[i].findings, f)
+	}
+	return list
+}
+
+// evidence is what is known about an item, from all its findings, with the
+// fingerprint of each file after the file. A fact that an earlier finding
+// about the item already gave is not given again. Within one finding every
+// fact stays: two hardware errors in the same minute are two errors.
+func (it item) evidence(s *model.Snapshot) []rules.Fact {
+	var out []rules.Fact
+	given := map[rules.Fact]bool{}
+	for _, f := range it.findings {
+		var these []rules.Fact
+		for _, fact := range withPrints(s, f.Facts) {
+			if !given[fact] {
+				these = append(these, fact)
+			}
+		}
+		for _, fact := range these {
+			given[fact] = true
+		}
+		out = append(out, these...)
+	}
+	return out
+}
+
+// tally says how many findings there are and about how many things.
+func tally(findings, things int) string {
+	n := count(findings, "finding", "findings")
+	if things != findings {
+		n += " about " + count(things, "thing", "things")
+	}
+	return n + "."
+}
+
+// sentences splits a paragraph after each full stop, question mark or
+// exclamation mark that a space and a capital letter follow. "Look up
+// file... to read" stays whole.
+func sentences(text string) []string {
+	var out []string
+	start := 0
+	for i := 0; i+2 < len(text); i++ {
+		if (text[i] == '.' || text[i] == '?' || text[i] == '!') && text[i+1] == ' ' && text[i+2] >= 'A' && text[i+2] <= 'Z' {
+			out = append(out, text[start:i+1])
+			start = i + 2
+		}
+	}
+	return append(out, text[start:])
+}
+
+// leans reports whether a sentence leans on the one before it, so that the
+// two must be kept or left out together.
+func leans(sentence string) bool {
+	for _, word := range []string{"That ", "This ", "It ", "Then ", "They "} {
+		if strings.HasPrefix(sentence, word) {
+			return true
+		}
+	}
+	return false
+}
+
+// fresh returns the sentences of a piece of advice that an earlier finding
+// about the same item has not already given, and notes them as given. Most
+// rules end their advice with how to switch the thing off, and an item
+// flagged three times needs to read that once.
+func fresh(advice string, given map[string]bool) string {
+	parts := sentences(strings.TrimSpace(advice))
+	drop := make([]bool, len(parts))
+	for i, part := range parts {
+		drop[i] = given[part]
+	}
+	for i := len(parts) - 1; i > 0; i-- {
+		if !drop[i] && leans(parts[i]) {
+			drop[i-1] = false
+		}
+	}
+	var kept []string
+	for i, part := range parts {
+		given[part] = true
+		if !drop[i] && part != "" {
+			kept = append(kept, part)
+		}
+	}
+	return strings.Join(kept, " ")
+}
+
+// ruleLine names the rule behind a finding and the ATT&CK techniques it is
+// a trace of.
+func ruleLine(f rules.Finding) string {
+	line := "Rule: " + f.Rule
+	if attack := rules.Attack(f.Attack); attack != "" {
+		line += ". MITRE ATT&CK " + rules.AttackVersion + ": " + attack
+	}
+	return line
+}
+
+// HTML writes the report as one web page that needs nothing else: the
+// overview's lights, what is worth a look, and then every list, closed.
 func HTML(b *view.Book, version string) []byte {
 	var w strings.Builder
 	e := html.EscapeString
 	fmt.Fprintf(&w, "<!doctype html>\n<html lang=\"en-GB\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>%s</title>\n<style>%s</style>\n</head>\n<body>\n<main>\n", e(title(b)), style)
-	fmt.Fprintf(&w, "<h1>LazaScope report</h1>\n<p>%s</p>\n", e(b.Summary))
+	fmt.Fprintf(&w, "<header>\n<h1>LazaScope</h1>\n<p class=\"tagline\">%s</p>\n</header>\n", e(tagline))
+
+	fmt.Fprintf(&w, "<h2>This PC at a glance</h2>\n<p class=\"soft\">%s</p>\n", e(b.Summary))
 	if b.Compared != "" {
 		// What a comparison or a watch showed.
-		fmt.Fprintf(&w, "<p>%s</p>\n", e(b.Compared))
+		fmt.Fprintf(&w, "<p class=\"soft\">%s</p>\n", e(b.Compared))
 		if len(b.Changes) > 0 {
-			w.WriteString("<details><summary><span>What has changed or gone</span></summary><div class=\"detail\">")
+			w.WriteString("<details class=\"more\"><summary>What has changed or gone</summary>\n<ul>\n")
 			for _, change := range b.Changes {
-				fmt.Fprintf(&w, "<p>%s</p>", e(change))
+				fmt.Fprintf(&w, "<li>%s</li>\n", e(change))
 			}
-			w.WriteString("</div></details>\n")
+			w.WriteString("</ul>\n</details>\n")
 		}
 	}
-	fmt.Fprintf(&w, "<p class=\"careful\">%s</p>\n", e(Careful))
-
-	w.WriteString("<h2>At a glance</h2>\n<ul class=\"lights\">\n")
+	fmt.Fprintf(&w, "<p class=\"quiet\">%s</p>\n<ul class=\"glance\">\n", e(Careful))
 	for _, glance := range b.Glances {
-		fmt.Fprintf(&w, "<li class=\"%s\"><span class=\"lamp\"></span><b>%s</b><span>%s</span><span class=\"facts\">%s</span></li>\n", lamp(glance.Light), e(glance.Area.String()), e(glance.Verdict), e(glance.Facts))
+		fmt.Fprintf(&w, "<li><span class=\"lamp %s\"></span><b>%s</b><span class=\"verdict %s\">%s</span><span class=\"facts\">%s</span></li>\n",
+			lamp(glance.Light), e(glance.Area.String()), tone(glance.Light), e(glance.Verdict), e(glance.Facts))
 	}
 	w.WriteString("</ul>\n")
 
-	fmt.Fprintf(&w, "<h2>%s</h2>\n<p class=\"quiet\">%s</p>\n", e(b.Worth.Title), e(b.Worth.Intro))
+	fmt.Fprintf(&w, "<h2>%s (%d)</h2>\n<p class=\"soft\">%s</p>\n", e(b.Worth.Title), len(b.Findings), e(b.Worth.Intro))
 	if len(b.Findings) == 0 {
 		w.WriteString("<p>Nothing on this PC stood out to the rules. That is not a promise that nothing is wrong: LazaScope only knows the signs it was taught.</p>\n")
-	}
-	for _, f := range b.Findings {
-		fmt.Fprintf(&w, "<div class=\"finding %s\">\n<h3><span class=\"tag\">%s</span>%s</h3>\n<p class=\"quiet\">%s: %s</p>\n<p>%s</p>\n<p><b>What you can do:</b> %s</p>\n",
-			class(severity(f.Severity)), e(f.Severity.String()), e(f.Title), e(f.Area.String()), e(f.Subject), e(f.Reason), e(f.Advice))
-		if len(f.Facts) > 0 {
-			w.WriteString("<dl>")
-			for _, fact := range withPrints(b.Snapshot, f.Facts) {
-				fmt.Fprintf(&w, "<dt>%s</dt><dd>%s</dd>", e(fact.Label), e(fact.Value))
+	} else {
+		all := items(b.Findings)
+		fmt.Fprintf(&w, "<p class=\"quiet\">%s</p>\n", e(tally(len(b.Findings), len(all))))
+		for _, it := range all {
+			fmt.Fprintf(&w, "<article class=\"item\">\n<h3>%s<span class=\"where\">%s</span></h3>\n", e(it.subject), e(tab(b, it.area)))
+			given := map[string]bool{}
+			for _, f := range it.findings {
+				level := class(severity(f.Severity))
+				fmt.Fprintf(&w, "<div class=\"finding\">\n<p class=\"check %s\">%s</p>\n<div>\n<p class=\"title\">%s</p>\n<p>%s</p>\n", level, e(f.Severity.String()), e(f.Title), e(f.Reason))
+				if advice := fresh(f.Advice, given); advice != "" {
+					fmt.Fprintf(&w, "<p><span class=\"label\">What you can do:</span> %s</p>\n", e(advice))
+				}
+				w.WriteString("</div>\n</div>\n")
 			}
-			w.WriteString("</dl>\n")
+			w.WriteString("<details class=\"more\"><summary>Details</summary>\n")
+			if facts := it.evidence(b.Snapshot); len(facts) > 0 {
+				w.WriteString("<dl>")
+				for _, fact := range facts {
+					fmt.Fprintf(&w, "<dt>%s</dt><dd>%s</dd>", e(fact.Label), e(fact.Value))
+				}
+				w.WriteString("</dl>\n")
+			}
+			for _, f := range it.findings {
+				fmt.Fprintf(&w, "<p class=\"rule\">%s</p>\n", e(ruleLine(f)))
+			}
+			w.WriteString("</details>\n</article>\n")
 		}
-		fmt.Fprintf(&w, "<p class=\"quiet\">Rule: %s", e(f.Rule))
-		if attack := rules.Attack(f.Attack); attack != "" {
-			fmt.Fprintf(&w, ". MITRE ATT&amp;CK %s: %s", e(rules.AttackVersion), e(attack))
-		}
-		w.WriteString("</p>\n</div>\n")
 	}
 	if len(b.Worth.Unseen) > 0 {
 		w.WriteString("<h2>What could not be read</h2>\n<ul>\n")
@@ -193,9 +392,14 @@ func HTML(b *view.Book, version string) []byte {
 		w.WriteString("</ul>\n")
 	}
 
-	w.WriteString("<h2 class=\"part\">The facts</h2>\n<p class=\"quiet\">Everything LazaScope read, whether or not a rule flagged it. Select a row to open what is known about it.</p>\n")
-	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Health, &b.Startup, &b.Running, &b.Connections} {
-		fmt.Fprintf(&w, "<h2 id=\"%s\">%s</h2>\n<p class=\"quiet\">%s %s.</p>\n", e(strings.ToLower(page.Name)), e(page.Title), e(page.Intro), count(len(page.Rows), "row", "rows"))
+	w.WriteString("<h2>Everything LazaScope read</h2>\n<p class=\"soft\">Every list, whether or not a rule flagged anything in it, under the names of the window's sections. Open a list to see its rows, and a row to see what is known about it.</p>\n")
+	for i, page := range lists(b) {
+		fmt.Fprintf(&w, "<details class=\"section\" id=\"%s\"><summary><span class=\"num\">%02d</span><b>%s</b> (%d) <span class=\"soft\">%s</span></summary>\n<p class=\"intro\">%s</p>\n",
+			e(strings.ToLower(page.Name)), i+2, e(page.Name), len(page.Rows), e(page.Title), e(page.Intro))
+		if len(page.Rows) == 0 {
+			w.WriteString("<p class=\"quiet\">Nothing to list.</p>\n</details>\n")
+			continue
+		}
 		fmt.Fprintf(&w, "<div class=\"list\" style=\"--columns:%s\">\n<div class=\"head\">", columns(page.Columns))
 		for _, column := range page.Columns {
 			fmt.Fprintf(&w, "<span>%s</span>", e(column.Title))
@@ -204,8 +408,15 @@ func HTML(b *view.Book, version string) []byte {
 		for _, row := range page.Rows {
 			w.WriteString("<details><summary>")
 			for i, cell := range row.Cells {
-				if i == 0 && cell != "" {
-					fmt.Fprintf(&w, "<span><span class=\"tag %s\">%s</span></span>", class(row.Level), e(cell))
+				tint := ""
+				if i == 0 {
+					tint = class(row.Level)
+					if tint == "" && row.Off {
+						tint = "info"
+					}
+				}
+				if tint != "" {
+					fmt.Fprintf(&w, "<span class=\"%s\">%s</span>", tint, e(cell))
 				} else {
 					fmt.Fprintf(&w, "<span>%s</span>", e(cell))
 				}
@@ -237,7 +448,7 @@ func HTML(b *view.Book, version string) []byte {
 			}
 			w.WriteString("</div></details>\n")
 		}
-		w.WriteString("</div>\n")
+		w.WriteString("</div>\n</details>\n")
 	}
 	fmt.Fprintf(&w, "<footer>\n<p>%s</p>\n<p>Made by LazaScope %s on %s. This page holds no scripts and loads nothing from the internet.</p>\n</footer>\n</main>\n</body>\n</html>\n",
 		e(Limits), e(version), e(b.Snapshot.Taken.Format("2 January 2006 at 15:04")))
@@ -273,12 +484,18 @@ func count(n int, one, many string) string {
 const rule = "------------------------------------------------------------------------"
 
 // Text writes the report as plain text, for pasting where a web page
-// cannot go.
+// cannot go. It follows the web page: the lights, what is worth a look, then
+// every list.
 func Text(b *view.Book, version string) string {
 	var w strings.Builder
 	line := func(format string, values ...any) { fmt.Fprintf(&w, format+"\r\n", values...) }
+	heading := func(title string) {
+		line("")
+		line("%s", strings.ToUpper(title))
+		line(rule)
+	}
 	line("LazaScope report")
-	line("Made by LazaScope %s on %s", version, b.Snapshot.Taken.Format("2006-01-02 15:04"))
+	line("Made by LazaScope %s on %s", version, b.Snapshot.Taken.Format("2 January 2006 at 15:04"))
 	line(rule)
 	line("")
 	line("%s", b.Summary)
@@ -289,46 +506,53 @@ func Text(b *view.Book, version string) string {
 		}
 	}
 	line("%s", Careful)
-	line("")
-	line("AT A GLANCE")
-	line(rule)
+
+	heading("At a glance")
 	for _, glance := range b.Glances {
 		line("%-28s %s", glance.Area.String(), glance.Verdict)
 		if glance.Facts != "" {
 			line("%-28s %s", "", glance.Facts)
 		}
 	}
-	line("")
-	line("WORTH A LOOK (%d)", len(b.Findings))
-	line(rule)
+
+	heading(fmt.Sprintf("Worth a look (%d)", len(b.Findings)))
 	if len(b.Findings) == 0 {
 		line("Nothing on this PC stood out to the rules.")
-	}
-	for _, f := range b.Findings {
-		line("[%s] %s", f.Severity, f.Title)
-		line("    %s: %s", f.Area, f.Subject)
-		line("    Why: %s", f.Reason)
-		line("    What you can do: %s", f.Advice)
-		for _, fact := range withPrints(b.Snapshot, f.Facts) {
-			line("    %s: %s", fact.Label, fact.Value)
+	} else {
+		all := items(b.Findings)
+		line("%s", tally(len(b.Findings), len(all)))
+		for _, it := range all {
+			line("")
+			line("%s, under %s", it.subject, tab(b, it.area))
+			given := map[string]bool{}
+			for _, f := range it.findings {
+				line("  [%s] %s", f.Severity, f.Title)
+				line("      Why: %s", f.Reason)
+				if advice := fresh(f.Advice, given); advice != "" {
+					line("      What you can do: %s", advice)
+				}
+			}
+			line("  Details:")
+			for _, fact := range it.evidence(b.Snapshot) {
+				line("      %s: %s", fact.Label, fact.Value)
+			}
+			for _, f := range it.findings {
+				line("      %s", ruleLine(f))
+			}
 		}
-		line("    Rule: %s", f.Rule)
-		if attack := rules.Attack(f.Attack); attack != "" {
-			line("    MITRE ATT&CK %s: %s", rules.AttackVersion, attack)
-		}
-		line("")
 	}
 	if len(b.Worth.Unseen) > 0 {
-		line("WHAT COULD NOT BE READ")
-		line(rule)
+		heading("What could not be read")
 		for _, note := range b.Worth.Unseen {
 			line("%s", note)
 		}
-		line("")
 	}
-	for _, page := range []*view.Page{&b.Protection, &b.Accounts, &b.Health, &b.Startup, &b.Running, &b.Connections} {
-		line("%s (%d)", strings.ToUpper(page.Title), len(page.Rows))
-		line(rule)
+	for i, page := range lists(b) {
+		heading(fmt.Sprintf("%02d %s: %s (%d)", i+2, page.Name, page.Title, len(page.Rows)))
+		if len(page.Rows) == 0 {
+			line("Nothing to list.")
+			continue
+		}
 		var titles []string
 		for _, column := range page.Columns {
 			titles = append(titles, column.Title)
@@ -345,8 +569,8 @@ func Text(b *view.Book, version string) string {
 			}
 			line("%s", strings.Join(cells, " | "))
 		}
-		line("")
 	}
+	line("")
 	line(rule)
 	line("%s", Limits)
 	return w.String()
@@ -435,8 +659,16 @@ func JSON(b *view.Book, version string) []byte {
 		}
 		document.Findings = append(document.Findings, finding)
 	}
-	out, _ := json.MarshalIndent(document, "", "  ")
-	return append(out, '\n')
+	// Written as people type it: an apostrophe or a > as itself, not as an
+	// escape code. The data is never put into a web page as it is.
+	var out bytes.Buffer
+	encoder := json.NewEncoder(&out)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(document); err != nil {
+		return nil
+	}
+	return out.Bytes()
 }
 
 // printLabel is the label under which a file's fingerprint is given.
