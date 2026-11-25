@@ -284,7 +284,9 @@ The made-up PC's report was read from the first line to the last in its plain-te
 
 The included workflow runs the platform-neutral tests on Linux with the race detector, builds both programs on Windows, runs all the tests and the planted-items check there, checks that the committed icon and resources match what `tools/mkres` generates, and packages a ZIP with SHA-256 checksums. A version tag publishes the release only after both jobs succeed.
 
-The workflow first ran on GitHub on 25 November 2026, when the repository was published, and passed: the Linux tests in 49 seconds, and the Windows build, tests and planted-items check in 1 minute 39 seconds. It warned that the step that keeps the ZIP used a version of `actions/upload-artifact` that runs on Node.js 20, which GitHub is retiring. The workflow now uses `upload-artifact` v7 and `download-artifact` v8, which run on Node.js 24, and the next run passed with no warning. The release step runs only for a version tag, so it has not run yet.
+The workflow first ran on GitHub on 25 November 2026, when the repository was published, and passed: the Linux tests in 49 seconds, and the Windows build, tests and planted-items check in 1 minute 39 seconds. It warned that the step that keeps the ZIP used a version of `actions/upload-artifact` that runs on Node.js 20, which GitHub is retiring. The workflow now uses `upload-artifact` v7 and `download-artifact` v8, which run on Node.js 24, and the next run passed with no warning.
+
+The release step first ran for the tag `v1.0.0` on 25 November 2026 and published the release: the Linux tests in 40 seconds, the Windows build, tests and planted-items check in 2 minutes 6 seconds, and the publishing in 11 seconds. The SHA-256 of the published ZIP is the one the packaging step printed. Both programs in it are byte for byte the same as the ones built on the test PC from the same source with Go 1.27.3, so anyone can rebuild them from the source and get exactly the published files.
 
 ## Where the testing stopped on 22 November 2026
 
