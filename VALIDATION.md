@@ -277,6 +277,8 @@ The made-up PC's report was read from the first line to the last in its plain-te
 
 The included workflow runs the platform-neutral tests on Linux with the race detector, builds both programs on Windows, runs all the tests and the planted-items check there, checks that the committed icon and resources match what `tools/mkres` generates, and packages a ZIP with SHA-256 checksums. A version tag publishes the release only after both jobs succeed.
 
+The workflow first ran on GitHub on 25 November 2026, when the repository was published, and passed: the Linux tests in 49 seconds, and the Windows build, tests and planted-items check in 1 minute 39 seconds. It warned that the step that keeps the ZIP used a version of `actions/upload-artifact` that runs on Node.js 20, which GitHub is retiring. The workflow now uses `upload-artifact` v7 and `download-artifact` v8, which run on Node.js 24, and the next run passed with no warning. The release step runs only for a version tag, so it has not run yet.
+
 ## Where the testing stopped on 22 November 2026
 
 This is where the first round stopped. Later rounds lifted some of it: the third round ran LazaScope with administrator rights.
