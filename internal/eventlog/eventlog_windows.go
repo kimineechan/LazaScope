@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"lazascope/internal/sysdll"
@@ -43,15 +44,29 @@ const (
 //
 // log is the log's name, such as "System". question is written the way
 // Event Viewer's own filters are; Where, From, Numbered and Since build one.
-func Read(log, question string, most int) ([]Event, error) { return read(log, question, most, true) }
+func Read(log, question string, most int) ([]Event, error) {
+	return read(log, question, most, true, true)
+}
 
 // ReadPlain is Read without Windows' own wording of each record, for
 // records that are read for their values alone. It is a good deal quicker.
 func ReadPlain(log, question string, most int) ([]Event, error) {
-	return read(log, question, most, false)
+	return read(log, question, most, false, true)
 }
 
-func read(log, question string, most int, words bool) ([]Event, error) {
+// Oldest returns when the oldest record still in a log was written, or the
+// zero time when the log is empty. A log has a size limit, and Windows
+// drops its oldest records to keep within it, so this is how far back the
+// log reaches.
+func Oldest(log string) (time.Time, error) {
+	records, err := read(log, "*", 1, false, false)
+	if err != nil || len(records) == 0 {
+		return time.Time{}, err
+	}
+	return records[0].Time, nil
+}
+
+func read(log, question string, most int, words, newest bool) ([]Event, error) {
 	if err := wevtapi.Load(); err != nil {
 		return nil, err
 	}
@@ -63,8 +78,12 @@ func read(log, question string, most int, words bool) ([]Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	const byName, newestFirst = 0x1, 0x200
-	results, _, failure := evtQuery.Call(0, uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(asked)), byName|newestFirst)
+	const byName, oldestFirst, newestFirst = 0x1, 0x100, 0x200
+	order := uintptr(oldestFirst)
+	if newest {
+		order = newestFirst
+	}
+	results, _, failure := evtQuery.Call(0, uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(asked)), byName|order)
 	if results == 0 {
 		switch failure.(syscall.Errno) {
 		case accessDenied:

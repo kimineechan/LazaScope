@@ -41,4 +41,16 @@ func TestLive(t *testing.T) {
 			t.Logf("    %s  %s %d level %d  data %v loose %v\n        %s", e.Time.Local().Format("2006-01-02 15:04:05"), e.Provider, e.ID, e.Level, e.Data, e.Loose, words)
 		}
 	}
+
+	// How far back the System log reaches: its oldest record must be no
+	// younger than its newest.
+	oldest, err := Oldest("System")
+	newest, _ := ReadPlain("System", "*", 1)
+	if err != nil || oldest.IsZero() || len(newest) != 1 || oldest.After(newest[0].Time) {
+		t.Errorf("the System log's oldest record: %v, %v; its newest: %v", oldest, err, newest)
+	}
+	t.Logf("the System log reaches back to %s", oldest.Local().Format("2006-01-02 15:04:05"))
+	if _, err := Oldest("No such log"); err == nil {
+		t.Error("a log that does not exist gave no error")
+	}
 }

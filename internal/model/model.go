@@ -113,8 +113,9 @@ type Defence struct {
 	Key        string // a short name: pua, smartscreen, cfa, network, cloud, samples, hvci, lsa, drivers
 	Name       string // its name in Windows Security, such as Controlled folder access
 	On         Answer
-	Defender   bool // a part of Microsoft Defender, which stands aside when another antivirus is in charge
-	Ransomware bool // it helps against ransomware
+	Defender   bool   // a part of Microsoft Defender, which stands aside when another antivirus is in charge
+	Ransomware bool   // it helps against ransomware
+	Note       string // how LazaScope knows, when its setting alone does not tell
 }
 
 // Backups is what the PC shows of copies of the account's files.

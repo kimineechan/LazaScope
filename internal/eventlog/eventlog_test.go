@@ -91,4 +91,9 @@ func TestQuestions(t *testing.T) {
 	if got := Numbered(104); got != "EventID=104" {
 		t.Errorf("got %s", got)
 	}
+	// A moment is written in UTC whatever zone it was given in.
+	moment := time.Date(2026, 11, 20, 1, 15, 42, 250_000_000, time.FixedZone("UTC+2", 2*60*60))
+	if got := Where(From("Microsoft-Windows-Wininit"), Numbered(12), After(moment)); got != "*[System[Provider[@Name='Microsoft-Windows-Wininit'] and EventID=12 and TimeCreated[@SystemTime>='2026-11-19T23:15:42.250Z']]]" {
+		t.Errorf("got %s", got)
+	}
 }

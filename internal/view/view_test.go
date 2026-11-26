@@ -457,3 +457,33 @@ func TestPartOfWindows(t *testing.T) {
 		}
 	}
 }
+
+// A protection's note, on how LazaScope knows, follows how it stands, in
+// the details and in the evidence. Directions to switch it on follow only
+// when it is off.
+func TestDefenceNotes(t *testing.T) {
+	s := pc()
+	s.Defences = []model.Defence{
+		{Key: "lsa", Name: "Local Security Authority protection", On: model.Yes, Note: "Windows' own log shows that it has been working since Windows last started."},
+		{Key: "hvci", Name: "Memory integrity", On: model.No, Note: "It is switched on, but Windows reports that it is not running yet."},
+		{Key: "drivers", Name: "Microsoft Vulnerable Driver Blocklist", On: model.No},
+	}
+	book := build(s)
+	lsa := find(t, book.Defences, "Local Security Authority protection")
+	if text := words(lsa.Detail); !strings.Contains(text, "How it stands\nOn.\nWindows' own log shows") || strings.Contains(text, "How to switch it on") {
+		t.Errorf("a protection that is on, with a note:\n%s", text)
+	}
+	var raw []string
+	for _, line := range lsa.Raw {
+		raw = append(raw, line.Text)
+	}
+	if evidence := strings.Join(raw, "\n"); !strings.Contains(evidence, "note: Windows' own log shows") {
+		t.Errorf("the evidence lacks the note:\n%s", evidence)
+	}
+	if text := words(find(t, book.Defences, "Memory integrity").Detail); !strings.Contains(text, "Off.\nIt is switched on, but Windows reports") || !strings.Contains(text, "How to switch it on") {
+		t.Errorf("a protection waiting for a restart:\n%s", text)
+	}
+	if text := words(find(t, book.Defences, "Vulnerable Driver Blocklist").Detail); !strings.Contains(text, "Off.\nHow to switch it on\nOn Windows 11: ") || !strings.Contains(text, "Windows 10 has no switch for it: there, switching on Memory integrity applies the list.") {
+		t.Errorf("a protection with no note, and its directions for both versions of Windows:\n%s", text)
+	}
+}

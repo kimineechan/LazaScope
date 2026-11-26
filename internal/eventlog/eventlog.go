@@ -140,6 +140,14 @@ func Since(days int) string {
 	return "TimeCreated[timediff(@SystemTime) <= " + strconv.FormatInt(int64(days)*24*60*60*1000, 10) + "]"
 }
 
+// After is the piece of a question that keeps what was written at or after
+// a moment.
+func After(moment time.Time) string { return "TimeCreated[@SystemTime>='" + stamp(moment) + "']" }
+
+// stamp writes a moment the way the logs' questions compare them: in UTC,
+// to the thousandth of a second.
+func stamp(moment time.Time) string { return moment.UTC().Format("2006-01-02T15:04:05.000Z") }
+
 // From is the piece of a question that keeps the records of one writer.
 func From(provider string) string { return "Provider[@Name='" + provider + "']" }
 

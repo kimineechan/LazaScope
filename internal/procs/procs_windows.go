@@ -52,13 +52,13 @@ const (
 // at reads an address Windows returned as the pointer it is.
 func at(address uintptr) unsafe.Pointer { return *(*unsafe.Pointer)(unsafe.Pointer(&address)) }
 
-// Collect lists the running programs. It only reads. Nothing is opened
-// with more than the right to ask a process about itself.
-func Collect() ([]model.Process, []model.Gap) {
-	gap := func(what string) []model.Gap { return []model.Gap{{Area: model.RunningNow, What: what}} }
+// Table lists the running programs with only what Windows' list of
+// processes holds by itself: each one's number, parent, session, name and
+// start time. It opens no process.
+func Table() ([]model.Process, error) {
 	buffer, err := snapshot()
 	if err != nil {
-		return nil, gap("The list of running programs could not be read: " + err.Error() + ".")
+		return nil, err
 	}
 	var list []model.Process
 	base := uintptr(unsafe.Pointer(&buffer[0]))
@@ -95,6 +95,17 @@ func Collect() ([]model.Process, []model.Gap) {
 			break
 		}
 		offset += next
+	}
+	return list, nil
+}
+
+// Collect lists the running programs. It only reads. Nothing is opened
+// with more than the right to ask a process about itself.
+func Collect() ([]model.Process, []model.Gap) {
+	gap := func(what string) []model.Gap { return []model.Gap{{Area: model.RunningNow, What: what}} }
+	list, err := Table()
+	if err != nil {
+		return nil, gap("The list of running programs could not be read: " + err.Error() + ".")
 	}
 
 	drives := driveNames()

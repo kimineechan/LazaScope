@@ -3,10 +3,14 @@
 package privacy
 
 import (
+	"slices"
+	"strconv"
 	"strings"
 	"time"
 
+	"lazascope/internal/eventlog"
 	"lazascope/internal/model"
+	"lazascope/internal/procs"
 	"lazascope/internal/reg"
 	"lazascope/internal/winpath"
 	"lazascope/internal/wmi"
@@ -94,19 +98,86 @@ func Defences() []model.Defence {
 		}
 	}
 
+	// These three are judged by what Windows reports working, where it can
+	// be asked, and not only by their settings: Windows 11 switches them on
+	// by itself without always writing a setting, and a setting changed
+	// since the last restart has not yet taken effect.
+	build := windowsBuild()
+	explain := func(note string) { out[len(out)-1].Note = note }
+
 	n, ok = reg.Number(reg.Machine, `SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity`, reg.Native, "Enabled")
-	add("hvci", "Memory integrity", answer(n, ok, func(v uint32) bool { return v == 1 }), false, false)
+	running, asked := hvciRunning()
+	hvci, note := hvciState(n, ok, asked, running)
+	add("hvci", "Memory integrity", hvci, false, false)
+	explain(note)
 
 	n, ok = reg.Number(reg.Machine, `SYSTEM\CurrentControlSet\Control\Lsa`, reg.Native, "RunAsPPL")
-	lsa := answer(n, ok, func(v uint32) bool { return v == 1 || v == 2 })
-	if !ok {
-		lsa = model.No // off until set
-	}
+	protected, logged := lsaLog()
+	lsa, note := lsaState(n, ok, logged, protected, build)
 	add("lsa", "Local Security Authority protection", lsa, false, false)
+	explain(note)
 
 	n, ok = reg.Number(reg.Machine, `SYSTEM\CurrentControlSet\Control\CI\Config`, reg.Native, "VulnerableDriverBlocklistEnable")
-	add("drivers", "Microsoft Vulnerable Driver Blocklist", answer(n, ok, func(v uint32) bool { return v == 1 }), false, false)
+	list, note := blocklistState(n, ok, hvci, build)
+	add("drivers", "Microsoft Vulnerable Driver Blocklist", list, false, false)
+	explain(note)
 	return out
+}
+
+// windowsBuild returns the build number of Windows, such as 19045.
+func windowsBuild() int {
+	build, _ := reg.Text(reg.Machine, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, reg.Native, "CurrentBuild")
+	n, _ := strconv.Atoi(strings.TrimSpace(build))
+	return n
+}
+
+// hvciRunning asks Windows' Device Guard report, the one System Information
+// shows, whether memory integrity is running. asked is false when the
+// report could not be read.
+func hvciRunning() (running, asked bool) {
+	rows, err := wmi.Query(`root\Microsoft\Windows\DeviceGuard`, "SELECT SecurityServicesRunning FROM Win32_DeviceGuard", []string{"SecurityServicesRunning"}, 8*time.Second)
+	if err != nil || len(rows) != 1 {
+		return false, false
+	}
+	services, ok := rows[0]["SecurityServicesRunning"].([]int64)
+	if !ok {
+		return false, false
+	}
+	const memoryIntegrity = 2
+	return slices.Contains(services, memoryIntegrity), true
+}
+
+// lsaLog asks Windows' System log about the running LSASS, the Local
+// Security Authority. protected is whether Wininit noted starting it as a
+// protected process. logged is whether the log reaches back to its start,
+// so that a missing note means something. Comparing with LSASS's own start,
+// and not with the PC's, keeps Fast Startup out of it: that resumes Windows
+// as it was and does not start LSASS again.
+func lsaLog() (protected, logged bool) {
+	table, err := procs.Table()
+	if err != nil {
+		return false, false
+	}
+	start := lsassStart(table)
+	if start.IsZero() {
+		return false, false
+	}
+	return noted("Microsoft-Windows-Wininit", 12, start)
+}
+
+// noted reports whether the System log holds a record of the given writer
+// and number written since a moment, and whether the log reaches back to
+// that moment. A minute is allowed either side for the clock.
+func noted(writer string, id int, since time.Time) (found, logged bool) {
+	oldest, err := eventlog.Oldest("System")
+	if err != nil || oldest.IsZero() || oldest.After(since) {
+		return false, false
+	}
+	records, err := eventlog.ReadPlain("System", eventlog.Where(eventlog.From(writer), eventlog.Numbered(id), eventlog.After(since.Add(-time.Minute))), 1)
+	if err != nil {
+		return false, false
+	}
+	return len(records) > 0, true
 }
 
 // Collect reads the backups: when File History last ran, which of the

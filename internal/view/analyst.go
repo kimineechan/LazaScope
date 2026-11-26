@@ -365,6 +365,9 @@ func (b *builder) evidence(row *Row, r *raw, processes map[uint32]model.Process)
 		d := s.Defences[i]
 		r.field("name", d.Name)
 		r.line("defence: %s (%s); on: %s; part of Defender: %s; helps against ransomware: %s", d.Name, d.Key, d.On, yesNo(d.Defender), yesNo(d.Ransomware))
+		if d.Note != "" {
+			r.line("note: %s", d.Note)
+		}
 		b.rawFindings(r, "defences")
 	case "device":
 		i, err := strconv.Atoi(key)

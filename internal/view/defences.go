@@ -24,11 +24,11 @@ var defenceText = map[string][2]string{
 	"hvci": {"Memory integrity keeps the most trusted part of Windows walled off, so that a bad driver cannot be loaded into it. A few old drivers do not work with it; Windows says which before switching it on.",
 		"Windows Security, Device security, Core isolation details, Memory integrity. It needs a restart."},
 	"lsa": {"Guards the part of Windows that holds the passwords of signed-in accounts, so that tools that copy them out of memory fail.",
-		"Windows Security, Device security, Core isolation details, Local Security Authority protection. It needs a restart. Older Windows 10 has no switch for it."},
+		"On Windows 11: Windows Security, Device security, Core isolation details, Local Security Authority protection. It needs a restart. Windows 10 has no switch for it: there it is set in the registry, as Microsoft's guide Configure added LSA protection explains, and a few programs that plug into Windows' sign-in can stop working with it."},
 	"samples": {"Lets Defender send Microsoft a copy of a suspicious program it has not seen before, never documents, so that it can be studied and blocked everywhere.",
 		"Windows Security, Virus and threat protection, Manage settings, Automatic sample submission."},
 	"drivers": {"Stops drivers that are known to have weaknesses from loading. Attackers bring such drivers along to switch antivirus off.",
-		"Windows Security, Device security, Core isolation details, Microsoft Vulnerable Driver Blocklist."},
+		"On Windows 11: Windows Security, Device security, Core isolation details, Microsoft Vulnerable Driver Blocklist. Windows 10 has no switch for it: there, switching on Memory integrity applies the list."},
 }
 
 // defences lists the protections Windows and Defender have, and what the
@@ -59,6 +59,9 @@ func (b *builder) defences() Page {
 		row.Cells = []string{row.Level.String(), d.Name, state}
 		text := defenceText[d.Key]
 		lines := []Line{{Heading, d.Name}, {Text, text[0]}, {Heading, "How it stands"}, {Text, state + "."}}
+		if d.Note != "" {
+			lines = append(lines, Line{Text, d.Note})
+		}
 		if d.On == model.No && rules.Applies(s, d) {
 			lines = append(lines, Line{Heading, "How to switch it on"}, Line{Text, text[1]})
 		}

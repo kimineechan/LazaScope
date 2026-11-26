@@ -25,6 +25,9 @@ var (
 	setBlanket   = sysdll.Load("ole32.dll").NewProc("CoSetProxyBlanket")
 	variantClear = sysdll.Load("oleaut32.dll").NewProc("VariantClear")
 	stringLength = sysdll.Load("oleaut32.dll").NewProc("SysStringLen")
+	arrayLower   = sysdll.Load("oleaut32.dll").NewProc("SafeArrayGetLBound")
+	arrayUpper   = sysdll.Load("oleaut32.dll").NewProc("SafeArrayGetUBound")
+	arrayElement = sysdll.Load("oleaut32.dll").NewProc("SafeArrayGetElement")
 )
 
 // The places in the tables of functions WMI's objects hand back.
@@ -40,9 +43,9 @@ const (
 var ErrTimeout = errors.New("WMI did not answer in time")
 
 // Query runs a query in WQL, WMI's form of SQL, in a namespace, and returns
-// the named properties of each object found, as whole numbers, true or
-// false, or text. It runs on a thread of its own and gives up after the
-// time given.
+// the named properties of each object found, as whole numbers, lists of
+// whole numbers, true or false, or text. It runs on a thread of its own and
+// gives up after the time given.
 func Query(namespace, wql string, properties []string, wait time.Duration) ([]map[string]any, error) {
 	type answer struct {
 		rows []map[string]any
@@ -218,8 +221,13 @@ func watch(namespace, wql string, properties []string, stop <-chan struct{}, eac
 }
 
 // read takes the value out of a VARIANT, for the kinds WMI uses for
-// numbers, true or false, and text. VariantClear gives the memory back.
+// numbers, lists of numbers, true or false, and text. VariantClear gives
+// the memory back.
 func read(v *com.Variant) (any, bool) {
+	const list = 0x2000 // VT_ARRAY
+	if v.Kind&list != 0 {
+		return numbers(uintptr(v.Value), v.Kind&^list)
+	}
 	switch v.Kind {
 	case 16: // VT_I1
 		return int64(int8(v.Value)), true
@@ -244,4 +252,36 @@ func read(v *com.Variant) (any, bool) {
 		return syscall.UTF16ToString(unsafe.Slice((*uint16)(*(*unsafe.Pointer)(unsafe.Pointer(&address))), n)), true
 	}
 	return nil, false
+}
+
+// numbers reads a SAFEARRAY of whole numbers, the form WMI gives a list of
+// numbers in, such as the protections Device Guard reports running. Lists
+// of anything else are not read.
+func numbers(array uintptr, kind uint16) ([]int64, bool) {
+	switch kind {
+	case 16, 17, 2, 18, 3, 19: // the kinds of whole number read above
+	default:
+		return nil, false
+	}
+	if array == 0 {
+		return nil, false
+	}
+	var lower, upper int32
+	if failed, _, _ := arrayLower.Call(array, 1, uintptr(unsafe.Pointer(&lower))); failed != 0 {
+		return nil, false
+	}
+	if failed, _, _ := arrayUpper.Call(array, 1, uintptr(unsafe.Pointer(&upper))); failed != 0 {
+		return nil, false
+	}
+	found := []int64{}
+	for i := lower; i <= upper && len(found) < 1000; i++ {
+		var element uint64 // room for the widest kind read
+		index := i
+		if failed, _, _ := arrayElement.Call(array, uintptr(unsafe.Pointer(&index)), uintptr(unsafe.Pointer(&element))); failed != 0 {
+			return nil, false
+		}
+		value, _ := read(&com.Variant{Kind: kind, Value: element})
+		found = append(found, value.(int64))
+	}
+	return found, true
 }
