@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title desc">
+  <title id="title">LazaScope</title>
+  <desc id="desc">What starts. What runs. What is worth a second look.</desc>
+  <style>
+    .word { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  </style>
+  <rect x="1" y="1" width="1278" height="318" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+
+  <g transform="translate(76 108)">
+    <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f3f3" stroke-width="9"/>
+    <path d="M62 62 82 82" fill="none" stroke="#f3f3f3" stroke-width="11" stroke-linecap="round"/>
+  </g>
+  <text class="word" x="196" y="170" font-size="66" font-weight="600" fill="#f3f3f3" letter-spacing="-1">LazaScope</text>
+  <text class="word" x="199" y="212" font-size="22" fill="#a9a9a9">What starts. What runs. What is worth a second look.</text>
+
+  <g transform="translate(900 50)">
+    <rect width="320" height="220" rx="14" fill="#121212" stroke="#2e2e2e" stroke-width="1.5"/>
+    <rect x="22" y="22" width="96" height="9" rx="4.5" fill="#4a4a4a"/>
+    <rect x="22" y="44" width="276" height="1" fill="#262626"/>
+    <g>
+      <circle cx="30" cy="66" r="6" fill="#5fcb80"/>
+      <rect x="46" y="62" width="104" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="62" width="74" height="8" rx="4" fill="#262626"/>
+      <circle cx="30" cy="91" r="6" fill="#f2b33d"/>
+      <rect x="46" y="87" width="88" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="87" width="102" height="8" rx="4" fill="#3d3424"/>
+      <circle cx="30" cy="116" r="6" fill="#5fcb80"/>
+      <rect x="46" y="112" width="120" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="112" width="60" height="8" rx="4" fill="#262626"/>
+      <circle cx="30" cy="141" r="6" fill="#ff5449"/>
+      <rect x="46" y="137" width="96" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="137" width="96" height="8" rx="4" fill="#3f2624"/>
+      <circle cx="30" cy="166" r="6" fill="#5fcb80"/>
+      <rect x="46" y="162" width="110" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="162" width="68" height="8" rx="4" fill="#262626"/>
+      <circle cx="30" cy="191" r="6" fill="#5fcb80"/>
+      <rect x="46" y="187" width="80" height="8" rx="4" fill="#3a3a3a"/>
+      <rect x="196" y="187" width="84" height="8" rx="4" fill="#262626"/>
+    </g>
+  </g>
+</svg>

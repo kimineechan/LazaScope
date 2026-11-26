@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+  <title id="title">Protection and health</title>
+  <desc id="desc">Four sketches: protections Windows already has, some switched on and some off; ninety days of Windows' own log with hardware errors and blue screens marked; the fixed disks, one nearly full; and programs that used the camera and the microphone, one in use now.</desc>
+  <style>
+    .t { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  </style>
+  <rect x="1" y="1" width="1278" height="298" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+  <g fill="#121212" stroke="#262626" stroke-width="1.5">
+    <rect x="24" y="24" width="284" height="252" rx="14"/>
+    <rect x="340" y="24" width="284" height="252" rx="14"/>
+    <rect x="656" y="24" width="284" height="252" rx="14"/>
+    <rect x="972" y="24" width="284" height="252" rx="14"/>
+  </g>
+  <g class="t" font-size="20" fill="#a9a9a9">
+    <text x="44" y="62">Protections</text>
+    <text x="360" y="62">Health</text>
+    <text x="676" y="62">Drives</text>
+    <text x="992" y="62">Camera and microphone</text>
+  </g>
+
+  <!-- Protections, switched on and off -->
+  <g fill="#2e2e2e">
+    <rect x="44" y="96" width="150" height="8" rx="4"/>
+    <rect x="44" y="124" width="124" height="8" rx="4"/>
+    <rect x="44" y="152" width="170" height="8" rx="4"/>
+    <rect x="44" y="180" width="110" height="8" rx="4"/>
+    <rect x="44" y="208" width="140" height="8" rx="4"/>
+    <rect x="44" y="236" width="120" height="8" rx="4"/>
+  </g>
+  <g fill="#5fcb80">
+    <rect x="246" y="91" width="40" height="18" rx="9"/>
+    <rect x="246" y="147" width="40" height="18" rx="9"/>
+    <rect x="246" y="175" width="40" height="18" rx="9"/>
+    <rect x="246" y="231" width="40" height="18" rx="9"/>
+  </g>
+  <g fill="#1d1d1d" stroke="#4a4a4a" stroke-width="1.5">
+    <rect x="246" y="119" width="40" height="18" rx="9"/>
+    <rect x="246" y="203" width="40" height="18" rx="9"/>
+  </g>
+  <g fill="#0b0b0b">
+    <circle cx="277" cy="100" r="6"/>
+    <circle cx="277" cy="156" r="6"/>
+    <circle cx="277" cy="184" r="6"/>
+    <circle cx="277" cy="240" r="6"/>
+  </g>
+  <g fill="#8a8a8a">
+    <circle cx="255" cy="128" r="6"/>
+    <circle cx="255" cy="212" r="6"/>
+  </g>
+
+  <!-- Health: ninety days of the log -->
+  <path d="M360 232H604" stroke="#333" stroke-width="1.5"/>
+  <g fill="#3a3a3a">
+    <rect x="362" y="222" width="4" height="10" rx="2"/>
+    <rect x="372" y="218" width="4" height="14" rx="2"/>
+    <rect x="382" y="224" width="4" height="8" rx="2"/>
+    <rect x="392" y="220" width="4" height="12" rx="2"/>
+    <rect x="402" y="216" width="4" height="16" rx="2"/>
+    <rect x="452" y="222" width="4" height="10" rx="2"/>
+    <rect x="462" y="218" width="4" height="14" rx="2"/>
+    <rect x="472" y="224" width="4" height="8" rx="2"/>
+    <rect x="512" y="220" width="4" height="12" rx="2"/>
+    <rect x="522" y="222" width="4" height="10" rx="2"/>
+    <rect x="532" y="218" width="4" height="14" rx="2"/>
+    <rect x="552" y="220" width="4" height="12" rx="2"/>
+    <rect x="572" y="222" width="4" height="10" rx="2"/>
+    <rect x="582" y="218" width="4" height="14" rx="2"/>
+    <rect x="592" y="224" width="4" height="8" rx="2"/>
+  </g>
+  <g fill="#f2b33d">
+    <rect x="412" y="188" width="4" height="44" rx="2"/>
+    <rect x="422" y="174" width="4" height="58" rx="2"/>
+    <rect x="432" y="192" width="4" height="40" rx="2"/>
+    <rect x="492" y="180" width="4" height="52" rx="2"/>
+    <rect x="502" y="184" width="4" height="48" rx="2"/>
+    <rect x="542" y="196" width="4" height="36" rx="2"/>
+  </g>
+  <g fill="#ff5449">
+    <rect x="442" y="118" width="4" height="114" rx="2"/>
+    <rect x="482" y="130" width="4" height="102" rx="2"/>
+    <rect x="562" y="106" width="4" height="126" rx="2"/>
+  </g>
+  <text class="t" x="360" y="262" font-size="16" fill="#8a8a8a">90 days of Windows' own log</text>
+
+  <!-- Drives, one nearly full -->
+  <g class="t" font-size="18" fill="#c2c2c2">
+    <text x="676" y="102">C:</text>
+    <text x="676" y="162">D:</text>
+    <text x="676" y="222">E:</text>
+  </g>
+  <g fill="#1d1d1d">
+    <rect x="676" y="112" width="244" height="14" rx="7"/>
+    <rect x="676" y="172" width="244" height="14" rx="7"/>
+    <rect x="676" y="232" width="244" height="14" rx="7"/>
+  </g>
+  <rect x="676" y="112" width="112" height="14" rx="7" fill="#4a4a4a"/>
+  <rect x="676" y="172" width="224" height="14" rx="7" fill="#f2b33d"/>
+  <rect x="676" y="232" width="68" height="14" rx="7" fill="#4a4a4a"/>
+
+  <!-- Camera and microphone -->
+  <g fill="none" stroke="#8a8a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="992" y="91" width="26" height="18" rx="4"/>
+    <path d="M1018 96l9-5v18l-9-5"/>
+    <rect x="999" y="145" width="12" height="20" rx="6"/>
+    <path d="M993 157a12 12 0 0 0 24 0M1005 169v8M999 177h12"/>
+    <rect x="992" y="211" width="26" height="18" rx="4"/>
+    <path d="M1018 216l9-5v18l-9-5"/>
+  </g>
+  <g fill="#3a3a3a">
+    <rect x="1046" y="92" width="120" height="8" rx="4"/>
+    <rect x="1046" y="152" width="96" height="8" rx="4"/>
+    <rect x="1046" y="212" width="132" height="8" rx="4"/>
+  </g>
+  <g fill="#262626">
+    <rect x="1046" y="106" width="80" height="6" rx="3"/>
+    <rect x="1046" y="166" width="70" height="6" rx="3"/>
+    <rect x="1046" y="226" width="86" height="6" rx="3"/>
+  </g>
+  <circle cx="1228" cy="100" r="6" fill="#f2b33d"/>
+  <text class="t" x="1236" y="130" font-size="16" fill="#8a8a8a" text-anchor="end">in use now</text>
+</svg>

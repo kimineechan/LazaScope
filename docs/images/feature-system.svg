@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+  <title id="title">What starts, what runs, what connects</title>
+  <desc id="desc">Four sketches: the start-up list with one entry marked, the running programs as a family tree with one marked, connections from this PC to the internet with one marked, and files with their signatures checked, one of them unsigned.</desc>
+  <style>
+    .t { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  </style>
+  <rect x="1" y="1" width="1278" height="298" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+  <g fill="#121212" stroke="#262626" stroke-width="1.5">
+    <rect x="24" y="24" width="284" height="252" rx="14"/>
+    <rect x="340" y="24" width="284" height="252" rx="14"/>
+    <rect x="656" y="24" width="284" height="252" rx="14"/>
+    <rect x="972" y="24" width="284" height="252" rx="14"/>
+  </g>
+  <g class="t" font-size="20" fill="#a9a9a9">
+    <text x="44" y="62">Start-up</text>
+    <text x="360" y="62">Running</text>
+    <text x="676" y="62">Connections</text>
+    <text x="992" y="62">Signatures</text>
+  </g>
+
+  <!-- Start-up: entries, one marked -->
+  <rect x="34" y="171" width="264" height="26" rx="6" fill="#f2b33d" fill-opacity="0.08"/>
+  <g fill="#3a3a3a">
+    <rect x="44" y="94" width="12" height="12" rx="3"/>
+    <rect x="44" y="122" width="12" height="12" rx="3"/>
+    <rect x="44" y="150" width="12" height="12" rx="3"/>
+    <rect x="44" y="178" width="12" height="12" rx="3" fill="#f2b33d"/>
+    <rect x="44" y="206" width="12" height="12" rx="3"/>
+    <rect x="44" y="234" width="12" height="12" rx="3"/>
+  </g>
+  <g fill="#2e2e2e">
+    <rect x="66" y="96" width="150" height="8" rx="4"/>
+    <rect x="66" y="124" width="120" height="8" rx="4"/>
+    <rect x="66" y="152" width="176" height="8" rx="4"/>
+    <rect x="66" y="180" width="96" height="8" rx="4" fill="#4a4a4a"/>
+    <rect x="66" y="208" width="140" height="8" rx="4"/>
+    <rect x="66" y="236" width="110" height="8" rx="4"/>
+  </g>
+
+  <!-- Running: a family tree, one marked -->
+  <rect x="350" y="171" width="264" height="26" rx="6" fill="#f2b33d" fill-opacity="0.08"/>
+  <g fill="none" stroke="#3a3a3a" stroke-width="1.5">
+    <path d="M368 105V212H386M368 128H386"/>
+    <path d="M392 133V184H410M392 156H410"/>
+    <path d="M392 217V240H410"/>
+  </g>
+  <g fill="#5a5a5a">
+    <circle cx="368" cy="100" r="4.5"/>
+    <circle cx="392" cy="128" r="4.5"/>
+    <circle cx="416" cy="156" r="4.5"/>
+    <circle cx="416" cy="184" r="4.5" fill="#f2b33d"/>
+    <circle cx="392" cy="212" r="4.5"/>
+    <circle cx="416" cy="240" r="4.5"/>
+  </g>
+  <g fill="#2e2e2e">
+    <rect x="380" y="96" width="150" height="8" rx="4"/>
+    <rect x="404" y="124" width="130" height="8" rx="4"/>
+    <rect x="428" y="152" width="100" height="8" rx="4"/>
+    <rect x="428" y="180" width="88" height="8" rx="4" fill="#4a4a4a"/>
+    <rect x="404" y="208" width="126" height="8" rx="4"/>
+    <rect x="428" y="236" width="96" height="8" rx="4"/>
+  </g>
+
+  <!-- Connections: this PC to the internet, one marked -->
+  <g fill="none" stroke="#3a3a3a" stroke-width="1.5">
+    <path d="M700 100C800 100 796 142 896 142"/>
+    <path d="M700 142C800 142 796 100 896 100"/>
+    <path d="M700 226C800 226 796 184 896 184"/>
+  </g>
+  <path d="M700 184C800 184 796 226 896 226" fill="none" stroke="#f2b33d" stroke-width="2"/>
+  <g fill="#5a5a5a">
+    <circle cx="700" cy="100" r="6"/>
+    <circle cx="700" cy="142" r="6"/>
+    <circle cx="700" cy="184" r="6" fill="#f2b33d"/>
+    <circle cx="700" cy="226" r="6"/>
+    <circle cx="896" cy="100" r="6"/>
+    <circle cx="896" cy="142" r="6"/>
+    <circle cx="896" cy="184" r="6"/>
+    <circle cx="896" cy="226" r="6" fill="#f2b33d"/>
+  </g>
+  <g class="t" font-size="16" fill="#8a8a8a">
+    <text x="676" y="262">This PC</text>
+    <text x="920" y="262" text-anchor="end">Internet</text>
+  </g>
+
+  <!-- Signatures: files checked, one unsigned -->
+  <g fill="#1d1d1d" stroke="#5a5a5a" stroke-width="1.5" stroke-linejoin="round">
+    <path d="M1022 84h30l12 12v40h-42z"/>
+    <path d="M1142 84h30l12 12v40h-42z"/>
+    <path d="M1022 172h30l12 12v40h-42z"/>
+    <path d="M1142 172h30l12 12v40h-42z"/>
+  </g>
+  <g fill="none" stroke="#5a5a5a" stroke-width="1.5">
+    <path d="M1052 84v12h12M1172 84v12h12M1052 172v12h12M1172 172v12h12"/>
+  </g>
+  <g fill="#5fcb80">
+    <circle cx="1062" cy="132" r="11"/>
+    <circle cx="1182" cy="132" r="11"/>
+    <circle cx="1062" cy="220" r="11"/>
+  </g>
+  <circle cx="1182" cy="220" r="11" fill="#f2b33d"/>
+  <g fill="none" stroke="#0b0b0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1057 132l4 4 6-7M1177 132l4 4 6-7M1057 220l4 4 6-7"/>
+  </g>
+  <rect x="1180.75" y="213" width="2.5" height="8" rx="1" fill="#0b0b0b"/>
+  <circle cx="1182" cy="225" r="1.6" fill="#0b0b0b"/>
+  <g fill="#2e2e2e">
+    <rect x="1016" y="150" width="54" height="6" rx="3"/>
+    <rect x="1136" y="150" width="54" height="6" rx="3"/>
+    <rect x="1016" y="238" width="54" height="6" rx="3"/>
+    <rect x="1136" y="238" width="54" height="6" rx="3"/>
+  </g>
+</svg>

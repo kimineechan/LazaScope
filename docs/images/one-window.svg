@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
+  <title id="title">One window instead of many</title>
+  <desc id="desc">The answers Windows keeps in Task Manager, Windows Security, Event Viewer, Task Scheduler, Services, Resource Monitor, Registry Editor and Microsoft's Sysinternals tools, gathered into one LazaScope window.</desc>
+  <style>
+    .t { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  </style>
+  <rect x="1" y="1" width="1278" height="478" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+
+  <text class="t" x="48" y="54" font-size="20" fill="#a9a9a9">Where Windows keeps the answers</text>
+  <text class="t" x="700" y="54" font-size="20" fill="#a9a9a9">One window, explained</text>
+
+  <g fill="none" stroke="#333" stroke-width="1.5">
+    <path d="M308 92C490 92 530 263 700 263"/>
+    <path d="M308 130C490 130 530 263 700 263"/>
+    <path d="M308 168C490 168 530 263 700 263"/>
+    <path d="M308 206C490 206 530 263 700 263"/>
+    <path d="M308 244C490 244 530 263 700 263"/>
+    <path d="M308 282C490 282 530 263 700 263"/>
+    <path d="M308 320C490 320 530 263 700 263"/>
+    <path d="M308 358C490 358 530 263 700 263"/>
+    <path d="M308 396C490 396 530 263 700 263"/>
+    <path d="M308 434C490 434 530 263 700 263"/>
+  </g>
+
+  <g fill="#141414" stroke="#2e2e2e" stroke-width="1.5">
+    <rect x="48" y="76" width="260" height="32" rx="8"/>
+    <rect x="48" y="114" width="260" height="32" rx="8"/>
+    <rect x="48" y="152" width="260" height="32" rx="8"/>
+    <rect x="48" y="190" width="260" height="32" rx="8"/>
+    <rect x="48" y="228" width="260" height="32" rx="8"/>
+    <rect x="48" y="266" width="260" height="32" rx="8"/>
+    <rect x="48" y="304" width="260" height="32" rx="8"/>
+    <rect x="48" y="342" width="260" height="32" rx="8"/>
+    <rect x="48" y="380" width="260" height="32" rx="8"/>
+    <rect x="48" y="418" width="260" height="32" rx="8"/>
+  </g>
+  <g class="t" font-size="19" fill="#c2c2c2">
+    <text x="66" y="99">Task Manager</text>
+    <text x="66" y="137">Windows Security</text>
+    <text x="66" y="175">Event Viewer</text>
+    <text x="66" y="213">Task Scheduler</text>
+    <text x="66" y="251">Services</text>
+    <text x="66" y="289">Resource Monitor</text>
+    <text x="66" y="327">Registry Editor</text>
+    <text x="66" y="365">Autoruns</text>
+    <text x="66" y="403">Process Explorer</text>
+    <text x="66" y="441">TCPView</text>
+  </g>
+
+  <rect x="700" y="76" width="532" height="374" rx="16" fill="#121212" stroke="#2e2e2e" stroke-width="1.5"/>
+  <g transform="translate(728 98)">
+    <circle cx="12" cy="12" r="10" fill="none" stroke="#f3f3f3" stroke-width="3.5"/>
+    <path d="M19.5 19.5 26 26" fill="none" stroke="#f3f3f3" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text class="t" x="768" y="121" font-size="26" font-weight="600" fill="#f3f3f3">LazaScope</text>
+
+  <rect x="728" y="142" width="476" height="32" rx="8" fill="#0d0d0d" stroke="#262626" stroke-width="1.5"/>
+  <rect x="733" y="146" width="54" height="24" rx="6" fill="#262626"/>
+  <g fill="#3a3a3a">
+    <rect x="740" y="154" width="40" height="8" rx="4" fill="#d6d6d6"/>
+    <rect x="798" y="154" width="40" height="8" rx="4"/>
+    <rect x="856" y="154" width="40" height="8" rx="4"/>
+    <rect x="914" y="154" width="40" height="8" rx="4"/>
+    <rect x="972" y="154" width="40" height="8" rx="4"/>
+    <rect x="1030" y="154" width="40" height="8" rx="4"/>
+    <rect x="1088" y="154" width="40" height="8" rx="4"/>
+    <rect x="1146" y="154" width="40" height="8" rx="4"/>
+  </g>
+
+  <text class="t" x="728" y="212" font-size="19" font-weight="600" fill="#f3f3f3">This PC at a glance</text>
+  <circle cx="742" cy="240" r="7" fill="#f2b33d"/>
+  <circle cx="742" cy="274" r="7" fill="#ff5449"/>
+  <circle cx="742" cy="308" r="7" fill="#5fcb80"/>
+  <circle cx="742" cy="342" r="7" fill="#5fcb80"/>
+  <circle cx="742" cy="376" r="7" fill="#5fcb80"/>
+  <circle cx="742" cy="410" r="7" fill="#5fcb80"/>
+  <g class="t" font-size="18" fill="#c2c2c2">
+    <text x="760" y="246">Protection</text>
+    <text x="760" y="280">Starts with Windows</text>
+    <text x="760" y="314">Running now</text>
+    <text x="760" y="348">Internet connections</text>
+    <text x="760" y="382">Accounts and remote access</text>
+    <text x="760" y="416">PC health</text>
+  </g>
+  <rect x="1010" y="236" width="150" height="8" rx="4" fill="#3d3424"/>
+  <rect x="1010" y="270" width="190" height="8" rx="4" fill="#3f2624"/>
+  <g fill="#262626">
+    <rect x="1010" y="304" width="110" height="8" rx="4"/>
+    <rect x="1010" y="338" width="130" height="8" rx="4"/>
+    <rect x="1010" y="372" width="96" height="8" rx="4"/>
+    <rect x="1010" y="406" width="120" height="8" rx="4"/>
+  </g>
+</svg>

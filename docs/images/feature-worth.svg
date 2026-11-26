@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+  <title id="title">Worth a look</title>
+  <desc id="desc">Three sketches: the list of findings, the most serious first; one finding's reason and what you can do, with its MITRE ATT&amp;CK numbers; and a grid of ATT&amp;CK techniques with a few marked, as in a layer for the ATT&amp;CK Navigator.</desc>
+  <style>
+    .t { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .m { font-family: "Cascadia Mono", Consolas, Menlo, monospace; }
+  </style>
+  <rect x="1" y="1" width="1278" height="298" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+  <g fill="#121212" stroke="#262626" stroke-width="1.5">
+    <rect x="24" y="24" width="392" height="252" rx="14"/>
+    <rect x="440" y="24" width="392" height="252" rx="14"/>
+    <rect x="856" y="24" width="400" height="252" rx="14"/>
+  </g>
+  <g class="t" font-size="20" fill="#a9a9a9">
+    <text x="44" y="62">Worth a look</text>
+    <text x="460" y="62">Why, and what to do</text>
+    <text x="876" y="62">MITRE ATT&amp;CK</text>
+  </g>
+
+  <!-- The findings, the most serious first -->
+  <rect x="36" y="87" width="368" height="26" rx="6" fill="#1f1f1f"/>
+  <circle cx="54" cy="100" r="6" fill="#ff5449"/>
+  <circle cx="54" cy="126" r="6" fill="#f2b33d"/>
+  <circle cx="54" cy="152" r="6" fill="#f2b33d"/>
+  <circle cx="54" cy="178" r="6" fill="#f2b33d"/>
+  <g fill="#6a6a6a">
+    <circle cx="54" cy="204" r="6"/>
+    <circle cx="54" cy="230" r="6"/>
+    <circle cx="54" cy="256" r="6"/>
+  </g>
+  <g fill="#2e2e2e">
+    <rect x="72" y="96" width="220" height="8" rx="4" fill="#5a5a5a"/>
+    <rect x="72" y="122" width="190" height="8" rx="4"/>
+    <rect x="72" y="148" width="240" height="8" rx="4"/>
+    <rect x="72" y="174" width="170" height="8" rx="4"/>
+    <rect x="72" y="200" width="200" height="8" rx="4"/>
+    <rect x="72" y="226" width="150" height="8" rx="4"/>
+    <rect x="72" y="252" width="180" height="8" rx="4"/>
+  </g>
+
+  <!-- One finding: the reason and what to do -->
+  <rect x="460" y="80" width="210" height="12" rx="6" fill="#cfcfcf"/>
+  <g class="t" font-size="18" fill="#a9a9a9">
+    <text x="460" y="124">Why</text>
+    <text x="460" y="194">What you can do</text>
+  </g>
+  <g fill="#2e2e2e">
+    <rect x="460" y="134" width="340" height="8" rx="4"/>
+    <rect x="460" y="150" width="328" height="8" rx="4"/>
+    <rect x="460" y="166" width="240" height="8" rx="4"/>
+    <rect x="460" y="204" width="330" height="8" rx="4"/>
+    <rect x="460" y="220" width="200" height="8" rx="4"/>
+  </g>
+  <text class="m" x="460" y="258" font-size="18" fill="#f2b33d">T1036.005, T1547.001</text>
+
+  <!-- ATT&CK techniques, a few marked -->
+  <g fill="#1d1d1d">
+    <rect x="880" y="80" width="38" height="18" rx="4"/><rect x="924" y="80" width="38" height="18" rx="4"/><rect x="968" y="80" width="38" height="18" rx="4"/><rect x="1012" y="80" width="38" height="18" rx="4"/><rect x="1056" y="80" width="38" height="18" rx="4"/><rect x="1100" y="80" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/><rect x="1144" y="80" width="38" height="18" rx="4"/><rect x="1188" y="80" width="38" height="18" rx="4"/>
+    <rect x="880" y="104" width="38" height="18" rx="4"/><rect x="924" y="104" width="38" height="18" rx="4"/><rect x="968" y="104" width="38" height="18" rx="4"/><rect x="1012" y="104" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/><rect x="1056" y="104" width="38" height="18" rx="4"/><rect x="1100" y="104" width="38" height="18" rx="4"/><rect x="1144" y="104" width="38" height="18" rx="4"/><rect x="1188" y="104" width="38" height="18" rx="4"/>
+    <rect x="880" y="128" width="38" height="18" rx="4"/><rect x="924" y="128" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/><rect x="968" y="128" width="38" height="18" rx="4"/><rect x="1012" y="128" width="38" height="18" rx="4"/><rect x="1056" y="128" width="38" height="18" rx="4"/><rect x="1100" y="128" width="38" height="18" rx="4"/><rect x="1144" y="128" width="38" height="18" rx="4"/><rect x="1188" y="128" width="38" height="18" rx="4"/>
+    <rect x="880" y="152" width="38" height="18" rx="4"/><rect x="924" y="152" width="38" height="18" rx="4"/><rect x="968" y="152" width="38" height="18" rx="4"/><rect x="1012" y="152" width="38" height="18" rx="4"/><rect x="1056" y="152" width="38" height="18" rx="4"/><rect x="1100" y="152" width="38" height="18" rx="4"/><rect x="1144" y="152" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/><rect x="1188" y="152" width="38" height="18" rx="4"/>
+    <rect x="880" y="176" width="38" height="18" rx="4"/><rect x="924" y="176" width="38" height="18" rx="4"/><rect x="968" y="176" width="38" height="18" rx="4"/><rect x="1012" y="176" width="38" height="18" rx="4" fill="#ff5449" fill-opacity="0.9"/><rect x="1056" y="176" width="38" height="18" rx="4"/><rect x="1100" y="176" width="38" height="18" rx="4"/><rect x="1144" y="176" width="38" height="18" rx="4"/><rect x="1188" y="176" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/>
+    <rect x="880" y="200" width="38" height="18" rx="4"/><rect x="924" y="200" width="38" height="18" rx="4"/><rect x="968" y="200" width="38" height="18" rx="4" fill="#f2b33d" fill-opacity="0.85"/><rect x="1012" y="200" width="38" height="18" rx="4"/><rect x="1056" y="200" width="38" height="18" rx="4"/><rect x="1100" y="200" width="38" height="18" rx="4" fill="#ff5449" fill-opacity="0.9"/><rect x="1144" y="200" width="38" height="18" rx="4"/><rect x="1188" y="200" width="38" height="18" rx="4"/>
+    <rect x="880" y="224" width="38" height="18" rx="4"/><rect x="924" y="224" width="38" height="18" rx="4"/><rect x="968" y="224" width="38" height="18" rx="4"/><rect x="1012" y="224" width="38" height="18" rx="4"/><rect x="1056" y="224" width="38" height="18" rx="4"/><rect x="1100" y="224" width="38" height="18" rx="4"/><rect x="1144" y="224" width="38" height="18" rx="4"/><rect x="1188" y="224" width="38" height="18" rx="4"/>
+  </g>
+  <text class="t" x="880" y="266" font-size="16" fill="#8a8a8a">A layer for the ATT&amp;CK Navigator</text>
+</svg>

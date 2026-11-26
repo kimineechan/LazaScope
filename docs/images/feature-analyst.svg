@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+  <title id="title">For helpers and analysts</title>
+  <desc id="desc">Three sketches: a search of every list for services with no signature; analyst mode's exact evidence for one row, with its ATT&amp;CK numbers; and the command-line tool scanning the PC and saving a report.</desc>
+  <style>
+    .t { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .m { font-family: "Cascadia Mono", Consolas, Menlo, monospace; }
+  </style>
+  <rect x="1" y="1" width="1278" height="298" rx="20" fill="#0b0b0b" stroke="#262626" stroke-width="2"/>
+  <g fill="#121212" stroke="#262626" stroke-width="1.5">
+    <rect x="24" y="24" width="392" height="252" rx="14"/>
+    <rect x="440" y="24" width="392" height="252" rx="14"/>
+    <rect x="856" y="24" width="400" height="252" rx="14"/>
+  </g>
+  <g class="t" font-size="20" fill="#a9a9a9">
+    <text x="44" y="62">Search every list</text>
+    <text x="460" y="62">Analyst mode</text>
+    <text x="876" y="62">Command line</text>
+  </g>
+
+  <!-- Search -->
+  <rect x="44" y="78" width="352" height="44" rx="8" fill="#0d0d0d" stroke="#5a5a5a" stroke-width="1.5"/>
+  <text class="m" x="60" y="107" font-size="19" fill="#f3f3f3">kind:service signed:no</text>
+  <g fill="#3a3a3a">
+    <rect x="44" y="142" width="12" height="12" rx="3"/>
+    <rect x="44" y="168" width="12" height="12" rx="3" fill="#f2b33d"/>
+    <rect x="44" y="194" width="12" height="12" rx="3"/>
+    <rect x="44" y="220" width="12" height="12" rx="3"/>
+    <rect x="44" y="246" width="12" height="12" rx="3"/>
+  </g>
+  <g fill="#2e2e2e">
+    <rect x="66" y="144" width="200" height="8" rx="4"/>
+    <rect x="66" y="170" width="160" height="8" rx="4" fill="#4a4a4a"/>
+    <rect x="66" y="196" width="230" height="8" rx="4"/>
+    <rect x="66" y="222" width="140" height="8" rx="4"/>
+    <rect x="66" y="248" width="190" height="8" rx="4"/>
+  </g>
+
+  <!-- Analyst mode: the evidence behind one row -->
+  <g class="m" font-size="17" fill="#d9d9d9">
+    <text x="460" y="100"><tspan fill="#8a8a8a">kind:</tspan> Registry Run</text>
+    <text x="460" y="130"><tspan fill="#8a8a8a">recorded in:</tspan> HKCU\…\Run</text>
+    <text x="460" y="160"><tspan fill="#8a8a8a">image:</tspan> …\Roaming\svchost.exe</text>
+    <text x="460" y="190"><tspan fill="#8a8a8a">signature:</tspan> none</text>
+    <text x="460" y="220"><tspan fill="#8a8a8a">sha256:</tspan> 9b1e…c07d</text>
+    <text x="460" y="250" fill="#f2b33d">ATT&amp;CK T1036.005, T1547.001</text>
+  </g>
+
+  <!-- Command line -->
+  <rect x="872" y="76" width="368" height="188" rx="8" fill="#070707" stroke="#262626" stroke-width="1.5"/>
+  <g class="m" font-size="17" fill="#f3f3f3">
+    <text x="888" y="108"><tspan fill="#5fcb80">&gt;</tspan> lazascope-cli scan</text>
+    <text x="888" y="226"><tspan fill="#5fcb80">&gt;</tspan> lazascope-cli report pc.html</text>
+  </g>
+  <circle cx="893" cy="132" r="5" fill="#ff5449"/>
+  <circle cx="893" cy="158" r="5" fill="#f2b33d"/>
+  <circle cx="893" cy="184" r="5" fill="#5fcb80"/>
+  <g fill="#2e2e2e">
+    <rect x="908" y="128" width="220" height="8" rx="4"/>
+    <rect x="908" y="154" width="180" height="8" rx="4"/>
+    <rect x="908" y="180" width="200" height="8" rx="4"/>
+    <rect x="888" y="242" width="150" height="8" rx="4"/>
+  </g>
+</svg>
