@@ -230,7 +230,7 @@ var protectionRules = []Rule{
 			}
 			f := r.find("Windows Update",
 				"The last update Windows installed was on "+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
-				"Open Settings, go to Windows Update and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates.",
+				"Open Settings, go to Windows Update (inside Update and Security on Windows 10) and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates.",
 				Fact{"Windows", strings.TrimSpace(s.Windows + " build " + g.Build)}, Fact{"Last update installed", g.LastUpdate.Format("2 January 2006")})
 			if days > 180 {
 				f.Severity = High

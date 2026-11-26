@@ -123,7 +123,7 @@ var cryptoRules = []Rule{
 			}
 			found = append(found, r.find(strings.Join(names, ", "),
 				"The files of "+listed(names)+" are on drive "+listed(each(drives))+", which is not encrypted. Anyone who takes the PC or its disk can copy them. Most wallets lock their files with a password too.",
-				"Switch on BitLocker, or Device encryption where Windows offers it (Settings, Privacy and security), and give each wallet a long password of its own.",
+				"Switch on BitLocker, or Device encryption where Windows offers it (in Settings, under Privacy and security on Windows 11, or Update and Security on Windows 10), and give each wallet a long password of its own.",
 				Fact{"Wallets", strings.Join(names, ", ")}))
 			return
 		},
