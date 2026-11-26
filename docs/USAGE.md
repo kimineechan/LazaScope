@@ -12,6 +12,8 @@ The window has no title bar from Windows. Drag it by its top part, around the na
 
 The app targets **64-bit Windows 10 and Windows 11**. You do not need Go, Node, Python or an installer. Nothing is uploaded unless you ask: looking a file up on VirusTotal sends its fingerprint, never the file.
 
+The programs are not code-signed. The first time, Windows SmartScreen may say it does not recognise the app: choose **More info**, then **Run anyway**. On Windows 11, where Smart App Control is switched on, Windows may refuse to open LazaScope at all, as Smart App Control has no way to allow one program.
+
 To see what findings look like without having any, start it with `--demo`. It then shows a made-up PC in place of yours.
 
 ```powershell
@@ -298,6 +300,8 @@ A file saved from the internet carries a hidden mark from Windows (its Zone.Iden
 
 **Protections to switch on...** on the Overview lists the protections that come with Windows and Microsoft Defender, whether each is on, what each does and where to switch it on: blocking of potentially unwanted apps, SmartScreen's check of apps and files, Controlled folder access, network protection, cloud-delivered protection, automatic sample submission, memory integrity, Local Security Authority protection and the vulnerable driver blocklist. Defender's settings are read the way PowerShell's Get-MpPreference reads them. When another antivirus is in charge, Defender's own protections do not apply and are not judged. A setting Windows does not record says **Not known**.
 
+Memory integrity, Local Security Authority protection and the vulnerable driver blocklist are judged by what Windows reports working, not only by their settings. Windows 11 switches them on by itself without always writing a setting, and a protection switched on since the last restart is not working yet: LazaScope then says it is off and that a restart starts it. Where its setting alone does not tell, a protection's details say how LazaScope knows.
+
 The same page says how ready the PC is for ransomware. Two things limit the harm: Controlled folder access, and a copy of your files kept somewhere else. LazaScope looks for File History run in the last 30 days, OneDrive's backup of Documents, Desktop and Pictures, and backup programs it knows by name. With neither, it says so under 08 Worth a look.
 
 ## Camera and microphone
@@ -365,6 +369,7 @@ A command that is given an option or a file name it does not take says so and do
 | Limit | Detail |
 | --- | --- |
 | Not an antivirus | LazaScope shows and explains. It removes nothing and blocks nothing |
+| Windows 11 | Made for it, and tested on Windows 10. Where Smart App Control is switched on, Windows may refuse to open LazaScope, which is not code-signed |
 | Hidden software | Software that hides inside the core of Windows (a "rootkit") can hide from LazaScope too |
 | A clean result | Means that none of the known signs was seen, not that nothing is wrong |
 | Start-up places | The ones that matter most, and browser extensions. The rarer places are not read in this version. An account that is not signed in keeps its start-up list in a file that is not opened |

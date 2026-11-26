@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.1 - 2026-11-26
+
+Windows 11, and directions that fit both Windows 10 and Windows 11.
+
+- Local Security Authority protection is judged by the note Wininit writes in the System log when it starts LSASS as a protected process, which is how Microsoft says to check, and not by the RunAsPPL setting alone. Fresh installations of Windows 11 22H2 and later switch the protection on without the setting, so LazaScope could call it off when it was on. The note is looked for after LSASS's own start, so Fast Startup does not mislead the check. The value 2, which Windows 10 does not act on, no longer counts as on there.
+- Memory integrity is judged by Windows' Device Guard report, the one System Information shows, so a protection switched on but waiting for a restart is no longer taken for one at work.
+- The vulnerable driver blocklist counts as on where Windows applies it: by default since Windows 11 22H2, and wherever memory integrity runs. Without memory integrity on Windows 10 it counts as off, where it said Not known.
+- A protection's details say how LazaScope knows, where its setting alone does not tell, and analyst mode shows the same note.
+- Directions to Settings name the pages of both Windows 10 and Windows 11: camera and microphone, device encryption, Windows Update and the name servers (DNS). The directions for Local Security Authority protection and the driver blocklist say that Windows 10 has no switch for them, and what to do there.
+- The ransomware advice no longer suggests Windows Backup for a copy on a drive you unplug: Windows Backup copies to OneDrive.
+- The README and the usage guide say that, on Windows 11, Smart App Control can refuse to open LazaScope, which is not code-signed.
+- WMI answers that are lists of numbers are read.
+
 ## 1.0.0 - 2026-11-25
 
 First version.

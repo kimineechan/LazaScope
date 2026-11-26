@@ -29,7 +29,7 @@ None of them tells you what is normal. LazaScope reads the same information from
 | Who made this file? | A file's Properties > Digital Signatures, Sigcheck | Every list |
 | What did Defender find, and what was it told to skip? | Windows Security's Protection history and Exclusions | 02 Protection |
 | What ran lately, and where did a download come from? | Registry Editor and PowerShell, if you know where to look | Timeline |
-| Which apps used the camera or microphone? | Settings > Privacy | Camera and microphone |
+| Which apps used the camera or microphone? | Settings > Privacy and security (Privacy on Windows 10) | Camera and microphone |
 | What is starting right now? | Process Monitor, Sysmon | Watch programs start |
 
 LazaScope is not made by or connected with Microsoft. It does not contain, download or run any of these tools: it asks Windows for the same information itself.
@@ -102,15 +102,19 @@ The [usage guide](docs/USAGE.md) explains every page and button.
 
 ## Download and run
 
-1. Open [Releases](https://github.com/kimineechan/LazaScope/releases) and download `LazaScope-v1.0.0-windows-x64.zip`.
+1. Open [Releases](https://github.com/kimineechan/LazaScope/releases) and download `LazaScope-v1.0.1-windows-x64.zip`.
 2. Extract it and open `LazaScope.exe`. There is nothing to install.
 
 It is made for 64-bit Windows 10 and 11, and has been tested on Windows 10. It needs no administrator rights. Without them a few things cannot be read, and LazaScope says which; **Look again as administrator** reads them too.
 
-The programs are not code-signed, so the first time you run one, Windows SmartScreen may say it does not recognise the app. Choose **More info**, then **Run anyway**. To check the download, compare its fingerprint with the one in `SHA256SUMS.txt`:
+The programs are not code-signed, so the first time you run one, Windows SmartScreen may say it does not recognise the app. Choose **More info**, then **Run anyway**.
+
+On Windows 11, **Smart App Control** goes further. Where it is switched on, it blocks programs that are not code-signed unless Microsoft's cloud service already knows them, with no **Run anyway** and no way to allow one program, so Windows may refuse to open LazaScope at all. Windows Security, App and browser control, Smart App Control settings shows whether it is on. Switching a protection off to run LazaScope is not worth it.
+
+To check the download, compare its fingerprint with the one in `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\LazaScope-v1.0.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\LazaScope-v1.0.1-windows-x64.zip -Algorithm SHA256
 ```
 
 ## What it sends, and what it keeps

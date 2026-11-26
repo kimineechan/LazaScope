@@ -1,5 +1,29 @@
 # Validation
 
+## Checks completed on 26 November 2026
+
+Version 1.0.1 came from a review of what differs on Windows 11, after the question of whether LazaScope works there. The test PC runs Windows 10, so the review read the code for every place that depends on the version of Windows and checked each against Microsoft's own documentation. The full automated tests pass on Windows and, built for Linux, in Ubuntu under WSL, and `go vet` is clean for both.
+
+### What the review found
+
+- **Already right.** The name of Windows (Windows 11 still calls itself Windows 10 in the registry, so the build number decides), and the window's rounded corners and see-through backdrop.
+- **Local Security Authority protection could be called off when it was on.** LazaScope read only the RunAsPPL setting. Microsoft's page "Configure added LSA protection" says that a fresh installation of Windows 11 22H2 or later switches the protection on by itself, and that the way to check is Wininit's event 12 in the System log. It also says that only Windows 11 22H2 and later act on the value 2, which LazaScope counted as on everywhere.
+- **Memory integrity and the driver blocklist** were read from their settings only. Microsoft's page on the recommended driver block rules says that the blocklist has been on by default since the Windows 11 2022 update, that Windows applies it wherever memory integrity runs, and that memory integrity is on by default on most new Windows 11 devices.
+- **Directions to Settings** used Windows 11's names in five places: the camera and microphone pages (twice), Windows Update, device encryption and the name servers. The Windows Security app of the Windows 10 test PC was searched for the names of its switches. It has Memory integrity, and no switch for Local Security Authority protection or the driver blocklist, which the directions had implied it had.
+- **Smart App Control.** Microsoft's answers on it say that, where it is on, it blocks unsigned programs its cloud service cannot vouch for, with no way to allow one program. LazaScope is not code-signed, and the README and the usage guide now say what that means. Free code signing for open source from SignPath Foundation was considered, but its terms exclude tools that point out missing protections or detect traces of a break-in, which is what LazaScope does.
+- **Also fixed.** The ransomware advice suggested Windows Backup for a copy on a drive you unplug, but Windows Backup copies to OneDrive.
+
+### How the changes were checked
+
+- **The decisions** are worked out by small functions with tests of their own: seventeen cases for Local Security Authority protection (on by Windows 11's own choice, locked in the firmware, switched on and waiting for a restart, the value 2 on each version, a log that does not reach back), eight for memory integrity, nine for the driver blocklist, and the choice of the real LSASS over a copy in another session or one started later. A view test holds where the notes and directions appear.
+- **On the test PC.** Windows' Device Guard report was read through WMI as a list of numbers, the first list LazaScope reads from WMI, and agreed with PowerShell's reading of the same report. LSASS's start time, from Windows' list of processes, agreed to the second with Wininit's notes in the System log. The question for Wininit's note 12 was shown to find a note that is there, by asking it for another note Wininit writes as it starts LSASS. What LazaScope says of each of the three protections agreed with their settings and with PowerShell's readings of the same report and log. The Protections page was looked at in the window, with its new notes and directions.
+- **Fast Startup** resumes Windows without starting LSASS again, so the note is looked for after LSASS's own start, not the PC's. That could not be seen on the test PC, and was worked out from how Fast Startup works.
+
+### Where this round stops
+
+- LazaScope has still not run on Windows 11. Its Windows 11 cases are tested with made-up readings only.
+- The planted-items check was not run on the test PC this round, as nothing it covers changed. GitHub's Windows build runs it.
+
 ## Checks completed on 25 November 2026
 
 The fifth round added the recovery-phrase finder, on the same PC (Windows 10 Pro 22H2, build 19045). The full automated tests pass and `go vet` is clean.
