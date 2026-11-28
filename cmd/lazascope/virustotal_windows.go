@@ -187,7 +187,7 @@ func (v *vtPanel) saveKey() {
 			}
 			if saveErr := virustotal.SaveKey(key); saveErr != nil {
 				v.status.SetText("The key was not saved.")
-				v.w.Alert(title, "The key could not be saved: "+sentence(saveErr))
+				v.w.Alert(title, i18n.T("The key could not be saved: ")+sentence(saveErr))
 				return
 			}
 			v.client, v.broken = client, ""
@@ -296,7 +296,7 @@ func (v *vtPanel) afterLook(b *view.Book) {
 func (v *vtPanel) run(b *view.Book, todo []virustotal.Candidate, quiet bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	v.stop = cancel
-	v.ask.SetText("Stop asking")
+	v.ask.SetText(i18n.T("Stop asking"))
 	client, memory := v.client, v.memory
 	go func() {
 		asked, remembered, failed := 0, 0, 0
@@ -409,7 +409,7 @@ func (v *vtPanel) openPage() {
 	title := i18n.T("Open VirusTotal's page")
 	l := v.list
 	if l.picked < 0 || l.picked >= len(l.shown) {
-		v.w.Info(title, "Select a row first.")
+		v.w.Info(title, i18n.T("Select a row first."))
 		return
 	}
 	path := l.shown[l.picked].Path

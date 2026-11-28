@@ -33,7 +33,7 @@ func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	w.Page(pageLive)
 	heading := w.Heading("Watch programs start, live", left, 166, across, 30)
 	intro := w.Label(i18n.T("Every program that starts while this runs, checked the moment Windows reports it against LazaScope's detections, such as Word starting PowerShell or a command that deletes Windows' backups."), left, 200, across, 42)
-	p.button = w.Button("Start watching", left, 250, 180, 34, p.toggle)
+	p.button = w.Button(i18n.T("Start watching"), left, 250, 180, 34, p.toggle)
 	p.button.Lead(true)
 	p.choice = w.Choice([]string{i18n.T("Every program"), "Only what set off a detection"}, left+192, 250, 300, 34, p.refill)
 	count := w.Caption(i18n.T("Not watching."), left+504, 250, across-504-148, 34)
@@ -102,14 +102,14 @@ func (p *livePanel) toggle() {
 	if p.started {
 		close(p.stop)
 		p.started = false
-		p.button.SetText("Start watching")
+		p.button.SetText(i18n.T("Start watching"))
 		p.counts()
-		p.status.SetText("Stopped watching. The list stays until LazaScope is closed.")
+		p.status.SetText(i18n.T("Stopped watching. The list stays until LazaScope is closed."))
 		return
 	}
 	p.stop = make(chan struct{})
 	p.started = true
-	p.button.SetText("Stop watching")
+	p.button.SetText(i18n.T("Stop watching"))
 	p.counts()
 	p.status.SetText("Watching programs start. Nothing is changed; LazaScope only reads what Windows reports.")
 	stop := p.stop
@@ -136,7 +136,7 @@ func (p *livePanel) toggle() {
 		p.w.Post(func() {
 			if err != nil && p.started && p.stop == stop {
 				p.started = false
-				p.button.SetText("Start watching")
+				p.button.SetText(i18n.T("Start watching"))
 				p.counts()
 				p.status.SetText("The watch stopped: " + sentence(err))
 			}

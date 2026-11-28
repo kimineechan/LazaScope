@@ -212,7 +212,7 @@ func (l *list) fill() {
 	}
 	// Until a row is chosen, the box says what the page is and what could
 	// not be read for it.
-	lines := []view.Line{{Style: view.Heading, Text: l.page.Title}, {Style: view.Text, Text: "Select a row to read what it is and why it is there."}}
+	lines := []view.Line{{Style: view.Heading, Text: l.page.Title}, {Style: view.Text, Text: i18n.T("Select a row to read what it is and why it is there.")}}
 	switch {
 	case l.page.Name == "Worth a look" && len(l.page.Rows) == 0:
 		lines[1].Text = i18n.T("Nothing on this PC stood out to the rules. That is not a promise that nothing is wrong: LazaScope only knows the signs it was taught.")
@@ -392,7 +392,7 @@ func main() {
 		title := i18n.T("Look up file")
 		switch {
 		case l.picked < 0 || l.picked >= len(l.shown):
-			w.Info(title, "Select a row first.")
+			w.Info(title, i18n.T("Select a row first."))
 			return
 		case l.shown[l.picked].Path == "":
 			w.Info(title, "This row is not about a file on disk, so there is nothing to look up.")
@@ -440,8 +440,8 @@ func main() {
 			w.Post(func() {
 				working = false
 				if err != nil {
-					status.SetText("The fingerprint could not be worked out. Nothing was sent.")
-					w.Alert(title, "The file could not be read, so its fingerprint could not be worked out: "+sentence(err))
+					status.SetText(i18n.T("The fingerprint could not be worked out. Nothing was sent."))
+					w.Alert(title, i18n.T("The file could not be read, so its fingerprint could not be worked out: ")+sentence(err))
 					return
 				}
 				prints[strings.ToLower(path)] = print
@@ -474,11 +474,11 @@ func main() {
 		l.count = w.Caption("", x, 250, 384, 34)
 		if files {
 			w.Button(i18n.T("Look up file..."), left+across-422, 250, 142, 34, func() { lookUp(l) })
-			w.Button(i18n.T("Show in folder"), left+across-272, 250, 130, 34, func() {
+			w.Button(i18n.T(i18n.T("Show in folder")), left+across-272, 250, 130, 34, func() {
 				if l.picked < 0 || l.picked >= len(l.shown) {
-					w.Info("Show in folder", "Select a row first.")
+					w.Info(i18n.T("Show in folder"), i18n.T("Select a row first."))
 				} else if path := l.shown[l.picked].Path; path == "" {
-					w.Info("Show in folder", "This row is not about a file on disk, so there is no folder to show.")
+					w.Info(i18n.T("Show in folder"), "This row is not about a file on disk, so there is no folder to show.")
 				} else {
 					w.Reveal(path)
 				}
@@ -488,7 +488,7 @@ func main() {
 			if w.Copy(l.detail.Words()) {
 				status.SetText(i18n.T("Copied the details shown below the list."))
 			} else {
-				status.SetText("The details could not be copied, because another program is using the clipboard. Try again in a moment.")
+				status.SetText(i18n.T("The details could not be copied, because another program is using the clipboard. Try again in a moment."))
 			}
 		})
 		// The columns come with the first look; until then the table has one.
@@ -573,7 +573,7 @@ func main() {
 		case 1:
 			colours = i18n.T("It colours in the one ATT&CK technique that a finding may be a trace of.")
 		}
-		w.Info(title, "Saved a layer for MITRE's ATT&CK Navigator, the free web page that shows the whole ATT&CK catalogue as a grid. "+colours+
+		w.Info(title, i18n.T("Saved a layer for MITRE's ATT&CK Navigator, the free web page that shows the whole ATT&CK catalogue as a grid. ")+colours+
 			"\r\n\r\nTo see it, open the Navigator at mitre-attack.github.io/attack-navigator in your web browser, choose Open Existing Layer, then Upload from local, and pick this file. The Navigator reads the file inside your browser.\r\n\r\nThe layer names this PC and what was found on it. Read it before you send it to anyone.")
 	})
 	jobs = append(jobs, layerButton)
@@ -599,12 +599,12 @@ func main() {
 	searchBox.Do(func() {
 		text := strings.TrimSpace(searchBox.Text())
 		if text == "?" {
-			w.Info("Searching the lists", strings.Join(query.Help(), "\r\n"))
+			w.Info(i18n.T("Searching the lists"), strings.Join(query.Help(), "\r\n"))
 			return
 		}
 		q, err := query.Parse(text)
 		if err != nil {
-			status.SetText("Search not applied: " + sentence(err))
+			status.SetText(i18n.T("Search not applied: ") + sentence(err))
 			return
 		}
 		search = q
@@ -847,7 +847,7 @@ func main() {
 		}
 		halt = make(chan struct{})
 		stop := halt
-		watch.SetText("Stop watching")
+		watch.SetText(i18n.T("Stop watching"))
 		status.SetText("Watching this PC for a minute...")
 		go func() {
 			defer func() {

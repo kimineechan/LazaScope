@@ -44,7 +44,7 @@ func newWallets(w *winui.Window, status *winui.Control, demo bool, prints map[st
 	w.Page(pageWallets)
 	heading := w.Heading("", left, 166, across, 30)
 	intro := w.Label("", left, 200, across, 42)
-	p.test = w.Button("Test for address swapping", left, 250, 232, 34, p.swapTest)
+	p.test = w.Button(i18n.T("Test for address swapping"), left, 250, 232, 34, p.swapTest)
 	p.test.Lead(true)
 	p.print = w.Input("", left+242, 250, 240, 34, nil)
 	p.print.Hint(i18n.T("Paste the maker's SHA-256"))
@@ -63,7 +63,7 @@ func newWallets(w *winui.Window, status *winui.Control, demo bool, prints map[st
 // swapTest copies made-up wallet addresses and watches whether a program
 // swaps them, after saying what it is about to do.
 func (p *walletPanel) swapTest() {
-	const title = "Test for address swapping"
+	title := i18n.T("Test for address swapping")
 	if p.testing {
 		return
 	}
@@ -89,7 +89,7 @@ func (p *walletPanel) swapTest() {
 	}
 	p.testing = true
 	p.test.Enable(false)
-	p.status.SetText("Testing for address swapping. Please leave the clipboard alone for a few seconds...")
+	p.status.SetText(i18n.T("Testing for address swapping. Please leave the clipboard alone for a few seconds..."))
 	go func() {
 		result, err := clipboard.Test(p.w.Handle, 2*time.Second)
 		p.w.Post(func() {
@@ -134,7 +134,7 @@ func (p *walletPanel) swapTest() {
 			}
 			p.status.SetText(i18n.T("No program swapped the made-up addresses. The clipboard's text is back as it was."))
 			p.w.Info(title, i18n.T("No program swapped any of the ")+strconv.Itoa(len(result.Tried))+" made-up addresses ("+strings.Join(result.Tried, ", ")+").\r\n\r\n"+
-				"That is good news, though not a promise: some malware waits, or only swaps addresses of other coins. Whenever you paste an address, check it character by character against the one you meant.")
+				i18n.T("That is good news, though not a promise: some malware waits, or only swaps addresses of other coins. Whenever you paste an address, check it character by character against the one you meant."))
 		})
 	}()
 }
@@ -164,8 +164,8 @@ func (p *walletPanel) checkDownload() {
 		library.Close()
 		p.w.Post(func() {
 			if err != nil {
-				p.status.SetText("The file could not be read.")
-				p.w.Alert(title, "The file could not be read: "+sentence(err))
+				p.status.SetText(i18n.T("The file could not be read."))
+				p.w.Alert(title, i18n.T("The file could not be read: ")+sentence(err))
 				return
 			}
 			signature := ""
@@ -173,11 +173,11 @@ func (p *walletPanel) checkDownload() {
 				signature = "\r\n\r\nIts signature: " + rules.Signature(file) + "."
 			}
 			if print == want {
-				p.status.SetText("The fingerprints match: this is the file the maker published.")
+				p.status.SetText(i18n.T("The fingerprints match: this is the file the maker published."))
 				p.w.Info(title, "The fingerprints match.\r\n\r\n"+path+"\r\n\r\nThis is exactly the file the maker published, byte for byte."+signature)
 				return
 			}
-			p.status.SetText("The fingerprints do not match. Do not open the file.")
+			p.status.SetText(i18n.T("The fingerprints do not match. Do not open the file."))
 			p.w.Alert(title, fmt.Sprintf("The fingerprints do not match.\r\n\r\nPublished: %s\r\nThis file: %s\r\n\r\n%s\r\n\r\nThis is not the file the maker published, or the fingerprint was copied from the wrong place. Do not install or open it. Download it again from the maker's own website, and check again.%s", want, print, path, signature))
 		})
 	}()
@@ -192,7 +192,7 @@ func (p *walletPanel) findPhrases() {
 		close(p.stop)
 		p.stop = nil
 		p.find.Enable(false) // until the search has wound down
-		p.status.SetText("Stopping the search...")
+		p.status.SetText(i18n.T("Stopping the search..."))
 		return
 	}
 	b := p.book()
@@ -220,13 +220,13 @@ func (p *walletPanel) findPhrases() {
 	}
 	stop := make(chan struct{})
 	p.stop = stop
-	p.find.SetText("Stop the search")
-	p.status.SetText("Searching for recovery phrases...")
+	p.find.SetText(i18n.T("Stop the search"))
+	p.status.SetText(i18n.T("Searching for recovery phrases..."))
 	go func() {
 		result := phrase.Search(places, stop, func(read int) {
 			p.w.Post(func() {
 				if p.stop == stop {
-					p.status.SetText("Searching for recovery phrases: " + fileCount(read) + " read so far...")
+					p.status.SetText(i18n.T("Searching for recovery phrases: ") + fileCount(read) + " read so far...")
 				}
 			})
 		})
