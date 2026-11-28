@@ -14,7 +14,7 @@ import (
 // aboutExtension gathers the evidence that goes with a browser extension.
 func aboutExtension(e model.Startup) []Fact {
 	x := e.Extension
-	facts := []Fact{{"Extension", x.Name}, {"Browser", x.Browser + ", profile " + x.Profile}, {"Where it came from", x.Source.String()}}
+	facts := []Fact{{"Extension", x.Name}, {"Browser", x.Browser + ", profile " + x.Profile}, {i18n.T("Where it came from"), x.Source.String()}}
 	add := func(label, value string) {
 		if value != "" {
 			facts = append(facts, Fact{label, value})
@@ -42,7 +42,7 @@ func extensionMay(x *model.Extension) string {
 
 // removeExtension says how to switch an extension off in its browser.
 func removeExtension(x *model.Extension) string {
-	return "To switch it off, open " + x.Browser + ", open its menu and choose Extensions (in Firefox: Add-ons and themes), find it and turn its switch off or choose Remove."
+	return i18n.T("To switch it off, open ") + x.Browser + ", open its menu and choose Extensions (in Firefox: Add-ons and themes), find it and turn its switch off or choose Remove."
 }
 
 // about gathers the evidence that goes with a start-up entry.
@@ -122,11 +122,11 @@ func Claim(f model.File) string {
 func stop(kind model.StartupKind) string {
 	switch kind {
 	case model.RunKey, model.RunOnceKey, model.StartupFolder, model.StoreApp:
-		return "To stop it starting, open Task Manager (Ctrl + Shift + Esc), go to the Start-up tab and switch it off. That does not delete anything and can be undone."
+		return i18n.T("To stop it starting, open Task Manager (Ctrl + Shift + Esc), go to the Start-up tab and switch it off. That does not delete anything and can be undone.")
 	case model.ScheduledTask:
-		return "To stop it, open Task Scheduler from the Start menu, find the task and choose Disable. That does not delete anything and can be undone."
+		return i18n.T("To stop it, open Task Scheduler from the Start menu, find the task and choose Disable. That does not delete anything and can be undone.")
 	case model.Service:
-		return "To stop it, open Services from the Start menu, open the service and set Startup type to Disabled. Only do this if you are sure what it is: some services are needed for Windows or your hardware to work."
+		return i18n.T("To stop it, open Services from the Start menu, open the service and set Startup type to Disabled. Only do this if you are sure what it is: some services are needed for Windows or your hardware to work.")
 	case model.Driver:
 		return i18n.T("Do not remove a driver by hand. If you do not recognise it, look up its name and maker, and uninstall the program it came with from Settings > Apps.")
 	}
@@ -178,11 +178,11 @@ var startupRules = []Rule{
 					if Disguised(file.Path, s.Folders) {
 						found = append(found, r.find(e.Shown(),
 							winpath.Base(file.Path)+" is the name of a part of Windows, and the real one is in "+s.Folders.Windows+". This one is in "+winpath.Dir(file.Path)+". A program that borrows a Windows name in another folder is usually trying not to be noticed."+stillMicrosoft(file),
-							"Unless you put it there yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well. "+stop(e.Kind), about(e)...))
+							i18n.T("Unless you put it there yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well. ")+stop(e.Kind), about(e)...))
 					} else if of, ok := Lookalike(file.Path); ok {
 						found = append(found, r.find(e.Shown(),
 							winpath.Base(file.Path)+" is spelt almost like "+of+", a part of Windows, but it is not that file. Names one letter away from a Windows name are chosen to be misread.",
-							"Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well. "+stop(e.Kind), about(e)...))
+							i18n.T("Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well. ")+stop(e.Kind), about(e)...))
 					}
 				}
 			}
@@ -267,7 +267,7 @@ var startupRules = []Rule{
 				}
 				found = append(found, r.find(e.Name+": "+e.Command,
 					"The "+e.Name+" setting normally names only "+usual+".exe in the Windows folder. Here it also runs "+e.Command+". Whatever is named there starts at every sign-in, before the desktop appears.",
-					"Unless a kiosk or a custom desktop was set up on purpose, this needs looking at by someone who knows Windows well. Do not edit the setting by guesswork: a wrong value can stop Windows from signing in.", about(e)...))
+					i18n.T("Unless a kiosk or a custom desktop was set up on purpose, this needs looking at by someone who knows Windows well. Do not edit the setting by guesswork: a wrong value can stop Windows from signing in."), about(e)...))
 			}
 			return
 		},
@@ -308,7 +308,7 @@ var startupRules = []Rule{
 					continue
 				}
 				f := r.find(e.Shown(),
-					"Windows is set to load "+e.Command+" into every program that shows a window. Few programs need that, and whatever is loaded this way can watch or change what those programs do.",
+					i18n.T("Windows is set to load ")+e.Command+" into every program that shows a window. Few programs need that, and whatever is loaded this way can watch or change what those programs do.",
 					i18n.T("Find out which program this library belongs to. If you do not recognise it, ask someone who knows Windows well."), about(e)...)
 				if works := e.Works(); works.Exists && works.Program && !works.Signature.Trusted() {
 					f.Severity = High
@@ -452,7 +452,7 @@ var startupRules = []Rule{
 				case EncodedScript(works.Path):
 					severity = High
 					reason += " Its name says it is an encoded script, saved in a scrambled form so that it cannot be read. Honest scripts are rarely hidden like that."
-					advice = "Unless you set this up yourself, show it to someone who knows Windows well. Do not double-click the file, because that runs it. "
+					advice = i18n.T("Unless you set this up yourself, show it to someone who knows Windows well. Do not double-click the file, because that runs it. ")
 				case upkeep:
 					severity = Low
 					reason += " Administrators and PC makers set up scripts like this for upkeep, so it is only good to know, unless you do not recognise it."
@@ -544,7 +544,7 @@ var startupRules = []Rule{
 				}
 				found = append(found, r.find(e.Shown(),
 					i18n.T("This entry is meant to start ")+works.Path+", but there is no such file. It is most likely left over from a program that was removed. It does no harm as it is.",
-					"You can leave it as it is. "+stop(e.Kind), about(e)...))
+					i18n.T("You can leave it as it is. ")+stop(e.Kind), about(e)...))
 			}
 			return
 		},

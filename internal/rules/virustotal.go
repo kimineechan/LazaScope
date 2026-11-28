@@ -79,9 +79,9 @@ func FlagSeverity(r model.Reputation) Severity {
 func VirusTotalSays(r model.Reputation) string {
 	switch {
 	case !r.Known:
-		return "VirusTotal has never seen this file"
+		return i18n.T("VirusTotal has never seen this file")
 	case r.Engines() == 0:
-		return "VirusTotal knows this file, but has no engines' verdicts on it yet"
+		return i18n.T("VirusTotal knows this file, but has no engines' verdicts on it yet")
 	case r.Flags() == 0:
 		return fmt.Sprintf(i18n.T("none of the %d antivirus engines flags it"), r.Engines())
 	}
@@ -96,7 +96,7 @@ func VirusTotalSays(r model.Reputation) string {
 }
 
 func flagReason(s *model.Snapshot, r model.Reputation) string {
-	reason := "VirusTotal, asked by this file's fingerprint, reports that " + VirusTotalSays(r) + "."
+	reason := i18n.T("VirusTotal, asked by this file's fingerprint, reports that ") + VirusTotalSays(r) + "."
 	if r.Label != "" {
 		reason += " Its own label for the file is " + r.Label + "."
 	}
@@ -117,7 +117,7 @@ func flagAdvice(r model.Reputation, page string) string {
 func flagFacts(s *model.Snapshot, r model.Reputation) []Fact {
 	facts := []Fact{{"VirusTotal", strings.ToUpper(VirusTotalSays(r)[:1]) + VirusTotalSays(r)[1:] + ", asked on " + r.Asked.In(location(s)).Format("2 January 2006")}}
 	if r.Label != "" {
-		facts = append(facts, Fact{"VirusTotal's label", r.Label})
+		facts = append(facts, Fact{i18n.T("VirusTotal's label"), r.Label})
 	}
 	var names []string
 	for i, n := range r.Names {
@@ -128,7 +128,7 @@ func flagFacts(s *model.Snapshot, r model.Reputation) []Fact {
 		names = append(names, n.Engine+": "+n.Name)
 	}
 	if len(names) > 0 {
-		facts = append(facts, Fact{"What the engines call it", strings.Join(names, "; ")})
+		facts = append(facts, Fact{i18n.T("What the engines call it"), strings.Join(names, "; ")})
 	}
 	return facts
 }

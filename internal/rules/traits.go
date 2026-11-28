@@ -41,7 +41,7 @@ func Temporary(path string, f model.Folders) (kind string, ok bool) {
 	case f.Temp != "" && winpath.Under(path, f.Temp):
 		return i18n.T("a temporary folder"), true
 	case f.Windows != "" && winpath.Under(path, winpath.Join(f.Windows, "Temp")):
-		return "Windows' temporary folder", true
+		return i18n.T("Windows' temporary folder"), true
 	case f.Downloads != "" && winpath.Under(path, f.Downloads):
 		return i18n.T("the Downloads folder"), true
 	case winpath.Has(path, "$Recycle.Bin"):

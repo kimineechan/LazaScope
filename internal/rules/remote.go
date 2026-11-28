@@ -208,7 +208,7 @@ var accountRules = []Rule{
 			if s.Guard.Guest == model.Yes {
 				found = append(found, r.find("Guest account",
 					i18n.T("The built-in Guest account is switched on. It has no password, so anyone can sign in with it."),
-					"Unless you need it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open Guest and tick Account is disabled."))
+					i18n.T("Unless you need it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open Guest and tick Account is disabled.")))
 			}
 			return
 		},
@@ -225,7 +225,7 @@ var accountRules = []Rule{
 				}
 				found = append(found, r.find("Automatic sign-in",
 					"Windows signs "+who+" in by itself when the PC starts, with no password asked. Whoever switches the PC on is in.",
-					"If the PC never leaves a safe room this may be what you want. To switch it off, press Windows + R, type netplwiz, and tick \"Users must enter a user name and password\"."))
+					i18n.T("If the PC never leaves a safe room this may be what you want. To switch it off, press Windows + R, type netplwiz, and tick \"Users must enter a user name and password\".")))
 			}
 			return
 		},

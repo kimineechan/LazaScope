@@ -170,7 +170,7 @@ var healthRules = []Rule{
 				reason += " Windows also logged hardware errors in the same period. Start with those."
 			}
 			f := r.find(plural(len(crashes), "blue screen", "blue screens"), reason,
-				"Install any waiting Windows updates and the newest drivers from the PC maker. Then test the memory: search the Start menu for Windows Memory Diagnostic. If hardware errors are listed on this page, deal with those first. A repair shop or the PC maker can read the saved crash file, C:\\Windows\\MEMORY.DMP, to name the cause.", facts...)
+				i18n.T("Install any waiting Windows updates and the newest drivers from the PC maker. Then test the memory: search the Start menu for Windows Memory Diagnostic. If hardware errors are listed on this page, deal with those first. A repair shop or the PC maker can read the saved crash file, C:\\Windows\\MEMORY.DMP, to name the cause."), facts...)
 			if len(crashes) == 1 {
 				f.Severity = Low
 			}
@@ -370,7 +370,7 @@ var historyRules = []Rule{
 				subject = strconv.Itoa(len(g.Detections)) + " detections"
 			}
 			f := r.find(subject, reason,
-				openSecurity+"Under Virus and threat protection > Protection history, check that each item says Quarantined or Removed. Think back to what was downloaded or opened that day. If a name mentions a password stealer (PWS, Stealer, Spy), change your important passwords from another device. Antivirus is sometimes wrong about programs people build themselves and about tools that change Windows settings, so a detection can be a false alarm.", facts...)
+				openSecurity+i18n.T("Under Virus and threat protection > Protection history, check that each item says Quarantined or Removed. Think back to what was downloaded or opened that day. If a name mentions a password stealer (PWS, Stealer, Spy), change your important passwords from another device. Antivirus is sometimes wrong about programs people build themselves and about tools that change Windows settings, so a detection can be a false alarm."), facts...)
 			if int(s.Taken.Sub(latest.When).Hours()/24) > 30 {
 				f.Severity = Low
 			}
@@ -398,7 +398,7 @@ var historyRules = []Rule{
 			}
 			f := r.find(plural(len(values), i18n.T("exclusion in Defender's log"), i18n.T("exclusions in Defender's log")),
 				i18n.T("The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: ")+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
-				openSecurity+"Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too.", facts...)
+				openSecurity+i18n.T("Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too."), facts...)
 			if broad != "" {
 				f.Severity = High
 				f.Reason += " The exclusion " + broad + " is very wide: it covers places where downloads and temporary files land."
@@ -492,7 +492,7 @@ var networkRules = []Rule{
 					for _, c := range s.Connections {
 						if c.Listening && c.Protocol == "TCP" && strconv.Itoa(c.LocalPort) == port && c.Process != "" {
 							reason += " " + c.Process + " is waiting on that port."
-							facts = append(facts, Fact{"Waiting on that port", c.Process}, Fact{"File", c.File.Path})
+							facts = append(facts, Fact{i18n.T("Waiting on that port"), c.Process}, Fact{"File", c.File.Path})
 							break
 						}
 					}

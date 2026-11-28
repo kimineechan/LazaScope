@@ -50,7 +50,7 @@ var runningRules = []Rule{
 				r.at(FileRef(p.File.Path))
 				if p.File.Exists && p.File.Signature.Changed() {
 					found = append(found, r.find(p.Name,
-						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
+						i18n.T("This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program."),
 						i18n.T("Reinstall the program from its maker's website and scan the PC with your antivirus."), aboutProcess(s, p)...))
 				}
 			}
@@ -67,11 +67,11 @@ var runningRules = []Rule{
 				if Disguised(p.File.Path, s.Folders) {
 					found = append(found, r.find(p.Name,
 						p.Name+" is the name of a part of Windows, and the real one runs from "+s.Folders.Windows+". This one is running from "+winpath.Dir(p.File.Path)+". A program that borrows a Windows name in another folder is usually trying not to be noticed."+stillMicrosoft(p.File),
-						seeRunning+"Unless you started it yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(s, p)...))
+						i18n.T(seeRunning)+i18n.T("Unless you started it yourself, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well."), aboutProcess(s, p)...))
 				} else if of, ok := Lookalike(p.File.Path); ok {
 					found = append(found, r.find(p.Name,
 						p.Name+" is spelt almost like "+of+", a part of Windows, but it is not that file. Names one letter away from a Windows name are chosen to be misread.",
-						seeRunning+"Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well.", aboutProcess(s, p)...))
+						i18n.T(seeRunning)+i18n.T("Unless you know what this program is, treat it as suspect: scan the file with your antivirus and ask someone who knows Windows well."), aboutProcess(s, p)...))
 				}
 			}
 			return
@@ -90,7 +90,7 @@ var runningRules = []Rule{
 				}
 				f := r.find(p.Name,
 					i18n.T("It is running from ")+kind+": "+p.File.Path+". An installer or a portable tool you opened a moment ago looks like this. So does something that was downloaded and started without being installed.",
-					seeRunning+i18n.T("If you just ran an installer or a downloaded tool, this is it and nothing needs doing. If you do not recognise it, scan the file with your antivirus."), aboutProcess(s, p)...)
+					i18n.T(seeRunning)+i18n.T("If you just ran an installer or a downloaded tool, this is it and nothing needs doing. If you do not recognise it, scan the file with your antivirus."), aboutProcess(s, p)...)
 				if p.File.Exists && p.File.Program && !p.File.Signature.Trusted() {
 					f.Severity = High
 					f.Reason += " The file is also not signed by a known maker."

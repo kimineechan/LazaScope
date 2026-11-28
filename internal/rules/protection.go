@@ -81,9 +81,9 @@ var protectionRules = []Rule{
 			}
 			switch {
 			case g.AntivirusHealth == model.No, len(g.Antivirus) > 0 && on == 0:
-				reason := "Windows Security reports that no antivirus is switched on."
+				reason := i18n.T("Windows Security reports that no antivirus is switched on.")
 				if len(g.Antivirus) == 0 {
-					reason = "Windows Security reports that antivirus protection needs attention."
+					reason = i18n.T("Windows Security reports that antivirus protection needs attention.")
 				}
 				found = append(found, r.find("Antivirus", reason+" Files are not being checked as they are opened or downloaded.",
 					i18n.T(openSecurity)+"Under Virus and threat protection, switch protection back on. If it will not stay on, or you did not switch it off yourself, treat that as a warning sign and scan the PC.", facts...))
@@ -169,7 +169,7 @@ var protectionRules = []Rule{
 			var facts []Fact
 			var off []string
 			for _, profile := range g.Firewall {
-				facts = append(facts, Fact{"Windows Firewall, " + strings.ToLower(profile.Name), on(profile.On)})
+				facts = append(facts, Fact{i18n.T("Windows Firewall, ") + strings.ToLower(profile.Name), on(profile.On)})
 				if profile.On == model.No {
 					off = append(off, strings.ToLower(profile.Name))
 				}
@@ -185,11 +185,11 @@ var protectionRules = []Rule{
 			case g.FirewallHealth == model.Yes, other && g.FirewallHealth != model.No:
 				// Windows Security is satisfied, or another firewall has taken over.
 			case g.FirewallHealth == model.No && len(off) == 0:
-				found = append(found, r.find("Firewall", "Windows Security reports that the firewall needs attention.",
+				found = append(found, r.find("Firewall", i18n.T("Windows Security reports that the firewall needs attention."),
 					i18n.T(openSecurity)+"Under Firewall and network protection, switch the firewall on for every kind of network.", facts...))
 			case len(off) > 0:
 				found = append(found, r.find("Windows Firewall",
-					"Windows Firewall is switched off for "+list(off, 3)+". On those networks, other devices can reach every program on this PC that is waiting for connections.",
+					i18n.T("Windows Firewall is switched off for ")+list(off, 3)+". On those networks, other devices can reach every program on this PC that is waiting for connections.",
 					i18n.T(openSecurity)+"Under Firewall and network protection, switch the firewall on for every kind of network. If you did not switch it off yourself, treat that as a warning sign.", facts...))
 			}
 			return
@@ -204,13 +204,13 @@ var protectionRules = []Rule{
 			fix := i18n.T("Open the Start menu, type UAC and open Change User Account Control settings. Move the slider up to the second position from the top, which is Windows' own default.")
 			switch {
 			case g.UAC == model.No:
-				found = append(found, r.find("User Account Control",
-					"User Account Control is switched off completely. Every program an administrator runs gets full rights at once, and nothing asks first.", fix))
+				found = append(found, r.find(i18n.T("User Account Control"),
+					i18n.T("User Account Control is switched off completely. Every program an administrator runs gets full rights at once, and nothing asks first."), fix))
 			case g.UACSilent == model.Yes:
-				f := r.find("User Account Control",
-					"User Account Control is set to never notify. Windows still separates ordinary rights from full rights, but when a program asks for full rights an administrator's account gives them silently. The prompt that would let you say no never appears.", fix)
+				f := r.find(i18n.T("User Account Control"),
+					i18n.T("User Account Control is set to never notify. Windows still separates ordinary rights from full rights, but when a program asks for full rights an administrator's account gives them silently. The prompt that would let you say no never appears."), fix)
 				f.Severity = Medium
-				f.Title = "Windows gives programs full rights without asking"
+				f.Title = i18n.T("Windows gives programs full rights without asking")
 				found = append(found, f)
 			}
 			return
@@ -294,8 +294,8 @@ var protectionRules = []Rule{
 			// checks stays clean.
 			if usual := winpath.Join(s.Folders.System, `drivers\etc\hosts`); s.Guard.HostsPath != "" && s.Folders.System != "" && !winpath.Same(s.Guard.HostsPath, usual) {
 				f := r.find("Hosts file moved",
-					"Windows is set to read its hosts file from "+s.Guard.HostsPath+" and not from the usual place, "+usual+". Moving it is a way to keep changes out of sight.",
-					"This is set in the registry under Tcpip\\Parameters, value DataBasePath. Unless you changed it yourself, have someone who knows Windows well look at it.", Fact{"File", s.Guard.HostsPath})
+					i18n.T("Windows is set to read its hosts file from ")+s.Guard.HostsPath+" and not from the usual place, "+usual+". Moving it is a way to keep changes out of sight.",
+					i18n.T("This is set in the registry under Tcpip\\Parameters, value DataBasePath. Unless you changed it yourself, have someone who knows Windows well look at it."), Fact{"File", s.Guard.HostsPath})
 				f.Severity = High
 				found = append(found, f)
 			}
