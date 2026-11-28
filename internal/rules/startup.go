@@ -73,7 +73,7 @@ func about(e model.Startup) []Fact {
 	}
 	if decoded, ok := cmdline.EncodedCommand(e.Command); ok {
 		if reading := scripts.Read(decoded, 0); len(reading.Signs) > 0 {
-			add("Going by the decoded command", strings.Join(reading.Signs, " "))
+			add(i18n.T("Going by the decoded command"), strings.Join(reading.Signs, " "))
 		}
 	}
 	switch {
@@ -103,7 +103,7 @@ func Signature(f model.File) string {
 		}
 		return text + ". " + f.Signature.Problem
 	}
-	return "Could not be checked. " + f.Signature.Problem
+	return i18n.T("Could not be checked. ") + f.Signature.Problem
 }
 
 // Claim joins what a file says of itself. Anyone can write anything into
@@ -128,7 +128,7 @@ func stop(kind model.StartupKind) string {
 	case model.Service:
 		return "To stop it, open Services from the Start menu, open the service and set Startup type to Disabled. Only do this if you are sure what it is: some services are needed for Windows or your hardware to work."
 	case model.Driver:
-		return "Do not remove a driver by hand. If you do not recognise it, look up its name and maker, and uninstall the program it came with from Settings > Apps."
+		return i18n.T("Do not remove a driver by hand. If you do not recognise it, look up its name and maker, and uninstall the program it came with from Settings > Apps.")
 	}
 	return "If you did not set this up yourself, ask someone who knows Windows well to look at it."
 }
@@ -205,7 +205,7 @@ var startupRules = []Rule{
 				}
 				found = append(found, r.find(e.Shown(),
 					"This entry runs "+winpath.Base(e.Program.Path)+", a tool that carries out whatever commands it is given, and the commands are hidden. "+strings.Join(signs, " ")+" Honest software has little reason to hide what it runs at start-up.",
-					"Do not run the command to see what it does. Unless you set this up yourself, show it to someone who knows Windows well. "+stop(e.Kind), about(e)...))
+					i18n.T("Do not run the command to see what it does. Unless you set this up yourself, show it to someone who knows Windows well. ")+stop(e.Kind), about(e)...))
 			}
 			return
 		},
@@ -243,7 +243,7 @@ var startupRules = []Rule{
 					reason += " and names " + it + " " + opinion.Name
 				}
 				found = append(found, r.find(e.Shown(), reason+". That is the antivirus's judgement and not LazaScope's."+why,
-					"Do not run it. Open Windows Security from the Start menu and run a full scan, then look at Protection history. "+stop(e.Kind), about(e)...))
+					i18n.T("Do not run it. Open Windows Security from the Start menu and run a full scan, then look at Protection history. ")+stop(e.Kind), about(e)...))
 			}
 			return
 		},
@@ -309,7 +309,7 @@ var startupRules = []Rule{
 				}
 				f := r.find(e.Shown(),
 					"Windows is set to load "+e.Command+" into every program that shows a window. Few programs need that, and whatever is loaded this way can watch or change what those programs do.",
-					"Find out which program this library belongs to. If you do not recognise it, ask someone who knows Windows well.", about(e)...)
+					i18n.T("Find out which program this library belongs to. If you do not recognise it, ask someone who knows Windows well."), about(e)...)
 				if works := e.Works(); works.Exists && works.Program && !works.Signature.Trusted() {
 					f.Severity = High
 				}
@@ -483,7 +483,7 @@ var startupRules = []Rule{
 				case model.Unpacked:
 					how = "It is loaded from a folder on this PC, which needs the browser's developer mode. Whoever can change that folder can change what the extension does."
 				case model.FromOutside:
-					how = "Another program on this PC put it into the browser. Honest software does that now and then, for example an antivirus adding its web shield. It is also how unwanted toolbars arrive."
+					how = i18n.T("Another program on this PC put it into the browser. Honest software does that now and then, for example an antivirus adding its web shield. It is also how unwanted toolbars arrive.")
 				case model.CommandLine:
 					how = "It is loaded by a switch on the line that starts the browser. That is not how extensions are installed: something changed the browser's shortcut or the way it is started."
 				case model.SourceUnknown:

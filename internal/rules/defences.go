@@ -68,9 +68,9 @@ var defenceRules = []Rule{
 				return
 			}
 			found = append(found, r.find("Files and backups",
-				"Controlled folder access is off, and LazaScope found no copy of the account's files being kept: File History has not run in the last 30 days, OneDrive does not copy Documents, Desktop or Pictures, and no backup program is installed. If ransomware got in, there would be nothing to go back to.",
+				i18n.T("Controlled folder access is off, and LazaScope found no copy of the account's files being kept: File History has not run in the last 30 days, OneDrive does not copy Documents, Desktop or Pictures, and no backup program is installed. If ransomware got in, there would be nothing to go back to."),
 				"Keep a copy of your files somewhere ransomware cannot reach: File History to a drive you unplug afterwards, or OneDrive's folder backup. Then switch on Controlled folder access: Windows Security, Virus and threat protection, Ransomware protection.",
-				Fact{"Controlled folder access", "Off"}, Fact{"Backups found", "None"}))
+				Fact{i18n.T("Controlled folder access"), "Off"}, Fact{"Backups found", "None"}))
 			return
 		},
 	},

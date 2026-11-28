@@ -26,12 +26,12 @@ var remoteTools = []remoteTool{
 	{name: "AnyDesk", programs: []string{"anydesk"}, services: []string{"anydesk"}, installed: []string{"anydesk"}},
 	{name: "TeamViewer", programs: []string{"teamviewer", "teamviewer_service", "tv_w32", "tv_x64"}, services: []string{"teamviewer"}, installed: []string{"teamviewer"}},
 	{name: "RustDesk", programs: []string{"rustdesk"}, services: []string{"rustdesk"}, installed: []string{"rustdesk"}},
-	{name: "Chrome Remote Desktop", programs: []string{"remoting_host", "remote_assistance_host", "remoting_desktop"}, services: []string{"chromoting"}, installed: []string{"chrome remote desktop"}},
+	{name: i18n.T("Chrome Remote Desktop"), programs: []string{"remoting_host", "remote_assistance_host", "remoting_desktop"}, services: []string{"chromoting"}, installed: []string{"chrome remote desktop"}},
 	{name: "Splashtop", programs: []string{"srservice", "srmanager", "srfeature", "sragent"}, services: []string{"splashtopremoteservice"}, installed: []string{"splashtop"}},
 	{name: "LogMeIn", programs: []string{"logmein", "lmiguardiansvc", "logmeinsystray"}, services: []string{"logmein", "lmiguardiansvc"}, installed: []string{"logmein client", "logmein pro", "logmein rescue"}},
 	{name: "GoToMyPC", programs: []string{"g2comm", "g2svc", "g2pre", "g2tray"}, services: []string{"gotomypc"}, installed: []string{"gotomypc"}},
 	{name: "GoTo Resolve", programs: []string{"gotoresolve", "goto.resolve"}, installed: []string{"goto resolve", "gotoassist"}},
-	{name: "ScreenConnect (ConnectWise Control)", programs: []string{"screenconnect.clientservice", "screenconnect.windowsclient"}, services: []string{"screenconnect client"}, installed: []string{"screenconnect", "connectwise control"}},
+	{name: "ScreenConnect (ConnectWise Control)", programs: []string{"screenconnect.clientservice", "screenconnect.windowsclient"}, services: []string{"screenconnect client"}, installed: []string{"screenconnect", i18n.T("connectwise control")}},
 	{name: "Atera", programs: []string{"ateraagent"}, services: []string{"ateraagent"}, installed: []string{"ateraagent", "atera agent"}},
 	{name: "NinjaOne", programs: []string{"ninjarmmagent", "ninjarmmagentpatcher"}, services: []string{"ninjarmmagent"}, installed: []string{"ninjarmm", "ninjaone"}},
 	{name: "Parsec", programs: []string{"parsecd", "pservice"}, services: []string{"parsec"}, installed: []string{"parsec"}},
@@ -45,7 +45,7 @@ var remoteTools = []remoteTool{
 	{name: "Remote Utilities", programs: []string{"rutserv", "rfusclient"}, services: []string{"rmanservice"}, installed: []string{"remote utilities"}},
 	{name: "AeroAdmin", programs: []string{"aeroadmin"}, services: []string{"aeroadmin"}, installed: []string{"aeroadmin"}},
 	{name: "DameWare", programs: []string{"dwrcs", "dwrcst"}, services: []string{"dwmrcs"}, installed: []string{"dameware"}},
-	{name: "BeyondTrust Remote Support (Bomgar)", programs: []string{"bomgar-scc", "bomgar-rep", "bomgar-pac"}, installed: []string{"bomgar", "beyondtrust remote support"}},
+	{name: i18n.T("BeyondTrust Remote Support (Bomgar)"), programs: []string{"bomgar-scc", "bomgar-rep", "bomgar-pac"}, installed: []string{"bomgar", i18n.T("beyondtrust remote support")}},
 	{name: "MeshCentral", programs: []string{"meshagent"}, services: []string{"mesh agent"}, installed: []string{"mesh agent", "meshcentral"}},
 	{name: "Tactical RMM", programs: []string{"tacticalrmm"}, services: []string{"tacticalrmm"}, installed: []string{"tactical rmm"}},
 	{name: "NoMachine", programs: []string{"nxserver", "nxd", "nxnode"}, services: []string{"nxservice"}, installed: []string{"nomachine"}},
@@ -157,7 +157,7 @@ var accountRules = []Rule{
 			f := r.find("Remote Desktop",
 				"This PC accepts Remote Desktop connections. Anyone who can reach it over the network and knows an account's password can sign in and use it.",
 				"If you do not use it, switch it off under Settings > System > Remote Desktop. If you do, keep it away from the open internet and use strong passwords.",
-				Fact{"Remote Desktop", "On"}, Fact{"Asks for a password before showing the sign-in screen", s.Guard.RemoteNLA.String()})
+				Fact{"Remote Desktop", "On"}, Fact{i18n.T("Asks for a password before showing the sign-in screen"), s.Guard.RemoteNLA.String()})
 			if s.Guard.RemoteNLA == model.No {
 				f.Reason += " It also shows the sign-in screen to anyone who connects, before they have proved who they are, which exposes it to more attacks."
 			}

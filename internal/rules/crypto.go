@@ -54,7 +54,7 @@ var cryptoRules = []Rule{
 					reason += " It is switched off at the moment."
 				}
 				found = append(found, r.find(x.Name, reason,
-					"Do not type a recovery phrase or a password into it. Remove it from the browser: open the browser's menu, choose Extensions, then Remove. If you ever typed a recovery phrase into it, treat that phrase as known to a thief: from a device you trust, make a new wallet with a new phrase and move the coins to it at once.",
+					i18n.T("Do not type a recovery phrase or a password into it. Remove it from the browser: open the browser's menu, choose Extensions, then Remove. If you ever typed a recovery phrase into it, treat that phrase as known to a thief: from a device you trust, make a new wallet with a new phrase and move the coins to it at once."),
 					about(e)...))
 			}
 			return
@@ -77,7 +77,7 @@ var cryptoRules = []Rule{
 					f.Severity = High
 					f.Reason = p.Name + " is the program of the " + name + " wallet, and its file carries a signature that does not hold: " + Signature(p.File) + "."
 				}
-				f.Advice = "Check that it came from " + name + "'s own website. Wallet makers publish a fingerprint (SHA-256) for each download: on the Wallets page, paste it and choose Check a download... to compare. If it does not match, uninstall the program and, from a device you trust, move the coins to a new wallet with a new recovery phrase."
+				f.Advice = i18n.T("Check that it came from ") + name + "'s own website. Wallet makers publish a fingerprint (SHA-256) for each download: on the Wallets page, paste it and choose Check a download... to compare. If it does not match, uninstall the program and, from a device you trust, move the coins to a new wallet with a new recovery phrase."
 				found = append(found, f)
 			}
 			return
@@ -147,7 +147,7 @@ var cryptoRules = []Rule{
 				return
 			}
 			names = each(names)
-			reason := "Clipboard history is on, and this PC has a wallet (" + listed(names) + "). Whatever is copied, a recovery phrase or a private key included, stays in the list that Windows key + V shows until the PC restarts or the list is cleared."
+			reason := i18n.T("Clipboard history is on, and this PC has a wallet (") + listed(names) + "). Whatever is copied, a recovery phrase or a private key included, stays in the list that Windows key + V shows until the PC restarts or the list is cleared."
 			f := r.find("Clipboard history", reason, "Never copy a recovery phrase. To switch the history off, open Settings, then System, then Clipboard, and turn Clipboard history off. Clear clipboard data on the same page empties it now.",
 				Fact{"Clipboard history", "On"}, Fact{"Wallets", strings.Join(names, ", ")})
 			if s.Clipboard.Cloud == model.Yes {
@@ -231,7 +231,7 @@ var cryptoRules = []Rule{
 			}
 			who := t.By
 			if who == "" {
-				who = "A program Windows did not name"
+				who = i18n.T("A program Windows did not name")
 			}
 			reason := "LazaScope copied a made-up " + t.Kind + " address, and a moment later the clipboard held another: " + t.Into + "."
 			if t.By != "" {
@@ -239,7 +239,7 @@ var cryptoRules = []Rule{
 			}
 			facts := []Fact{{"Address tried", t.Kind}, {"Swapped for", t.Into}, {"Program", t.By}, {"File", t.Path}}
 			found = append(found, r.find(who, reason,
-				"Do not send coins from this PC until it is cleaned. Scan it with your antivirus, end the program in Task Manager, and look for it under 03 Start-up. Whenever you paste an address, check it character by character against the one you meant.",
+				i18n.T("Do not send coins from this PC until it is cleaned. Scan it with your antivirus, end the program in Task Manager, and look for it under 03 Start-up. Whenever you paste an address, check it character by character against the one you meant."),
 				facts...))
 			return
 		},

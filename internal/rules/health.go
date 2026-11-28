@@ -129,7 +129,7 @@ var healthRules = []Rule{
 				reason += " This PC also stopped with a blue screen " + plural(crashes, "time", "times") + " in the same period, which fits."
 			}
 			f := r.find(plural(len(faults), "hardware error", "hardware errors"), reason,
-				"Back up anything you cannot afford to lose. Make sure the vents are clear, and undo any overclocking or undervolting. Check the PC maker's website for a newer BIOS (the built-in software that starts the PC). If the errors keep coming, the part needs repairing or replacing, under warranty if the PC still has one. The maker will want to see these records: they are in Event Viewer under Windows Logs > System, with the source WHEA-Logger.", facts...)
+				i18n.T("Back up anything you cannot afford to lose. Make sure the vents are clear, and undo any overclocking or undervolting. Check the PC maker's website for a newer BIOS (the built-in software that starts the PC). If the errors keep coming, the part needs repairing or replacing, under warranty if the PC still has one. The maker will want to see these records: they are in Event Viewer under Windows Logs > System, with the source WHEA-Logger."), facts...)
 			switch {
 			case fatal > 0:
 				f.Severity = High
@@ -196,7 +196,7 @@ var healthRules = []Rule{
 			}
 			f := r.find(plural(len(faults), "disk fault", "disk faults"),
 				"Windows logged "+plural(len(faults), "disk fault", "disk faults")+" "+period+", the latest on "+Day(s, faults[0].When)+": "+faults[0].Words+" A disk that reports bad spots or a damaged filing system is one to stop trusting.",
-				"Copy your files somewhere else now, before anything else. Then let Windows check the disk: in File Explorer, right-click the drive and choose Properties > Tools > Check. If the faults keep coming, replace the disk.", facts...)
+				i18n.T("Copy your files somewhere else now, before anything else. Then let Windows check the disk: in File Explorer, right-click the drive and choose Properties > Tools > Check. If the faults keep coming, replace the disk."), facts...)
 			if failing {
 				f.Severity = High
 				f.Reason += " One record says the disk itself expects to fail."
@@ -325,7 +325,7 @@ var historyRules = []Rule{
 						tests = append(tests, Fact{"Found on " + Moment(s, d.When), d.Threat + sourced(d)})
 					}
 				}
-				f := r.find("A test of the antivirus", "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
+				f := r.find(i18n.T("A test of the antivirus"), "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
 					"Nothing needs doing. LazaScope's own tests do this, and so do some security tools.", tests...)
 				f.Severity = Low
 				return []Finding{f}
@@ -396,7 +396,7 @@ var historyRules = []Rule{
 					broad = e.Value
 				}
 			}
-			f := r.find(plural(len(values), "exclusion in Defender's log", "exclusions in Defender's log"),
+			f := r.find(plural(len(values), i18n.T("exclusion in Defender's log"), i18n.T("exclusions in Defender's log")),
 				"The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: "+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
 				openSecurity+"Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too.", facts...)
 			if broad != "" {

@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"strings"
 
 	"lazascope/internal/cmdline"
@@ -35,7 +36,7 @@ func Scrambled(program, command string) []string {
 	if cmdline.Encoded(command) {
 		add("It hands PowerShell its instructions in an encoded form, which hides what they say.")
 	}
-	if has("frombase64string", "[convert]::", "-bxor", "gzipstream", "deflatestream", "[text.encoding]", "[system.text.encoding]", "certutil -decode", "certutil.exe -decode", "certutil /decode") ||
+	if has("frombase64string", "[convert]::", "-bxor", "gzipstream", "deflatestream", "[text.encoding]", "[system.text.encoding]", "certutil -decode", i18n.T("certutil.exe -decode"), "certutil /decode") ||
 		strings.Count(joined, "[char]") >= 3 {
 		add("It unpacks or decodes hidden text before running it.")
 	}
