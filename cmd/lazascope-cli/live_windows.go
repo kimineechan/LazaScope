@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"os/signal"
 	"strconv"
@@ -21,7 +22,7 @@ func liveWatch(seconds string) error {
 	if seconds != "" {
 		n, err := strconv.Atoi(strings.TrimSpace(seconds))
 		if err != nil || n < 1 || n > 3600 {
-			return fmt.Errorf("say how many seconds to watch, from 1 to 3600, such as: lazascope-cli live 120")
+			return fmt.Errorf("%s", i18n.T("say how many seconds to watch, from 1 to 3600, such as: lazascope-cli live 120"))
 		}
 		span = n
 	}

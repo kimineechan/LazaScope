@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"strconv"
 	"strings"
@@ -21,11 +22,11 @@ import (
 // data: what is new, what is gone, and which settings differ.
 func compareWith(path string) error {
 	if path == "" {
-		return fmt.Errorf("name the report to compare with: one saved earlier with a name ending in .json")
+		return fmt.Errorf("%s", i18n.T("name the report to compare with: one saved earlier with a name ending in .json"))
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("the report could not be opened: %v", err)
+		return fmt.Errorf(i18n.T("the report could not be opened: %v"), err)
 	}
 	then, err := report.Load(data)
 	if err != nil {
@@ -33,7 +34,7 @@ func compareWith(path string) error {
 	}
 	s := scan.Run(scan.Everything, progress)
 	findings := scan.Judge(s)
-	compare.Mark(s, then, "the report of "+then.Taken.Format("2 January 2006 at 15:04"))
+	compare.Mark(s, then, i18n.T("the report of ")+then.Taken.Format("2 January 2006 at 15:04"))
 	book := view.Build(s, findings)
 	fmt.Printf("%s\n%s\n", book.Summary, book.Compared)
 	if then.Computer != "" && !strings.EqualFold(then.Computer, s.Computer) {
@@ -56,7 +57,7 @@ func watchFor(seconds string) error {
 	if seconds != "" {
 		n, err := strconv.Atoi(seconds)
 		if err != nil || n < 1 || n > int(scan.Longest.Seconds()) {
-			return fmt.Errorf("say how many seconds to watch for, from 1 to %d", int(scan.Longest.Seconds()))
+			return fmt.Errorf(i18n.T("say how many seconds to watch for, from 1 to %d"), int(scan.Longest.Seconds()))
 		}
 		lasting = n
 	}
@@ -96,7 +97,7 @@ func listNew(s *model.Snapshot) {
 	for _, e := range s.Startup {
 		if e.New {
 			if first {
-				head("New among what starts by itself:")
+				head(i18n.T("New among what starts by itself:"))
 				first = false
 			}
 			fmt.Printf("  %-18s %-40s %s\n", e.Kind, cut(e.Shown(), 40), e.Command)
@@ -111,7 +112,7 @@ func listNew(s *model.Snapshot) {
 		}
 		seen[key] = true
 		if first {
-			head("New among what is running:")
+			head(i18n.T("New among what is running:"))
 			first = false
 		}
 		state := "running"
@@ -126,7 +127,7 @@ func listNew(s *model.Snapshot) {
 			continue
 		}
 		if first {
-			head("New connections and waiting ports:")
+			head(i18n.T("New connections and waiting ports:"))
 			first = false
 		}
 		where := c.Protocol + " port " + strconv.Itoa(c.LocalPort) + " (waiting)"

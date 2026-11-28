@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"time"
 
 	"lazascope/internal/rules"
@@ -18,7 +19,7 @@ func healthList() error {
 	fmt.Printf("%s, %s, the last %d days\n\n", s.Computer, s.Windows, c.Days)
 	stamp := func(when time.Time) string { return when.Local().Format("2006-01-02 15:04") }
 	if !c.Read {
-		fmt.Println("Windows' log of hardware errors and crashes could not be read.")
+		fmt.Println(i18n.T("Windows' log of hardware errors and crashes could not be read."))
 	} else {
 		fmt.Printf("Hardware errors: %d\n", len(c.Hardware))
 		for _, fault := range c.Hardware {
@@ -49,7 +50,7 @@ func healthList() error {
 	}
 	fmt.Println()
 	for _, gap := range s.Gaps {
-		fmt.Println("Could not see:", gap.What)
+		fmt.Println(i18n.T("Could not see:"), gap.What)
 	}
 	fmt.Printf("\nRead in %d ms\n", s.Took.Milliseconds())
 	return nil

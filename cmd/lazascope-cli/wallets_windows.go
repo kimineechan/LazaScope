@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"lazascope/internal/i18n"
 	"runtime"
 	"strings"
 	"time"
@@ -64,16 +65,16 @@ func swapTest() error {
 	defer runtime.UnlockOSThread()
 	window, done, err := clipboard.Window()
 	if err != nil {
-		return fmt.Errorf("no window could be made to own the clipboard: %w", err)
+		return fmt.Errorf(i18n.T("no window could be made to own the clipboard: %w"), err)
 	}
 	defer done()
-	fmt.Println("Copying three made-up wallet addresses, one at a time, and watching for two seconds each.")
-	fmt.Println("They have broken checksums, so no wallet accepts them, and are kept out of the clipboard history.")
+	fmt.Println(i18n.T("Copying three made-up wallet addresses, one at a time, and watching for two seconds each."))
+	fmt.Println(i18n.T("They have broken checksums, so no wallet accepts them, and are kept out of the clipboard history."))
 	result, err := clipboard.Test(window, 2*time.Second)
 	restored := true
 	if errors.Is(err, clipboard.ErrNotRestored) {
 		restored, err = false, nil
-		defer fmt.Println("The clipboard could not be put back as it was: copy again whatever you need.")
+		defer fmt.Println(i18n.T("The clipboard could not be put back as it was: copy again whatever you need."))
 	}
 	if err != nil {
 		return err
@@ -96,6 +97,6 @@ func swapTest() error {
 		}
 		fmt.Printf("Windows says the clipboard was last changed by process %d %s\n", result.PID, name)
 	}
-	fmt.Println("Do not send coins from this PC until it is cleaned. Scan it with your antivirus.")
+	fmt.Println(i18n.T("Do not send coins from this PC until it is cleaned. Scan it with your antivirus."))
 	return nil
 }

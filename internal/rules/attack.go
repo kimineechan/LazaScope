@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,32 +33,32 @@ func (t Technique) String() string { return t.ID + " " + t.Name }
 // The techniques the rules name, with ATT&CK's own name for each.
 var techniques = map[string]string{
 	"T1021.001": "Remote Desktop Protocol",
-	"T1027.010": "Command Obfuscation",
-	"T1036.001": "Invalid Code Signature",
+	"T1027.010": i18n.T("Command Obfuscation"),
+	"T1036.001": i18n.T("Invalid Code Signature"),
 	"T1036.005": "Match Legitimate Resource Name or Location",
 	"T1053.005": "Scheduled Task",
-	"T1059":     "Command and Scripting Interpreter",
+	"T1059":     i18n.T("Command and Scripting Interpreter"),
 	"T1078.001": "Default Accounts",
 	"T1115":     "Clipboard Data",
 	"T1123":     "Audio Capture",
 	"T1125":     "Video Capture",
-	"T1176.001": "Browser Extensions",
+	"T1176.001": i18n.T("Browser Extensions"),
 	"T1204.002": "Malicious File",
 	"T1219":     "Remote Access Tools",
 	"T1496.001": "Compute Hijacking",
 	"T1543.003": "Windows Service",
-	"T1546.008": "Accessibility Features",
+	"T1546.008": i18n.T("Accessibility Features"),
 	"T1546.010": "AppInit DLLs",
-	"T1546.012": "Image File Execution Options Injection",
-	"T1547":     "Boot or Logon Autostart Execution",
+	"T1546.012": i18n.T("Image File Execution Options Injection"),
+	"T1547":     i18n.T("Boot or Logon Autostart Execution"),
 	"T1547.001": "Registry Run Keys / Startup Folder",
 	"T1547.004": "Winlogon Helper DLL",
-	"T1548.002": "Bypass User Account Control",
-	"T1552.002": "Credentials in Registry",
-	"T1554":     "Compromise Host Software Binary",
+	"T1548.002": i18n.T("Bypass User Account Control"),
+	"T1552.002": i18n.T("Credentials in Registry"),
+	"T1554":     i18n.T("Compromise Host Software Binary"),
 	"T1557":     "Adversary-in-the-Middle",
-	"T1685":     "Disable or Modify Tools",
-	"T1685.005": "Clear Windows Event Logs",
+	"T1685":     i18n.T("Disable or Modify Tools"),
+	"T1685.005": i18n.T("Clear Windows Event Logs"),
 	"T1686.003": "Windows Host Firewall",
 }
 
@@ -209,7 +210,7 @@ func AttackNote(rule string) string {
 		parts = append(parts, "T1546.008 Accessibility Features, for a program that can be opened from the sign-in screen")
 	}
 	if staying[rule] {
-		parts = append(parts, "and the technique of the way the entry starts")
+		parts = append(parts, i18n.T("and the technique of the way the entry starts"))
 	}
 	if rule == "device-used-unsigned" {
 		parts = append(parts, "T1125 Video Capture for the camera; T1123 Audio Capture for the microphone")

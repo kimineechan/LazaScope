@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 
 	"lazascope/internal/detect"
 	"lazascope/internal/query"
@@ -30,15 +31,15 @@ type livePanel struct {
 func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	p := &livePanel{w: w, status: status, demo: demo}
 	w.Page(pageLive)
-	heading := w.Heading("Watch programs start, live", left, 166, across, 30)
-	intro := w.Label("Every program that starts while this runs, checked the moment Windows reports it against LazaScope's detections, such as Word starting PowerShell or a command that deletes Windows' backups.", left, 200, across, 42)
-	p.button = w.Button("Start watching", left, 250, 180, 34, p.toggle)
+	heading := w.Heading(i18n.T("Watch programs start, live"), left, 166, across, 30)
+	intro := w.Label(i18n.T("Every program that starts while this runs, checked the moment Windows reports it against LazaScope's detections, such as Word starting PowerShell or a command that deletes Windows' backups."), left, 200, across, 42)
+	p.button = w.Button(i18n.T("Start watching"), left, 250, 180, 34, p.toggle)
 	p.button.Lead(true)
-	p.choice = w.Choice([]string{"Every program", "Only what set off a detection"}, left+192, 250, 300, 34, p.refill)
-	count := w.Caption("Not watching.", left+504, 250, across-504-148, 34)
-	w.Button("Copy details", left+across-136, 250, 136, 34, func() {
+	p.choice = w.Choice([]string{i18n.T("Every program"), "Only what set off a detection"}, left+192, 250, 300, 34, p.refill)
+	count := w.Caption(i18n.T("Not watching."), left+504, 250, across-504-148, 34)
+	w.Button(i18n.T("Copy details"), left+across-136, 250, 136, 34, func() {
 		if w.Copy(p.list.detail.Words()) {
-			status.SetText("Copied the details shown below the list.")
+			status.SetText(i18n.T("Copied the details shown below the list."))
 		}
 	})
 	l := &list{picked: -1, prints: map[string]string{}, count: count}
@@ -51,10 +52,10 @@ func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	l.page = &view.Page{Name: "Live", Title: heading.Text(), Intro: intro.Text(), Columns: view.LiveColumns}
 	p.list = l
 	l.detail.Read(paragraphs([]view.Line{
-		{Style: view.Heading, Text: "How the watch works"},
-		{Style: view.Text, Text: "Choose Start watching. Windows Management Instrumentation, the part of Windows that answers questions about the system, reports each new program, and LazaScope checks it against its 15 detections, listed in docs/DETECTIONS.md. Nothing is changed and nothing is sent anywhere."},
-		{Style: view.Text, Text: "Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only."},
-		{Style: view.Text, Text: "Choose Only what set off a detection above to see just those. The search box at the top works here too."},
+		{Style: view.Heading, Text: i18n.T("How the watch works")},
+		{Style: view.Text, Text: i18n.T("Choose Start watching. Windows Management Instrumentation, the part of Windows that answers questions about the system, reports each new program, and LazaScope checks it against its 15 detections, listed in docs/DETECTIONS.md. Nothing is changed and nothing is sent anywhere.")},
+		{Style: view.Text, Text: i18n.T("Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only.")},
+		{Style: view.Text, Text: i18n.T("Choose Only what set off a detection above to see just those. The search box at the top works here too.")},
 	})...)
 	return p
 }
@@ -87,7 +88,7 @@ func (p *livePanel) refill() {
 func (p *livePanel) counts() {
 	state := "Watching."
 	if !p.started {
-		state = "Not watching."
+		state = i18n.T("Not watching.")
 	}
 	p.list.count.SetText(fmt.Sprintf("%s %d programs started, %d set off a detection.", state, len(p.rows), p.alerts))
 }
@@ -95,22 +96,22 @@ func (p *livePanel) counts() {
 // toggle starts or stops the watch.
 func (p *livePanel) toggle() {
 	if p.demo {
-		p.w.Info("Watch programs start", "This is the made-up PC, where nothing runs. On your own PC this lists every program that starts while it watches, and checks each against the detections.")
+		p.w.Info("Watch programs start", i18n.T("This is the made-up PC, where nothing runs. On your own PC this lists every program that starts while it watches, and checks each against the detections."))
 		return
 	}
 	if p.started {
 		close(p.stop)
 		p.started = false
-		p.button.SetText("Start watching")
+		p.button.SetText(i18n.T("Start watching"))
 		p.counts()
-		p.status.SetText("Stopped watching. The list stays until LazaScope is closed.")
+		p.status.SetText(i18n.T("Stopped watching. The list stays until LazaScope is closed."))
 		return
 	}
 	p.stop = make(chan struct{})
 	p.started = true
-	p.button.SetText("Stop watching")
+	p.button.SetText(i18n.T("Stop watching"))
 	p.counts()
-	p.status.SetText("Watching programs start. Nothing is changed; LazaScope only reads what Windows reports.")
+	p.status.SetText(i18n.T("Watching programs start. Nothing is changed; LazaScope only reads what Windows reports."))
 	stop := p.stop
 	go func() {
 		err := sensor.Watch(stop, func(e detect.Event) {
@@ -135,9 +136,9 @@ func (p *livePanel) toggle() {
 		p.w.Post(func() {
 			if err != nil && p.started && p.stop == stop {
 				p.started = false
-				p.button.SetText("Start watching")
+				p.button.SetText(i18n.T("Start watching"))
 				p.counts()
-				p.status.SetText("The watch stopped: " + sentence(err))
+				p.status.SetText(i18n.T("The watch stopped: ") + sentence(err))
 			}
 		})
 	}()

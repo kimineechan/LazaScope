@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"strings"
 	"time"
 
@@ -17,8 +18,8 @@ import (
 var virusTotalRules = []Rule{
 	{
 		ID: "startup-virustotal-flags", Area: model.StartsWithWindows, Severity: Medium,
-		Title: "Antivirus engines on VirusTotal flag something that starts by itself",
-		Why:   "VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that starts with Windows, that is worth a look. One or two flags on a little-known or home-made program are often false alarms; many flags are a strong sign.",
+		Title: i18n.T("Antivirus engines on VirusTotal flag something that starts by itself"),
+		Why:   i18n.T("VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that starts with Windows, that is worth a look. One or two flags on a little-known or home-made program are often false alarms; many flags are a strong sign."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				works := e.Works()
@@ -36,8 +37,8 @@ var virusTotalRules = []Rule{
 	},
 	{
 		ID: "running-virustotal-flags", Area: model.RunningNow, Severity: Medium,
-		Title: "Antivirus engines on VirusTotal flag a running program",
-		Why:   "VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that is running now, that is worth a look. A program that also starts by itself is flagged once, under what starts by itself.",
+		Title: i18n.T("Antivirus engines on VirusTotal flag a running program"),
+		Why:   i18n.T("VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that is running now, that is worth a look. A program that also starts by itself is flagged once, under what starts by itself."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			starts := map[string]bool{}
 			for _, e := range s.Startup {
@@ -78,11 +79,11 @@ func FlagSeverity(r model.Reputation) Severity {
 func VirusTotalSays(r model.Reputation) string {
 	switch {
 	case !r.Known:
-		return "VirusTotal has never seen this file"
+		return i18n.T("VirusTotal has never seen this file")
 	case r.Engines() == 0:
-		return "VirusTotal knows this file, but has no engines' verdicts on it yet"
+		return i18n.T("VirusTotal knows this file, but has no engines' verdicts on it yet")
 	case r.Flags() == 0:
-		return fmt.Sprintf("none of the %d antivirus engines flags it", r.Engines())
+		return fmt.Sprintf(i18n.T("none of the %d antivirus engines flags it"), r.Engines())
 	}
 	text := fmt.Sprintf("%d of %d antivirus engines flag it", r.Flags(), r.Engines())
 	switch {
@@ -95,7 +96,7 @@ func VirusTotalSays(r model.Reputation) string {
 }
 
 func flagReason(s *model.Snapshot, r model.Reputation) string {
-	reason := "VirusTotal, asked by this file's fingerprint, reports that " + VirusTotalSays(r) + "."
+	reason := i18n.T("VirusTotal, asked by this file's fingerprint, reports that ") + VirusTotalSays(r) + "."
 	if r.Label != "" {
 		reason += " Its own label for the file is " + r.Label + "."
 	}
@@ -107,16 +108,16 @@ func flagReason(s *model.Snapshot, r model.Reputation) string {
 
 func flagAdvice(r model.Reputation, page string) string {
 	if FlagSeverity(r) == High {
-		return "Do not open it. Select it under " + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it, then run a full scan with your antivirus. Unless you installed it yourself and know why it is flagged, ask someone who knows Windows well to remove it."
+		return i18n.T("Do not open it. Select it under ") + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it, then run a full scan with your antivirus. Unless you installed it yourself and know why it is flagged, ask someone who knows Windows well to remove it."
 	}
-	return "One or two flags on a little-known or home-made program are often false alarms, and some engines flag remote-control and system tools as unwanted rather than harmful. Select it under " + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it. If you know the program and installed it yourself, nothing needs doing."
+	return i18n.T("One or two flags on a little-known or home-made program are often false alarms, and some engines flag remote-control and system tools as unwanted rather than harmful. Select it under ") + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it. If you know the program and installed it yourself, nothing needs doing."
 }
 
 // flagFacts is the evidence: the count, the label and the engines' names.
 func flagFacts(s *model.Snapshot, r model.Reputation) []Fact {
 	facts := []Fact{{"VirusTotal", strings.ToUpper(VirusTotalSays(r)[:1]) + VirusTotalSays(r)[1:] + ", asked on " + r.Asked.In(location(s)).Format("2 January 2006")}}
 	if r.Label != "" {
-		facts = append(facts, Fact{"VirusTotal's label", r.Label})
+		facts = append(facts, Fact{i18n.T("VirusTotal's label"), r.Label})
 	}
 	var names []string
 	for i, n := range r.Names {
@@ -127,7 +128,7 @@ func flagFacts(s *model.Snapshot, r model.Reputation) []Fact {
 		names = append(names, n.Engine+": "+n.Name)
 	}
 	if len(names) > 0 {
-		facts = append(facts, Fact{"What the engines call it", strings.Join(names, "; ")})
+		facts = append(facts, Fact{i18n.T("What the engines call it"), strings.Join(names, "; ")})
 	}
 	return facts
 }

@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"strings"
 
 	"lazascope/internal/model"
@@ -10,7 +11,7 @@ import (
 
 // This file holds the small questions the rules ask about a file's place
 // and name. They are plain functions, so that they can be used on their
-// own: "is this path in a temporary folder?", "does this name imitate a
+// own: i18n.T("is this path in a temporary folder?"), "does this name imitate a
 // part of Windows?".
 
 // userRest returns the part of a path below one account's folder: for
@@ -38,24 +39,24 @@ func Temporary(path string, f model.Folders) (kind string, ok bool) {
 	}
 	switch {
 	case f.Temp != "" && winpath.Under(path, f.Temp):
-		return "a temporary folder", true
+		return i18n.T("a temporary folder"), true
 	case f.Windows != "" && winpath.Under(path, winpath.Join(f.Windows, "Temp")):
-		return "Windows' temporary folder", true
+		return i18n.T("Windows' temporary folder"), true
 	case f.Downloads != "" && winpath.Under(path, f.Downloads):
-		return "the Downloads folder", true
+		return i18n.T("the Downloads folder"), true
 	case winpath.Has(path, "$Recycle.Bin"):
 		return "the Recycle Bin", true
 	case winpath.Has(path, "INetCache"), winpath.Has(path, "Temporary Internet Files"):
-		return "a web browser's cache", true
+		return i18n.T("a web browser's cache"), true
 	}
 	// The same folders in another account.
 	if rest, ok := userRest(path, f); ok {
 		lower := strings.ToLower(rest)
 		switch {
 		case strings.HasPrefix(lower, `appdata\local\temp\`):
-			return "a temporary folder", true
+			return i18n.T("a temporary folder"), true
 		case strings.HasPrefix(lower, `downloads\`):
-			return "a Downloads folder", true
+			return i18n.T("a Downloads folder"), true
 		}
 	}
 	return "", false

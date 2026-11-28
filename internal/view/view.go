@@ -8,6 +8,7 @@
 package view
 
 import (
+	"lazascope/internal/i18n"
 	"fmt"
 	"sort"
 	"strconv"
@@ -204,19 +205,19 @@ func Build(s *model.Snapshot, findings []rules.Finding) *Book {
 
 // summary says which PC was looked at, when, and with what rights.
 func summary(s *model.Snapshot) string {
-	rights := "without administrator rights, so some details could not be read"
+	rights := i18n.T("without administrator rights, so some details could not be read")
 	if s.Elevated {
-		rights = "with administrator rights"
+		rights = i18n.T("with administrator rights")
 	}
 	text := strings.TrimSpace(s.Computer)
 	if s.Windows != "" {
 		text += ", " + s.Windows
 	}
 	if !s.Taken.IsZero() {
-		text += ". Looked at on " + s.Taken.Format("2 January 2006") + " at " + s.Taken.Format("15:04")
+		text += i18n.T(". Looked at on ") + s.Taken.Format("2 January 2006") + i18n.T(" at ") + s.Taken.Format("15:04")
 	}
 	if s.User != "" {
-		text += " as " + s.User
+		text += i18n.T(" as ") + s.User
 	}
 	return strings.TrimLeft(text+", "+rights+".", ", ")
 }
@@ -306,21 +307,21 @@ func verdict(light rules.Light, findings []rules.Finding, area model.Area) strin
 	high, medium, low := rules.Count(findings, area)
 	var parts []string
 	if high > 0 {
-		parts = append(parts, strconv.Itoa(high)+" to look at first")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d to look at first"), high))
 	}
 	if medium > 0 {
-		parts = append(parts, strconv.Itoa(medium)+" worth a look")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d worth a look"), medium))
 	}
 	if low > 0 {
-		parts = append(parts, strconv.Itoa(low)+" good to know")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d good to know"), low))
 	}
 	switch {
 	case light == rules.Grey:
 		return "Could not be read"
 	case high == 0 && medium == 0 && low == 0:
-		return "Nothing stands out"
+		return i18n.T("Nothing stands out")
 	case high == 0 && medium == 0:
-		return "Nothing stands out (" + parts[0] + ")"
+		return i18n.T("Nothing stands out") + " (" + parts[0] + ")"
 	}
 	return strings.Join(parts, ", ")
 }
@@ -399,9 +400,9 @@ func (b *builder) unseen(areas ...model.Area) []string {
 func ago(days int) string {
 	switch {
 	case days <= 0:
-		return "today"
+		return i18n.T("today")
 	case days == 1:
-		return "yesterday"
+		return i18n.T("yesterday")
 	}
-	return fmt.Sprintf("%d days ago", days)
+	return fmt.Sprintf(i18n.T("%d days ago"), days)
 }

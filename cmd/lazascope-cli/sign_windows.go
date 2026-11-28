@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"lazascope/internal/files"
+	"lazascope/internal/i18n"
 	"time"
 
 	"lazascope/internal/sigcheck"
@@ -13,7 +14,7 @@ import (
 // sign prints the signature of each file named.
 func sign(paths []string) error {
 	if len(paths) == 0 {
-		return fmt.Errorf("name at least one file to check")
+		return fmt.Errorf("%s", i18n.T("name at least one file to check"))
 	}
 	checker := sigcheck.New()
 	defer checker.Close()

@@ -2,7 +2,11 @@
 
 package winui
 
-import "math"
+import (
+	"math"
+
+	"lazascope/internal/i18n"
+)
 
 // The kinds of control.
 const (
@@ -463,7 +467,7 @@ func (c *Control) draw(cv *Canvas) {
 		if c.kind == kindShortcut {
 			text, colour := shortcutText(c.key, c.modifiers), theme.Ink
 			if text == "" {
-				text, colour = pick(lit, "Press the keys to use", "None"), theme.Soft
+				text, colour = pick(lit, i18n.T("Press the keys to use"), "None"), theme.Soft
 			}
 			w.write(cv, text, c.font, x+inset, y, width-2*inset, height, c.flags, colour)
 			break

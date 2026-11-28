@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"strconv"
 	"strings"
 	"time"
@@ -83,8 +84,8 @@ const period = "in the last 90 days"
 var healthRules = []Rule{
 	{
 		ID: "hardware-errors", Area: model.Health, Severity: Medium, Topic: "hardware",
-		Title: "The hardware has been reporting errors",
-		Why:   "Processors, memory and other parts check themselves as they work, and Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none. A part that keeps reporting them is usually failing, overheating or being run harder than it was made for, and it is a common cause of crashes that look like software trouble.",
+		Title: i18n.T("The hardware has been reporting errors"),
+		Why:   i18n.T("Processors, memory and other parts check themselves as they work, and Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none. A part that keeps reporting them is usually failing, overheating or being run harder than it was made for, and it is a common cause of crashes that look like software trouble."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			faults := s.Condition.Hardware
 			if len(faults) == 0 {
@@ -103,7 +104,7 @@ var healthRules = []Rule{
 				}
 			}
 			parts, spots = each(parts), each(spots)
-			reason := "Windows logged " + plural(len(faults), "hardware error", "hardware errors") + " " + period + ", the latest on " + Day(s, faults[0].When) + "."
+			reason := "Windows logged " + plural(len(faults), "hardware error", "hardware errors") + " " + i18n.T(period) + ", the latest on " + Day(s, faults[0].When) + "."
 			switch {
 			case len(parts) == 1 && len(faults) == 1:
 				reason += " It was reported by " + parts[0] + "."
@@ -128,7 +129,7 @@ var healthRules = []Rule{
 				reason += " This PC also stopped with a blue screen " + plural(crashes, "time", "times") + " in the same period, which fits."
 			}
 			f := r.find(plural(len(faults), "hardware error", "hardware errors"), reason,
-				"Back up anything you cannot afford to lose. Make sure the vents are clear, and undo any overclocking or undervolting. Check the PC maker's website for a newer BIOS (the built-in software that starts the PC). If the errors keep coming, the part needs repairing or replacing, under warranty if the PC still has one. The maker will want to see these records: they are in Event Viewer under Windows Logs > System, with the source WHEA-Logger.", facts...)
+				i18n.T("Back up anything you cannot afford to lose. Make sure the vents are clear, and undo any overclocking or undervolting. Check the PC maker's website for a newer BIOS (the built-in software that starts the PC). If the errors keep coming, the part needs repairing or replacing, under warranty if the PC still has one. The maker will want to see these records: they are in Event Viewer under Windows Logs > System, with the source WHEA-Logger."), facts...)
 			switch {
 			case fatal > 0:
 				f.Severity = High
@@ -140,8 +141,8 @@ var healthRules = []Rule{
 	},
 	{
 		ID: "blue-screens", Area: model.Health, Severity: Medium, Topic: "crashes",
-		Title: "Windows has been stopping with a blue screen",
-		Why:   "A blue screen is Windows stopping itself because carrying on could damage data. One can be a passing fault. Several mean something is wrong underneath: a failing part, a faulty driver, or now and then software that reaches into the core of Windows.",
+		Title: i18n.T("Windows has been stopping with a blue screen"),
+		Why:   i18n.T("A blue screen is Windows stopping itself because carrying on could damage data. One can be a passing fault. Several mean something is wrong underneath: a failing part, a faulty driver, or now and then software that reaches into the core of Windows."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			crashes := s.Condition.Crashes
 			if len(crashes) == 0 {
@@ -156,7 +157,7 @@ var healthRules = []Rule{
 				}
 			}
 			different := len(each(codes))
-			reason := "Windows stopped with a blue screen " + plural(len(crashes), "time", "times") + " " + period + ", the latest on " + Day(s, crashes[0].When) + " (stop code " + stopCode(crashes[0]) + ")."
+			reason := "Windows stopped with a blue screen " + plural(len(crashes), "time", "times") + " " + i18n.T(period) + ", the latest on " + Day(s, crashes[0].When) + " (stop code " + stopCode(crashes[0]) + ")."
 			switch {
 			case len(crashes) == 1:
 				reason += " One crash can be a passing fault."
@@ -169,7 +170,7 @@ var healthRules = []Rule{
 				reason += " Windows also logged hardware errors in the same period. Start with those."
 			}
 			f := r.find(plural(len(crashes), "blue screen", "blue screens"), reason,
-				"Install any waiting Windows updates and the newest drivers from the PC maker. Then test the memory: search the Start menu for Windows Memory Diagnostic. If hardware errors are listed on this page, deal with those first. A repair shop or the PC maker can read the saved crash file, C:\\Windows\\MEMORY.DMP, to name the cause.", facts...)
+				i18n.T("Install any waiting Windows updates and the newest drivers from the PC maker. Then test the memory: search the Start menu for Windows Memory Diagnostic. If hardware errors are listed on this page, deal with those first. A repair shop or the PC maker can read the saved crash file, C:\\Windows\\MEMORY.DMP, to name the cause."), facts...)
 			if len(crashes) == 1 {
 				f.Severity = Low
 			}
@@ -178,8 +179,8 @@ var healthRules = []Rule{
 	},
 	{
 		ID: "disk-faults", Area: model.Health, Severity: Medium, Topic: "disk",
-		Title: "A disk has reported faults",
-		Why:   "A disk that can no longer read part of itself, or whose filing system is damaged, says so in Windows' log before it fails outright. That warning is the time to copy files off it.",
+		Title: i18n.T("A disk has reported faults"),
+		Why:   i18n.T("A disk that can no longer read part of itself, or whose filing system is damaged, says so in Windows' log before it fails outright. That warning is the time to copy files off it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			faults := s.Condition.Disk
 			if len(faults) == 0 {
@@ -195,7 +196,7 @@ var healthRules = []Rule{
 			}
 			f := r.find(plural(len(faults), "disk fault", "disk faults"),
 				"Windows logged "+plural(len(faults), "disk fault", "disk faults")+" "+period+", the latest on "+Day(s, faults[0].When)+": "+faults[0].Words+" A disk that reports bad spots or a damaged filing system is one to stop trusting.",
-				"Copy your files somewhere else now, before anything else. Then let Windows check the disk: in File Explorer, right-click the drive and choose Properties > Tools > Check. If the faults keep coming, replace the disk.", facts...)
+				i18n.T("Copy your files somewhere else now, before anything else. Then let Windows check the disk: in File Explorer, right-click the drive and choose Properties > Tools > Check. If the faults keep coming, replace the disk."), facts...)
 			if failing {
 				f.Severity = High
 				f.Reason += " One record says the disk itself expects to fail."
@@ -205,8 +206,8 @@ var healthRules = []Rule{
 	},
 	{
 		ID: "sudden-stops", Area: model.Health, Severity: Low, Topic: "stops",
-		Title: "The PC has gone off without shutting down",
-		Why:   "When a PC loses power, freezes and is held down by its power button, or overheats and cuts out, Windows notes at the next start that it was never shut down. Now and then is normal for a laptop. Often is a sign of overheating or a failing battery or power supply, and each sudden stop risks damaging whatever was being saved.",
+		Title: i18n.T("The PC has gone off without shutting down"),
+		Why:   i18n.T("When a PC loses power, freezes and is held down by its power button, or overheats and cuts out, Windows notes at the next start that it was never shut down. Now and then is normal for a laptop. Often is a sign of overheating or a failing battery or power supply, and each sudden stop risks damaging whatever was being saved."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			stops := s.Condition.PowerCuts
 			if len(stops) < 3 {
@@ -215,18 +216,18 @@ var healthRules = []Rule{
 			var facts []Fact
 			for i, when := range stops {
 				if i < 6 {
-					facts = append(facts, Fact{"Noticed when Windows started", Moment(s, when)})
+					facts = append(facts, Fact{i18n.T("Noticed when Windows started"), Moment(s, when)})
 				}
 			}
 			return []Finding{r.find(plural(len(stops), "sudden stop", "sudden stops"),
-				"This PC went off without shutting down "+plural(len(stops), "time", "times")+" "+period+", with no blue screen. The power went, the battery ran out, the PC froze and was held down by its power button, or it overheated and cut out. The latest was noticed when Windows started on "+Day(s, stops[0])+".",
-				"If you remember holding the power button down, that is all this is. If the PC goes off by itself when it is working hard, it is probably overheating: clear the vents and stand it on a hard surface.", facts...)}
+				i18n.T("This PC went off without shutting down ")+plural(len(stops), "time", "times")+" "+period+", with no blue screen. The power went, the battery ran out, the PC froze and was held down by its power button, or it overheated and cut out. The latest was noticed when Windows started on "+Day(s, stops[0])+".",
+				i18n.T("If you remember holding the power button down, that is all this is. If the PC goes off by itself when it is working hard, it is probably overheating: clear the vents and stand it on a hard surface."), facts...)}
 		},
 	},
 	{
 		ID: "disk-nearly-full", Area: model.Health, Severity: Low,
-		Title: "The Windows disk is nearly full",
-		Why:   "Windows needs free room for updates and for its own working files. With little left, updates fail, which leaves security holes open, and the PC becomes slow and unreliable.",
+		Title: i18n.T("The Windows disk is nearly full"),
+		Why:   i18n.T("Windows needs free room for updates and for its own working files. With little left, updates fail, which leaves security holes open, and the PC becomes slow and unreliable."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, drive := range s.Condition.Drives {
 				if !strings.HasPrefix(strings.ToUpper(s.Folders.Windows), strings.ToUpper(drive.Letter)) || drive.Size == 0 {
@@ -239,7 +240,7 @@ var healthRules = []Rule{
 				r.at(SpaceRef(drive.Letter))
 				found = append(found, r.find("Drive "+drive.Letter,
 					"Drive "+drive.Letter+", which holds Windows, has "+Size(drive.Free)+" free of "+Size(drive.Size)+". Windows updates need several gigabytes of free room to install.",
-					"Open Settings > System > Storage to see what takes the room, and let Windows clean up what is not needed. Empty the Recycle Bin and the Downloads folder first.",
+					i18n.T("Open Settings > System > Storage to see what takes the room, and let Windows clean up what is not needed. Empty the Recycle Bin and the Downloads folder first."),
 					Fact{"Free", Size(drive.Free)}, Fact{"Size", Size(drive.Size)}))
 			}
 			return
@@ -247,8 +248,8 @@ var healthRules = []Rule{
 	},
 	{
 		ID: "log-cleared", Area: model.Health, Severity: Medium, Topic: "wiped",
-		Title: "A Windows log was wiped",
-		Why:   "The logs are where Windows writes down what happened on the PC: sign-ins, crashes, what was installed. Clearing one is rare in everyday use. Some clean-up tools do it, and so does someone who wants to remove the traces of what they did.",
+		Title: i18n.T("A Windows log was wiped"),
+		Why:   i18n.T("The logs are where Windows writes down what happened on the PC: sign-ins, crashes, what was installed. Clearing one is rare in everyday use. Some clean-up tools do it, and so does someone who wants to remove the traces of what they did."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			wipes := s.Condition.Wiped
 			if len(wipes) == 0 {
@@ -273,11 +274,11 @@ var healthRules = []Rule{
 			}
 			reason += "."
 			if len(wipes) > 1 {
-				reason = plural(len(wipes), "time", "times") + " " + period + " a Windows log was cleared (" + list(each(logs), 4) + "). The latest: " + strings.ToLower(reason[:1]) + reason[1:]
+				reason = plural(len(wipes), "time", "times") + " " + i18n.T(period) + " a Windows log was cleared (" + list(each(logs), 4) + "). The latest: " + strings.ToLower(reason[:1]) + reason[1:]
 			}
 			return []Finding{r.find(plural(len(wipes), "cleared log", "cleared logs"),
 				reason+" Whatever the log held before that moment is gone, including anything LazaScope would have read from it.",
-				"If you ran a clean-up tool or cleared the log yourself, nothing needs doing. If not, ask who else uses this PC, and look at what else here dates from around that time.", facts...)}
+				i18n.T("If you ran a clean-up tool or cleared the log yourself, nothing needs doing. If not, ask who else uses this PC, and look at what else here dates from around that time."), facts...)}
 		},
 	},
 }
@@ -302,8 +303,8 @@ func sourced(d model.Detection) string {
 var historyRules = []Rule{
 	{
 		ID: "defender-found-something", Area: model.Protection, Severity: Medium, Topic: "detections",
-		Title: "Microsoft Defender found something not long ago",
-		Why:   "When the antivirus stops a file, it did its job, and the file is usually gone. It is still worth knowing that it happened and where the file came from, because whatever brought one unwanted file may bring another. Antivirus is also sometimes wrong, most often about tools people build themselves.",
+		Title: i18n.T("Microsoft Defender found something not long ago"),
+		Why:   i18n.T("When the antivirus stops a file, it did its job, and the file is usually gone. It is still worth knowing that it happened and where the file came from, because whatever brought one unwanted file may bring another. Antivirus is also sometimes wrong, most often about tools people build themselves."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if !g.HistoryRead || len(g.Detections) == 0 {
@@ -324,8 +325,8 @@ var historyRules = []Rule{
 						tests = append(tests, Fact{"Found on " + Moment(s, d.When), d.Threat + sourced(d)})
 					}
 				}
-				f := r.find("A test of the antivirus", "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
-					"Nothing needs doing. LazaScope's own tests do this, and so do some security tools.", tests...)
+				f := r.find(i18n.T("A test of the antivirus"), "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
+					i18n.T("Nothing needs doing. LazaScope's own tests do this, and so do some security tools."), tests...)
 				f.Severity = Low
 				return []Finding{f}
 			}
@@ -356,9 +357,9 @@ var historyRules = []Rule{
 			if latest.Path != "" {
 				what += " in " + latest.Path
 			}
-			reason := "Microsoft Defender's own log shows that it found " + what + " on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
+			reason := i18n.T("Microsoft Defender's own log shows that it found ") + what + " on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			if len(g.Detections) > 1 {
-				reason = "Microsoft Defender's own log shows " + strconv.Itoa(len(g.Detections)) + " detections " + period + ". The latest was " + what + ", on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
+				reason = "Microsoft Defender's own log shows " + strconv.Itoa(len(g.Detections)) + " detections " + i18n.T(period) + ". The latest was " + what + ", on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			}
 			if latest.Action != "" {
 				reason += " Defender's action was: " + latest.Action + "."
@@ -369,7 +370,7 @@ var historyRules = []Rule{
 				subject = strconv.Itoa(len(g.Detections)) + " detections"
 			}
 			f := r.find(subject, reason,
-				openSecurity+"Under Virus and threat protection > Protection history, check that each item says Quarantined or Removed. Think back to what was downloaded or opened that day. If a name mentions a password stealer (PWS, Stealer, Spy), change your important passwords from another device. Antivirus is sometimes wrong about programs people build themselves and about tools that change Windows settings, so a detection can be a false alarm.", facts...)
+				openSecurity+i18n.T("Under Virus and threat protection > Protection history, check that each item says Quarantined or Removed. Think back to what was downloaded or opened that day. If a name mentions a password stealer (PWS, Stealer, Spy), change your important passwords from another device. Antivirus is sometimes wrong about programs people build themselves and about tools that change Windows settings, so a detection can be a false alarm."), facts...)
 			if int(s.Taken.Sub(latest.When).Hours()/24) > 30 {
 				f.Severity = Low
 			}
@@ -378,8 +379,8 @@ var historyRules = []Rule{
 	},
 	{
 		ID: "defender-exclusions-logged", Area: model.Protection, Severity: Medium, Topic: "exclusions",
-		Title: "Microsoft Defender's log shows places it was told to skip",
-		Why:   "Windows hides the list of what Microsoft Defender skips from programs without administrator rights, so that malware cannot read where it would be safe. Defender's own log is not hidden, and it records every time something is added to that list or taken off it.",
+		Title: i18n.T("Microsoft Defender's log shows places it was told to skip"),
+		Why:   i18n.T("Windows hides the list of what Microsoft Defender skips from programs without administrator rights, so that malware cannot read where it would be safe. Defender's own log is not hidden, and it records every time something is added to that list or taken off it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if g.ExclusionsVisible || len(g.LoggedExclusions) == 0 {
@@ -395,9 +396,9 @@ var historyRules = []Rule{
 					broad = e.Value
 				}
 			}
-			f := r.find(plural(len(values), "exclusion in Defender's log", "exclusions in Defender's log"),
-				"The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: "+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
-				openSecurity+"Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too.", facts...)
+			f := r.find(plural(len(values), i18n.T("exclusion in Defender's log"), i18n.T("exclusions in Defender's log")),
+				i18n.T("The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: ")+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
+				openSecurity+i18n.T("Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too."), facts...)
 			if broad != "" {
 				f.Severity = High
 				f.Reason += " The exclusion " + broad + " is very wide: it covers places where downloads and temporary files land."
@@ -407,8 +408,8 @@ var historyRules = []Rule{
 	},
 	{
 		ID: "defender-switched-off", Area: model.Protection, Severity: Low, Topic: "realtime",
-		Title: "Defender's real-time protection was switched off for a while",
-		Why:   "Real-time protection is the part of the antivirus that checks files as they are opened. People switch it off to install something the antivirus objects to. Malware tries to switch it off for the same reason, and Windows switches it back on by itself after a while.",
+		Title: i18n.T("Defender's real-time protection was switched off for a while"),
+		Why:   i18n.T("Real-time protection is the part of the antivirus that checks files as they are opened. People switch it off to install something the antivirus objects to. Malware tries to switch it off for the same reason, and Windows switches it back on by itself after a while."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			// An old switching off and on again is history, not news.
@@ -422,16 +423,16 @@ var historyRules = []Rule{
 				}
 			}
 			latest := g.SwitchedOff[0]
-			reason := "Microsoft Defender's log shows that its real-time protection was switched off on " + Day(s, latest) + " (" + Ago(s, latest) + ")"
+			reason := i18n.T("Microsoft Defender's log shows that its real-time protection was switched off on ") + Day(s, latest) + " (" + Ago(s, latest) + ")"
 			if len(g.SwitchedOff) > 1 {
-				reason += ", and " + plural(len(g.SwitchedOff)-1, "more time", "more times") + " " + period
+				reason += ", and " + plural(len(g.SwitchedOff)-1, "more time", "more times") + " " + i18n.T(period)
 			}
 			reason += "."
 			if g.RealTime == model.Yes {
 				reason += " It is on now."
 			}
-			return []Finding{r.find("Real-time protection", reason+" While it was off, files were not checked as they were opened.",
-				"If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security.", facts...)}
+			return []Finding{r.find(i18n.T("Real-time protection"), reason+" While it was off, files were not checked as they were opened.",
+				i18n.T("If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security."), facts...)}
 		},
 	},
 }
@@ -440,8 +441,8 @@ var historyRules = []Rule{
 var networkRules = []Rule{
 	{
 		ID: "dns-set-by-hand", Area: model.Protection, Severity: Medium, Topic: "dns",
-		Title: "Website names are looked up through a server someone typed in",
-		Why:   "Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees every name that is looked up, and can answer with the address of a fake copy. A PC normally asks whatever its router tells it to. Some people set a public service such as Cloudflare or Quad9 by hand. Malware has been known to set a server of its own.",
+		Title: i18n.T("Website names are looked up through a server someone typed in"),
+		Why:   i18n.T("Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees every name that is looked up, and can answer with the address of a fake copy. A PC normally asks whatever its router tells it to. Some people set a public service such as Cloudflare or Quad9 by hand. Malware has been known to set a server of its own."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			var odd []string
 			var facts []Fact
@@ -458,14 +459,14 @@ var networkRules = []Rule{
 				return
 			}
 			return []Finding{r.find(list(odd, 4),
-				"This PC is set by hand to ask "+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
-				"If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back to automatic. On Windows 11: Settings > Network & internet, the connection's properties, DNS server assignment, Edit, Automatic (DHCP). On Windows 10: press Windows key + R, type ncpa.cpl, open the connection's Properties, then Internet Protocol Version 4 (TCP/IPv4), Properties, and choose Obtain DNS server address automatically; do the same for Version 6.", facts...)}
+				i18n.T("This PC is set by hand to ask ")+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
+				i18n.T("If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back to automatic. On Windows 11: Settings > Network & internet, the connection's properties, DNS server assignment, Edit, Automatic (DHCP). On Windows 10: press Windows key + R, type ncpa.cpl, open the connection's Properties, then Internet Protocol Version 4 (TCP/IPv4), Properties, and choose Obtain DNS server address automatically; do the same for Version 6."), facts...)}
 		},
 	},
 	{
 		ID: "proxy-set", Area: model.Protection, Severity: Medium, Topic: "proxy",
-		Title: "Web traffic is sent through a go-between",
-		Why:   "A proxy is a go-between: the browser and other programs hand their web traffic to it, and it passes the traffic on. Workplaces and schools use one to filter, and some ad blockers and security programs run one on the PC itself. Whatever sits in that place can read what passes through it, and with a certificate of its own on the PC it can read secure pages too. Unwanted software sets a proxy for exactly that reason.",
+		Title: i18n.T("Web traffic is sent through a go-between"),
+		Why:   i18n.T("A proxy is a go-between: the browser and other programs hand their web traffic to it, and it passes the traffic on. Workplaces and schools use one to filter, and some ad blockers and security programs run one on the PC itself. Whatever sits in that place can read what passes through it, and with a certificate of its own on the PC it can read secure pages too. Unwanted software sets a proxy for exactly that reason."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			p := s.Guard.Proxy
 			if p.Server == "" && p.Script == "" {
@@ -475,7 +476,7 @@ var networkRules = []Rule{
 			reason := ""
 			if p.Server != "" {
 				facts = append(facts, Fact{"Proxy", p.Server})
-				reason = "This account's web traffic is set to go through " + p.Server + "."
+				reason = i18n.T("This account's web traffic is set to go through ") + p.Server + "."
 				// A proxy on this PC itself is a program here. Say which, if it is waiting there.
 				server := p.Server
 				if cut := strings.Index(server, "="); cut >= 0 {
@@ -491,7 +492,7 @@ var networkRules = []Rule{
 					for _, c := range s.Connections {
 						if c.Listening && c.Protocol == "TCP" && strconv.Itoa(c.LocalPort) == port && c.Process != "" {
 							reason += " " + c.Process + " is waiting on that port."
-							facts = append(facts, Fact{"Waiting on that port", c.Process}, Fact{"File", c.File.Path})
+							facts = append(facts, Fact{i18n.T("Waiting on that port"), c.Process}, Fact{"File", c.File.Path})
 							break
 						}
 					}
@@ -512,7 +513,7 @@ var networkRules = []Rule{
 				subject = p.Script
 			}
 			return []Finding{r.find(subject, reason+" Whatever sits there can see the web traffic that passes through it.",
-				"If your workplace or school set this, or you run a filter or a debugging tool that works this way, nothing needs doing. If not, switch it off: open Settings > Network & Internet > Proxy, and turn off Use a proxy server and Use setup script. Then find out which program set it, starting with what is listed under Worth a look.", facts...)}
+				i18n.T("If your workplace or school set this, or you run a filter or a debugging tool that works this way, nothing needs doing. If not, switch it off: open Settings > Network & Internet > Proxy, and turn off Use a proxy server and Use setup script. Then find out which program set it, starting with what is listed under Worth a look."), facts...)}
 		},
 	},
 }

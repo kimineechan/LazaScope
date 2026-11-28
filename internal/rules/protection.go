@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"net/netip"
 	"strconv"
 	"strings"
@@ -66,8 +67,8 @@ func homeName(name string) bool {
 var protectionRules = []Rule{
 	{
 		ID: "antivirus-off", Area: model.Protection, Severity: High, Topic: "antivirus",
-		Title: "Antivirus protection is off",
-		Why:   "Antivirus checks every file as it is opened. Malware often switches it off first, and a PC without it has no second line of defence against a bad download.",
+		Title: i18n.T("Antivirus protection is off"),
+		Why:   i18n.T("Antivirus checks every file as it is opened. Malware often switches it off first, and a PC without it has no second line of defence against a bad download."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			var facts []Fact
@@ -80,24 +81,24 @@ var protectionRules = []Rule{
 			}
 			switch {
 			case g.AntivirusHealth == model.No, len(g.Antivirus) > 0 && on == 0:
-				reason := "Windows Security reports that no antivirus is switched on."
+				reason := i18n.T("Windows Security reports that no antivirus is switched on.")
 				if len(g.Antivirus) == 0 {
-					reason = "Windows Security reports that antivirus protection needs attention."
+					reason = i18n.T("Windows Security reports that antivirus protection needs attention.")
 				}
 				found = append(found, r.find("Antivirus", reason+" Files are not being checked as they are opened or downloaded.",
-					openSecurity+"Under Virus and threat protection, switch protection back on. If it will not stay on, or you did not switch it off yourself, treat that as a warning sign and scan the PC.", facts...))
+					i18n.T(openSecurity)+"Under Virus and threat protection, switch protection back on. If it will not stay on, or you did not switch it off yourself, treat that as a warning sign and scan the PC.", facts...))
 			case g.RealTime == model.No && defenderInUse(g):
 				found = append(found, r.find("Microsoft Defender",
-					"Microsoft Defender's real-time protection is switched off. Defender is installed, but it is not checking files as they are opened or downloaded.",
-					openSecurity+"Under Virus and threat protection > Manage settings, switch Real-time protection on. If you did not switch it off yourself, treat that as a warning sign and scan the PC.", facts...))
+					i18n.T("Microsoft Defender's real-time protection is switched off. Defender is installed, but it is not checking files as they are opened or downloaded."),
+					i18n.T(openSecurity)+"Under Virus and threat protection > Manage settings, switch Real-time protection on. If you did not switch it off yourself, treat that as a warning sign and scan the PC.", facts...))
 			}
 			return
 		},
 	},
 	{
 		ID: "antivirus-out-of-date", Area: model.Protection, Severity: Medium, Topic: "antivirus",
-		Title: "Antivirus is on but out of date",
-		Why:   "Antivirus recognises threats from a list that is renewed several times a day. With an old list it misses whatever is new.",
+		Title: i18n.T("Antivirus is on but out of date"),
+		Why:   i18n.T("Antivirus recognises threats from a list that is renewed several times a day. With an old list it misses whatever is new."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, product := range s.Guard.Antivirus {
 				if product.On == model.Yes && product.UpToDate == model.No {
@@ -111,21 +112,21 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "defender-tamper-off", Area: model.Protection, Severity: Medium, Topic: "tamper",
-		Title: "Defender's settings are not locked",
-		Why:   "Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings. Malware that gets in tries to do exactly that.",
+		Title: i18n.T("Defender's settings are not locked"),
+		Why:   i18n.T("Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings. Malware that gets in tries to do exactly that."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.Tamper == model.No && defenderInUse(s.Guard) && s.Guard.RealTime != model.No {
 				found = append(found, r.find("Tamper Protection",
-					"Tamper Protection is off, so a program with administrator rights could switch Microsoft Defender off without asking you.",
-					openSecurity+"Under Virus and threat protection > Manage settings, switch Tamper Protection on."))
+					i18n.T("Tamper Protection is off, so a program with administrator rights could switch Microsoft Defender off without asking you."),
+					i18n.T(openSecurity)+"Under Virus and threat protection > Manage settings, switch Tamper Protection on."))
 			}
 			return
 		},
 	},
 	{
 		ID: "defender-exclusions", Area: model.Protection, Severity: Medium, Topic: "exclusions",
-		Title: "Microsoft Defender has been told to skip some places",
-		Why:   "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Developers and games sometimes need one. Malware adds its own folder to the list so that it is never scanned.",
+		Title: i18n.T("Microsoft Defender has been told to skip some places"),
+		Why:   i18n.T("An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Developers and games sometimes need one. Malware adds its own folder to the list so that it is never scanned."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if len(g.Exclusions) == 0 {
@@ -149,8 +150,8 @@ var protectionRules = []Rule{
 				}
 			}
 			f := r.find(plural(len(g.Exclusions), "exclusion", "exclusions"),
-				"Microsoft Defender does not scan: "+list(values, 5)+". Anything placed there, or matching it, is never checked.",
-				openSecurity+"Under Virus and threat protection > Manage settings > Exclusions, remove any you did not add yourself.", facts...)
+				i18n.T("Microsoft Defender does not scan: ")+list(values, 5)+". Anything placed there, or matching it, is never checked.",
+				i18n.T(openSecurity)+"Under Virus and threat protection > Manage settings > Exclusions, remove any you did not add yourself.", facts...)
 			if broad != "" {
 				f.Severity = High
 				f.Reason += " The exclusion " + broad + " is very wide: it covers places where downloads and temporary files land."
@@ -161,14 +162,14 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "firewall-off", Area: model.Protection, Severity: High, Topic: "firewall",
-		Title: "The firewall is off",
-		Why:   "The firewall decides which programs on other devices may start a connection to this PC. With it off, every program that is waiting for connections can be reached by anything on the same network.",
+		Title: i18n.T("The firewall is off"),
+		Why:   i18n.T("The firewall decides which programs on other devices may start a connection to this PC. With it off, every program that is waiting for connections can be reached by anything on the same network."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			var facts []Fact
 			var off []string
 			for _, profile := range g.Firewall {
-				facts = append(facts, Fact{"Windows Firewall, " + strings.ToLower(profile.Name), on(profile.On)})
+				facts = append(facts, Fact{i18n.T("Windows Firewall, ") + strings.ToLower(profile.Name), on(profile.On)})
 				if profile.On == model.No {
 					off = append(off, strings.ToLower(profile.Name))
 				}
@@ -184,32 +185,32 @@ var protectionRules = []Rule{
 			case g.FirewallHealth == model.Yes, other && g.FirewallHealth != model.No:
 				// Windows Security is satisfied, or another firewall has taken over.
 			case g.FirewallHealth == model.No && len(off) == 0:
-				found = append(found, r.find("Firewall", "Windows Security reports that the firewall needs attention.",
-					openSecurity+"Under Firewall and network protection, switch the firewall on for every kind of network.", facts...))
+				found = append(found, r.find("Firewall", i18n.T("Windows Security reports that the firewall needs attention."),
+					i18n.T(openSecurity)+"Under Firewall and network protection, switch the firewall on for every kind of network.", facts...))
 			case len(off) > 0:
 				found = append(found, r.find("Windows Firewall",
-					"Windows Firewall is switched off for "+list(off, 3)+". On those networks, other devices can reach every program on this PC that is waiting for connections.",
-					openSecurity+"Under Firewall and network protection, switch the firewall on for every kind of network. If you did not switch it off yourself, treat that as a warning sign.", facts...))
+					i18n.T("Windows Firewall is switched off for ")+list(off, 3)+". On those networks, other devices can reach every program on this PC that is waiting for connections.",
+					i18n.T(openSecurity)+"Under Firewall and network protection, switch the firewall on for every kind of network. If you did not switch it off yourself, treat that as a warning sign.", facts...))
 			}
 			return
 		},
 	},
 	{
 		ID: "uac-off", Area: model.Protection, Severity: High, Topic: "uac",
-		Title: "Windows does not ask before giving a program full rights",
+		Title: i18n.T("Windows does not ask before giving a program full rights"),
 		Why:   "User Account Control is the prompt that asks \"Do you want to allow this app to make changes?\". It is the moment at which a person can say no. With it off or silenced, any program an administrator runs can take full control of the PC without anyone seeing it happen.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
-			const fix = "Open the Start menu, type UAC and open Change User Account Control settings. Move the slider up to the second position from the top, which is Windows' own default."
+			fix := i18n.T("Open the Start menu, type UAC and open Change User Account Control settings. Move the slider up to the second position from the top, which is Windows' own default.")
 			switch {
 			case g.UAC == model.No:
-				found = append(found, r.find("User Account Control",
-					"User Account Control is switched off completely. Every program an administrator runs gets full rights at once, and nothing asks first.", fix))
+				found = append(found, r.find(i18n.T("User Account Control"),
+					i18n.T("User Account Control is switched off completely. Every program an administrator runs gets full rights at once, and nothing asks first."), fix))
 			case g.UACSilent == model.Yes:
-				f := r.find("User Account Control",
-					"User Account Control is set to never notify. Windows still separates ordinary rights from full rights, but when a program asks for full rights an administrator's account gives them silently. The prompt that would let you say no never appears.", fix)
+				f := r.find(i18n.T("User Account Control"),
+					i18n.T("User Account Control is set to never notify. Windows still separates ordinary rights from full rights, but when a program asks for full rights an administrator's account gives them silently. The prompt that would let you say no never appears."), fix)
 				f.Severity = Medium
-				f.Title = "Windows gives programs full rights without asking"
+				f.Title = i18n.T("Windows gives programs full rights without asking")
 				found = append(found, f)
 			}
 			return
@@ -217,8 +218,8 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "updates-old", Area: model.Protection, Severity: Medium, Topic: "updates",
-		Title: "Windows has not installed an update for some time",
-		Why:   "Microsoft fixes security holes in Windows every month. Each month without updates leaves known holes open, and those are the ones attackers use most.",
+		Title: i18n.T("Windows has not installed an update for some time"),
+		Why:   i18n.T("Microsoft fixes security holes in Windows every month. Each month without updates leaves known holes open, and those are the ones attackers use most."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if !g.UpdateKnown || s.Taken.IsZero() {
@@ -229,8 +230,8 @@ var protectionRules = []Rule{
 				return
 			}
 			f := r.find("Windows Update",
-				"The last update Windows installed was on "+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
-				"Open Settings, go to Windows Update (inside Update and Security on Windows 10) and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates.",
+				i18n.T("The last update Windows installed was on ")+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
+				i18n.T("Open Settings, go to Windows Update (inside Update and Security on Windows 10) and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates."),
 				Fact{"Windows", strings.TrimSpace(s.Windows + " build " + g.Build)}, Fact{"Last update installed", g.LastUpdate.Format("2 January 2006")})
 			if days > 180 {
 				f.Severity = High
@@ -241,8 +242,8 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "hosts-entries", Area: model.Protection, Severity: Medium, Topic: "hosts",
-		Title: "The hosts file sends website names somewhere else",
-		Why:   "Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can silently send a name to any address, for instance a bank's name to a fake copy, or stop security sites from being reached at all.",
+		Title: i18n.T("The hosts file sends website names somewhere else"),
+		Why:   i18n.T("Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can silently send a name to any address, for instance a bank's name to a fake copy, or stop security sites from being reached at all."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			var blockedSecurity, redirected, blocked, home []string
 			var facts []Fact
@@ -266,26 +267,26 @@ var protectionRules = []Rule{
 				}
 			}
 			facts = append([]Fact{{"File", s.Guard.HostsPath}}, facts...)
-			const edit = "The file is plain text and can be read in Notepad. Changing it needs administrator rights. If you did not add these lines yourself, ask someone who knows Windows well before removing them."
+			edit := i18n.T("The file is plain text and can be read in Notepad. Changing it needs administrator rights. If you did not add these lines yourself, ask someone who knows Windows well before removing them.")
 			if len(blockedSecurity) > 0 {
-				f := r.find(plural(len(blockedSecurity), "security or update site blocked", "security or update sites blocked"),
-					"The hosts file stops this PC from reaching "+list(blockedSecurity, 5)+". Blocking update and antivirus sites is what malware does to keep a PC from being cleaned. Some people block Microsoft sites on purpose to stop data being sent.", edit, facts...)
+				f := r.find(plural(len(blockedSecurity), i18n.T("security or update site blocked"), i18n.T("security or update sites blocked")),
+					i18n.T("The hosts file stops this PC from reaching ")+list(blockedSecurity, 5)+". Blocking update and antivirus sites is what malware does to keep a PC from being cleaned. Some people block Microsoft sites on purpose to stop data being sent.", edit, facts...)
 				f.Severity = High
 				found = append(found, f)
 			}
 			if len(redirected) > 0 {
 				found = append(found, r.find(plural(len(redirected), "name redirected", "names redirected"),
-					"The hosts file sends "+list(redirected, 4)+". Anyone opening such a name on this PC lands at that address instead of the real site.", edit, facts...))
+					i18n.T("The hosts file sends ")+list(redirected, 4)+". Anyone opening such a name on this PC lands at that address instead of the real site.", edit, facts...))
 			}
 			if len(blocked) > 0 {
 				f := r.find(plural(len(blocked), "site blocked", "sites blocked"),
-					"The hosts file blocks "+list(blocked, 5)+" by pointing the names at this PC itself. Ad blockers and some programs' licence checks do this. It is harmless if you or a program you trust added the lines.", edit, facts...)
+					i18n.T("The hosts file blocks ")+list(blocked, 5)+" by pointing the names at this PC itself. Ad blockers and some programs' licence checks do this. It is harmless if you or a program you trust added the lines.", edit, facts...)
 				f.Severity = Low
 				found = append(found, f)
 			}
 			if len(home) > 0 && len(redirected) == 0 && len(blockedSecurity) == 0 {
 				f := r.find(plural(len(home), "local name", "local names"),
-					"The hosts file gives addresses to "+list(home, 5)+". These are names used only on this PC or its own network, the kind developer tools such as Docker add.", "Nothing needs doing if you use such tools. "+edit, facts...)
+					"The hosts file gives addresses to "+list(home, 5)+". These are names used only on this PC or its own network, the kind developer tools such as Docker add.", i18n.T("Nothing needs doing if you use such tools. ")+edit, facts...)
 				f.Severity = Low
 				found = append(found, f)
 			}
@@ -293,8 +294,8 @@ var protectionRules = []Rule{
 			// checks stays clean.
 			if usual := winpath.Join(s.Folders.System, `drivers\etc\hosts`); s.Guard.HostsPath != "" && s.Folders.System != "" && !winpath.Same(s.Guard.HostsPath, usual) {
 				f := r.find("Hosts file moved",
-					"Windows is set to read its hosts file from "+s.Guard.HostsPath+" and not from the usual place, "+usual+". Moving it is a way to keep changes out of sight.",
-					"This is set in the registry under Tcpip\\Parameters, value DataBasePath. Unless you changed it yourself, have someone who knows Windows well look at it.", Fact{"File", s.Guard.HostsPath})
+					i18n.T("Windows is set to read its hosts file from ")+s.Guard.HostsPath+" and not from the usual place, "+usual+". Moving it is a way to keep changes out of sight.",
+					i18n.T("This is set in the registry under Tcpip\\Parameters, value DataBasePath. Unless you changed it yourself, have someone who knows Windows well look at it."), Fact{"File", s.Guard.HostsPath})
 				f.Severity = High
 				found = append(found, f)
 			}
@@ -303,8 +304,8 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "disk-not-encrypted", Area: model.Protection, Severity: Low,
-		Title: "The Windows disk is not encrypted",
-		Why:   "Encryption (BitLocker, or Device encryption) scrambles the disk so that it can only be read after signing in. Without it, anyone who takes the PC or the disk can read every file on it without knowing the password. It matters most for a laptop.",
+		Title: i18n.T("The Windows disk is not encrypted"),
+		Why:   i18n.T("Encryption (BitLocker, or Device encryption) scrambles the disk so that it can only be read after signing in. Without it, anyone who takes the PC or the disk can read every file on it without knowing the password. It matters most for a laptop."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, volume := range s.Guard.Volumes {
 				r.at(DiskRef(volume.Drive))
@@ -317,7 +318,7 @@ var protectionRules = []Rule{
 					}
 					found = append(found, r.find("Drive "+volume.Drive,
 						"Drive "+volume.Drive+", which holds Windows and your files, is not encrypted"+state+". If the PC is lost or stolen, its files can be read without your password.",
-						"Search the Start menu for BitLocker or for Device encryption and switch it on. Save the recovery key somewhere other than this PC first: without it, a fault can lock you out of your own files.",
+						i18n.T("Search the Start menu for BitLocker or for Device encryption and switch it on. Save the recovery key somewhere other than this PC first: without it, a fault can lock you out of your own files."),
 						Fact{"Drive", volume.Drive}, Fact{"Encryption", volume.State}))
 				}
 			}
@@ -326,13 +327,13 @@ var protectionRules = []Rule{
 	},
 	{
 		ID: "secure-boot-off", Area: model.Protection, Severity: Low, Topic: "secureboot",
-		Title: "Secure Boot is off",
-		Why:   "Secure Boot lets the PC start only software its maker or Microsoft has signed, which blocks malware that loads before Windows does and so hides from it.",
+		Title: i18n.T("Secure Boot is off"),
+		Why:   i18n.T("Secure Boot lets the PC start only software its maker or Microsoft has signed, which blocks malware that loads before Windows does and so hides from it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.SecureBoot == model.No {
 				found = append(found, r.find("Secure Boot",
-					"Secure Boot is switched off, so the PC will start any boot software, signed or not. People switch it off to run other operating systems or older hardware.",
-					"It is switched on in the PC's firmware settings (often called BIOS or UEFI), reached with a key such as F2 or Del while the PC starts. Leave it if you switched it off for a reason."))
+					i18n.T("Secure Boot is switched off, so the PC will start any boot software, signed or not. People switch it off to run other operating systems or older hardware."),
+					i18n.T("It is switched on in the PC's firmware settings (often called BIOS or UEFI), reached with a key such as F2 or Del while the PC starts. Leave it if you switched it off for a reason.")))
 			}
 			return
 		},

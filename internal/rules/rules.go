@@ -11,6 +11,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"sort"
 	"strconv"
 	"strings"
@@ -167,7 +168,7 @@ func (l Light) String() string {
 	case Amber:
 		return "Worth a look"
 	case Red:
-		return "Look at this first"
+		return i18n.T("Look at this first")
 	}
 	return "Could not be read"
 }

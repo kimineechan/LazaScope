@@ -69,6 +69,22 @@ LazaScope reads the same information from Windows, puts it in one window, says w
 - **Not Microsoft's.** LazaScope is not made by or connected with Microsoft, and it contains, downloads and runs none of Microsoft's tools. It asks Windows for the same information itself.
 - **Not tested everywhere yet.** It is made for 64-bit Windows 10 and 11, and tested on Windows 10.
 
+## Deutsch
+
+LazaScope gibt es in dieser Fassung auch auf Deutsch. Die Sprache folgt Windows, oder wird
+ausdrücklich gewählt:
+
+```
+LazaScope.exe --lang de
+lazascope-cli scan --lang de
+```
+
+Alternativ die Umgebungsvariable `LAZASCOPE_LANG=de` setzen. Ohne Angabe gilt die Windows-Sprache;
+ist sie nicht Deutsch, bleibt alles englisch. Fehlt eine Übersetzung, erscheint der englische Text.
+
+Die Übersetzungen liegen in `internal/i18n/de.json` (englischer Text als Schlüssel, deutscher als
+Wert) und werden mit `go:embed` in das Programm eingebettet. Neue Texte im Code gehen durch
+`i18n.T(...)`; ohne Eintrag bleiben sie englisch.
 ## Download and run
 
 1. Download `LazaScope-v1.0.1-windows-x64.zip` from the [latest release](https://github.com/kimineechan/LazaScope/releases/latest).

@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 
 	"lazascope"
@@ -21,22 +22,22 @@ import (
 // LazaScope's rules look for.
 func attackLayer(path string, coverage, demo bool) error {
 	if path == "" {
-		return fmt.Errorf("name the file to write, ending in .json")
+		return fmt.Errorf("%s", i18n.T("name the file to write, ending in .json"))
 	}
 	if winpath.Ext(path) != ".json" {
-		return fmt.Errorf("a layer for the ATT&CK Navigator is a .json file, so the name must end in .json")
+		return fmt.Errorf("%s", i18n.T("a layer for the ATT&CK Navigator is a .json file, so the name must end in .json"))
 	}
 	var content []byte
 	var count int
-	what := "ATT&CK techniques that findings on this PC may be traces of"
+	what := i18n.T("ATT&CK techniques that findings on this PC may be traces of")
 	if coverage {
 		content, count = report.CoverageLayer(lazascope.Version())
-		what = "ATT&CK techniques that LazaScope's rules look for"
+		what = i18n.T("ATT&CK techniques that LazaScope's rules look for")
 	} else {
 		var s *model.Snapshot
 		if demo {
 			s = sample.PC()
-			what = "ATT&CK techniques that findings on the made-up PC may be traces of"
+			what = i18n.T("ATT&CK techniques that findings on the made-up PC may be traces of")
 		} else {
 			s = scan.Run(scan.Everything, progress)
 		}
@@ -50,7 +51,7 @@ func attackLayer(path string, coverage, demo bool) error {
 		return err
 	}
 	fmt.Printf("Wrote %s: %d %s.\n", path, count, what)
-	fmt.Println("To see it, open MITRE's ATT&CK Navigator at https://mitre-attack.github.io/attack-navigator/ in a web browser, choose Open Existing Layer, then Upload from local, and pick the file.")
+	fmt.Println(i18n.T("To see it, open MITRE's ATT&CK Navigator at https://mitre-attack.github.io/attack-navigator/ in a web browser, choose Open Existing Layer, then Upload from local, and pick the file."))
 	if !coverage {
 		fmt.Println(report.Careful)
 	}

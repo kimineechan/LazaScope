@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"strings"
 	"time"
@@ -24,7 +25,7 @@ import (
 func virusTotalCommand(args []string) error {
 	key, err := virustotal.Key()
 	if errors.Is(err, virustotal.ErrNoKey) {
-		return errors.New("there is no VirusTotal key. Save one in LazaScope's window (the VirusTotal... button at the top right), or set LAZASCOPE_VIRUSTOTAL_KEY")
+		return errors.New(i18n.T("there is no VirusTotal key. Save one in LazaScope's window (the VirusTotal... button at the top right), or set LAZASCOPE_VIRUSTOTAL_KEY"))
 	}
 	if err != nil {
 		return err

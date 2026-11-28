@@ -8,6 +8,7 @@
 package model
 
 import (
+	"lazascope/internal/i18n"
 	"strings"
 	"time"
 
@@ -30,17 +31,17 @@ const (
 func (a Area) String() string {
 	switch a {
 	case Protection:
-		return "Protection"
+		return i18n.T("Protection")
 	case StartsWithWindows:
-		return "Starts with Windows"
+		return i18n.T("Starts with Windows")
 	case RunningNow:
-		return "Running now"
+		return i18n.T("Running now")
 	case Connections:
-		return "Internet connections"
+		return i18n.T("Internet connections")
 	case Accounts:
-		return "Accounts and remote access"
+		return i18n.T("Accounts and remote access")
 	case Health:
-		return "PC health"
+		return i18n.T("PC health")
 	}
 	return ""
 }

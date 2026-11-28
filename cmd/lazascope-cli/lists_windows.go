@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"strings"
 
@@ -22,7 +23,7 @@ func progress(stage string) { fmt.Fprintln(os.Stderr, stage) }
 func gaps(s *model.Snapshot, area model.Area) {
 	for _, gap := range s.Gaps {
 		if gap.Area == area {
-			fmt.Println("Could not see:", gap.What)
+			fmt.Println(i18n.T("Could not see:"), gap.What)
 		}
 	}
 }
@@ -101,7 +102,7 @@ func runningList(details bool) error {
 		name := strings.Repeat("  ", p.Depth) + p.Name
 		maker := p.File.Maker()
 		if p.File.Path == "" {
-			maker = "Part of Windows itself"
+			maker = i18n.T("Part of Windows itself")
 		}
 		fmt.Printf("%-7d %-7d %-44s %-22s %-32s %s\n", p.PID, p.Parent, cut(name, 44), cut(p.User, 22), cut(maker, 32), p.File.Path)
 		if details {
@@ -153,22 +154,22 @@ func protectionList() error {
 	g := s.Guard
 	fmt.Printf("%s, %s, signed in as %s, administrator rights: %s\n\n", s.Computer, s.Windows, s.User, onOff(s.Elevated))
 	line := func(name string, value any) { fmt.Printf("%-34s %v\n", name, value) }
-	line("Antivirus (Windows' verdict)", good(g.AntivirusHealth))
+	line(i18n.T("Antivirus (Windows' verdict)"), good(g.AntivirusHealth))
 	for _, p := range g.Antivirus {
 		line("  "+p.Name, fmt.Sprintf("on: %s, up to date: %s", p.On, p.UpToDate))
 	}
-	line("Defender real-time protection", g.RealTime)
-	line("Defender tamper protection", g.Tamper)
+	line(i18n.T("Defender real-time protection"), g.RealTime)
+	line(i18n.T("Defender tamper protection"), g.Tamper)
 	if g.ExclusionsVisible {
-		line("Defender exclusions", len(g.Exclusions))
+		line(i18n.T("Defender exclusions"), len(g.Exclusions))
 		for _, e := range g.Exclusions {
 			line("  "+e.Kind, e.Value)
 		}
 	} else {
-		line("Defender exclusions", "not readable")
+		line(i18n.T("Defender exclusions"), i18n.T("not readable"))
 	}
 	if g.HistoryRead {
-		line("Defender found, last 90 days", len(g.Detections))
+		line(i18n.T("Defender found, last 90 days"), len(g.Detections))
 		for _, d := range g.Detections {
 			what := d.Threat
 			if d.Action != "" {
@@ -179,37 +180,37 @@ func protectionList() error {
 				line("", d.Path)
 			}
 		}
-		line("Exclusions in Defender's log", len(g.LoggedExclusions))
+		line(i18n.T("Exclusions in Defender's log"), len(g.LoggedExclusions))
 		for _, e := range g.LoggedExclusions {
 			line("  "+e.When.Local().Format("2006-01-02 15:04"), e.Kind+": "+e.Value)
 		}
-		line("Real-time protection switched off", fmt.Sprintf("%d in the last 90 days", len(g.SwitchedOff)))
+		line(i18n.T("Real-time protection switched off"), fmt.Sprintf("%d in the last 90 days", len(g.SwitchedOff)))
 	} else {
-		line("Defender's own log", "not readable")
+		line(i18n.T("Defender's own log"), i18n.T("not readable"))
 	}
-	line("Firewall (Windows' verdict)", good(g.FirewallHealth))
+	line(i18n.T("Firewall (Windows' verdict)"), good(g.FirewallHealth))
 	for _, p := range g.FirewallProducts {
 		line("  "+p.Name, fmt.Sprintf("on: %s", p.On))
 	}
 	for _, p := range g.Firewall {
 		line("  Windows Firewall, "+p.Name, p.On)
 	}
-	line("User Account Control on", g.UAC)
+	line(i18n.T("User Account Control on"), g.UAC)
 	line("  lets administrators through unasked", g.UACSilent)
-	line("Windows build", g.Build)
+	line(i18n.T("Windows build"), g.Build)
 	if g.UpdateKnown {
-		line("Last update installed", fmt.Sprintf("%s (%d days ago)", g.LastUpdate.Format("2006-01-02"), int(s.Taken.Sub(g.LastUpdate).Hours()/24)))
+		line(i18n.T("Last update installed"), fmt.Sprintf("%s (%d days ago)", g.LastUpdate.Format("2006-01-02"), int(s.Taken.Sub(g.LastUpdate).Hours()/24)))
 	} else {
-		line("Last update installed", "not known")
+		line(i18n.T("Last update installed"), "not known")
 	}
 	for _, v := range g.Volumes {
 		line("Disk "+v.Drive+" encrypted", fmt.Sprintf("%s (%s)", v.Encrypted, v.State))
 	}
 	line("Secure Boot", g.SecureBoot)
-	line("Remote Desktop on", g.RemoteDesktop)
+	line(i18n.T("Remote Desktop on"), g.RemoteDesktop)
 	line("  asks for a password first", g.RemoteNLA)
-	line("Signs in by itself", g.AutoSignIn)
-	line("Guest account on", g.Guest)
+	line(i18n.T("Signs in by itself"), g.AutoSignIn)
+	line(i18n.T("Guest account on"), g.Guest)
 	if g.AdminsVisible {
 		line("Administrators", len(g.Admins))
 		for _, a := range g.Admins {
@@ -226,16 +227,16 @@ func protectionList() error {
 			line("  "+a.Name, about)
 		}
 	} else {
-		line("Administrators", "not readable")
+		line("Administrators", i18n.T("not readable"))
 	}
 	line("Hosts file", g.HostsPath)
 	for _, h := range g.Hosts {
 		line("  "+h.Address, strings.Join(h.Names, " "))
 	}
 	if g.NameServersRead {
-		line("Name servers (DNS)", len(g.NameServers))
+		line(i18n.T("Name servers (DNS)"), len(g.NameServers))
 		for _, server := range g.NameServers {
-			how := "from the network"
+			how := i18n.T("from the network")
 			if server.ByHand {
 				how = "typed in"
 			}
@@ -245,20 +246,20 @@ func protectionList() error {
 			line("  "+server.Address, server.Connection+", "+how)
 		}
 	} else {
-		line("Name servers (DNS)", "not readable")
+		line(i18n.T("Name servers (DNS)"), i18n.T("not readable"))
 	}
 	switch p := g.Proxy; {
 	case !p.Read:
-		line("Proxy", "not readable")
+		line("Proxy", i18n.T("not readable"))
 	case p.Server == "" && p.Script == "":
 		line("Proxy", "none")
 	default:
 		line("Proxy", strings.TrimSpace(p.Server+" "+p.Script))
 	}
-	line("Installed programs", len(g.Programs))
+	line(i18n.T("Installed programs"), len(g.Programs))
 	fmt.Println()
 	for _, gap := range s.Gaps {
-		fmt.Println("Could not see:", gap.What)
+		fmt.Println(i18n.T("Could not see:"), gap.What)
 	}
 	fmt.Printf("\nRead in %d ms\n", s.Took.Milliseconds())
 	return nil
@@ -269,7 +270,7 @@ func good(a model.Answer) string {
 	case model.Yes:
 		return "good"
 	case model.No:
-		return "needs attention"
+		return i18n.T("needs attention")
 	}
 	return "not known"
 }
@@ -322,7 +323,7 @@ func scanAll(details, demo bool) error {
 // report in the form the file's name asks for.
 func saveReport(path string, demo bool) error {
 	if path == "" {
-		return fmt.Errorf("name the file to write, ending in .html, .txt or .json")
+		return fmt.Errorf("%s", i18n.T("name the file to write, ending in .html, .txt or .json"))
 	}
 	// The name is checked before the look is taken, not after it.
 	if err := report.Fits(path); err != nil {

@@ -4,6 +4,7 @@ package winui
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"unsafe"
 
 	"lazascope/internal/sysdll"
@@ -49,7 +50,7 @@ func newSurface(width, height int) (*surface, error) {
 	var bits unsafe.Pointer
 	s.bitmap, _, _ = createDIBSection.Call(s.context, uintptr(unsafe.Pointer(&header)), 0, uintptr(unsafe.Pointer(&bits)), 0, 0)
 	if s.context == 0 || s.bitmap == 0 || bits == nil {
-		return nil, fmt.Errorf("could not make a picture of %d by %d to draw the window on", width, height)
+		return nil, fmt.Errorf(i18n.T("could not make a picture of %d by %d to draw the window on"), width, height)
 	}
 	selectObject.Call(s.context, s.bitmap)
 	setBkMode.Call(s.context, 1) // text is drawn without a box behind it

@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ func timelineList(days string, demo bool) error {
 	if days != "" {
 		n, err := strconv.Atoi(strings.TrimSpace(days))
 		if err != nil || n < 1 || n > 90 {
-			return fmt.Errorf("say how many days back to go, from 1 to 90, such as: lazascope-cli timeline 30")
+			return fmt.Errorf("%s", i18n.T("say how many days back to go, from 1 to 90, such as: lazascope-cli timeline 30"))
 		}
 		span = n
 	}
