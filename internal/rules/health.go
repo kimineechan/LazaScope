@@ -104,7 +104,7 @@ var healthRules = []Rule{
 				}
 			}
 			parts, spots = each(parts), each(spots)
-			reason := "Windows logged " + plural(len(faults), "hardware error", "hardware errors") + " " + period + ", the latest on " + Day(s, faults[0].When) + "."
+			reason := "Windows logged " + plural(len(faults), "hardware error", "hardware errors") + " " + i18n.T(period) + ", the latest on " + Day(s, faults[0].When) + "."
 			switch {
 			case len(parts) == 1 && len(faults) == 1:
 				reason += " It was reported by " + parts[0] + "."
@@ -157,7 +157,7 @@ var healthRules = []Rule{
 				}
 			}
 			different := len(each(codes))
-			reason := "Windows stopped with a blue screen " + plural(len(crashes), "time", "times") + " " + period + ", the latest on " + Day(s, crashes[0].When) + " (stop code " + stopCode(crashes[0]) + ")."
+			reason := "Windows stopped with a blue screen " + plural(len(crashes), "time", "times") + " " + i18n.T(period) + ", the latest on " + Day(s, crashes[0].When) + " (stop code " + stopCode(crashes[0]) + ")."
 			switch {
 			case len(crashes) == 1:
 				reason += " One crash can be a passing fault."
@@ -221,7 +221,7 @@ var healthRules = []Rule{
 			}
 			return []Finding{r.find(plural(len(stops), "sudden stop", "sudden stops"),
 				"This PC went off without shutting down "+plural(len(stops), "time", "times")+" "+period+", with no blue screen. The power went, the battery ran out, the PC froze and was held down by its power button, or it overheated and cut out. The latest was noticed when Windows started on "+Day(s, stops[0])+".",
-				"If you remember holding the power button down, that is all this is. If the PC goes off by itself when it is working hard, it is probably overheating: clear the vents and stand it on a hard surface.", facts...)}
+				i18n.T("If you remember holding the power button down, that is all this is. If the PC goes off by itself when it is working hard, it is probably overheating: clear the vents and stand it on a hard surface."), facts...)}
 		},
 	},
 	{
@@ -274,11 +274,11 @@ var healthRules = []Rule{
 			}
 			reason += "."
 			if len(wipes) > 1 {
-				reason = plural(len(wipes), "time", "times") + " " + period + " a Windows log was cleared (" + list(each(logs), 4) + "). The latest: " + strings.ToLower(reason[:1]) + reason[1:]
+				reason = plural(len(wipes), "time", "times") + " " + i18n.T(period) + " a Windows log was cleared (" + list(each(logs), 4) + "). The latest: " + strings.ToLower(reason[:1]) + reason[1:]
 			}
 			return []Finding{r.find(plural(len(wipes), "cleared log", "cleared logs"),
 				reason+" Whatever the log held before that moment is gone, including anything LazaScope would have read from it.",
-				"If you ran a clean-up tool or cleared the log yourself, nothing needs doing. If not, ask who else uses this PC, and look at what else here dates from around that time.", facts...)}
+				i18n.T("If you ran a clean-up tool or cleared the log yourself, nothing needs doing. If not, ask who else uses this PC, and look at what else here dates from around that time."), facts...)}
 		},
 	},
 }
@@ -359,7 +359,7 @@ var historyRules = []Rule{
 			}
 			reason := "Microsoft Defender's own log shows that it found " + what + " on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			if len(g.Detections) > 1 {
-				reason = "Microsoft Defender's own log shows " + strconv.Itoa(len(g.Detections)) + " detections " + period + ". The latest was " + what + ", on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
+				reason = "Microsoft Defender's own log shows " + strconv.Itoa(len(g.Detections)) + " detections " + i18n.T(period) + ". The latest was " + what + ", on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			}
 			if latest.Action != "" {
 				reason += " Defender's action was: " + latest.Action + "."
@@ -425,14 +425,14 @@ var historyRules = []Rule{
 			latest := g.SwitchedOff[0]
 			reason := "Microsoft Defender's log shows that its real-time protection was switched off on " + Day(s, latest) + " (" + Ago(s, latest) + ")"
 			if len(g.SwitchedOff) > 1 {
-				reason += ", and " + plural(len(g.SwitchedOff)-1, "more time", "more times") + " " + period
+				reason += ", and " + plural(len(g.SwitchedOff)-1, "more time", "more times") + " " + i18n.T(period)
 			}
 			reason += "."
 			if g.RealTime == model.Yes {
 				reason += " It is on now."
 			}
 			return []Finding{r.find("Real-time protection", reason+" While it was off, files were not checked as they were opened.",
-				"If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security.", facts...)}
+				i18n.T("If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security."), facts...)}
 		},
 	},
 }
@@ -460,7 +460,7 @@ var networkRules = []Rule{
 			}
 			return []Finding{r.find(list(odd, 4),
 				"This PC is set by hand to ask "+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
-				"If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back to automatic. On Windows 11: Settings > Network & internet, the connection's properties, DNS server assignment, Edit, Automatic (DHCP). On Windows 10: press Windows key + R, type ncpa.cpl, open the connection's Properties, then Internet Protocol Version 4 (TCP/IPv4), Properties, and choose Obtain DNS server address automatically; do the same for Version 6.", facts...)}
+				i18n.T("If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back to automatic. On Windows 11: Settings > Network & internet, the connection's properties, DNS server assignment, Edit, Automatic (DHCP). On Windows 10: press Windows key + R, type ncpa.cpl, open the connection's Properties, then Internet Protocol Version 4 (TCP/IPv4), Properties, and choose Obtain DNS server address automatically; do the same for Version 6."), facts...)}
 		},
 	},
 	{
@@ -513,7 +513,7 @@ var networkRules = []Rule{
 				subject = p.Script
 			}
 			return []Finding{r.find(subject, reason+" Whatever sits there can see the web traffic that passes through it.",
-				"If your workplace or school set this, or you run a filter or a debugging tool that works this way, nothing needs doing. If not, switch it off: open Settings > Network & Internet > Proxy, and turn off Use a proxy server and Use setup script. Then find out which program set it, starting with what is listed under Worth a look.", facts...)}
+				i18n.T("If your workplace or school set this, or you run a filter or a debugging tool that works this way, nothing needs doing. If not, switch it off: open Settings > Network & Internet > Proxy, and turn off Use a proxy server and Use setup script. Then find out which program set it, starting with what is listed under Worth a look."), facts...)}
 		},
 	},
 }

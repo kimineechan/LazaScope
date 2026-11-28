@@ -22,7 +22,7 @@ func aboutExtension(e model.Startup) []Fact {
 	}
 	add("Version", x.Version)
 	add("What it may do", extensionMay(x))
-	add("Its number in the browser", x.ID)
+	add(i18n.T("Its number in the browser"), x.ID)
 	add("Folder", x.Folder)
 	return facts
 }
@@ -69,7 +69,7 @@ func about(e model.Startup) []Fact {
 	add("Starts", e.Trigger)
 	add("Runs as", e.Account)
 	if works.Script != nil && len(works.Script.Signs) > 0 {
-		add("Going by the script's text", strings.Join(works.Script.Signs, " "))
+		add(i18n.T("Going by the script's text"), strings.Join(works.Script.Signs, " "))
 	}
 	if decoded, ok := cmdline.EncodedCommand(e.Command); ok {
 		if reading := scripts.Read(decoded, 0); len(reading.Signs) > 0 {
@@ -130,7 +130,7 @@ func stop(kind model.StartupKind) string {
 	case model.Driver:
 		return i18n.T("Do not remove a driver by hand. If you do not recognise it, look up its name and maker, and uninstall the program it came with from Settings > Apps.")
 	}
-	return "If you did not set this up yourself, ask someone who knows Windows well to look at it."
+	return i18n.T("If you did not set this up yourself, ask someone who knows Windows well to look at it.")
 }
 
 const known = "If you know this program and installed it yourself, nothing needs doing. If you do not, search the web for its file name and maker before touching it. "
@@ -284,7 +284,7 @@ var startupRules = []Rule{
 				}
 				f := r.find(e.Subject,
 					"Whenever "+e.Subject+" is opened, Windows runs this in its place: "+e.Command+". Some tools set this on purpose, for example to replace Task Manager with a fuller one. It is also a known way to hijack a program.",
-					"If you installed a tool that replaces "+e.Subject+", this is that tool's doing. If not, ask someone who knows Windows well to remove the setting.", about(e)...)
+					i18n.T("If you installed a tool that replaces ")+e.Subject+", this is that tool's doing. If not, ask someone who knows Windows well to remove the setting.", about(e)...)
 				// The programs reachable from the sign-in screen without a password.
 				switch strings.ToLower(e.Subject) {
 				case "sethc.exe", "utilman.exe", "osk.exe", "magnify.exe", "narrator.exe", "displayswitch.exe", "atbroker.exe":
@@ -335,7 +335,7 @@ var startupRules = []Rule{
 					}
 					f := r.find(e.Shown(),
 						"It starts "+file.Path+", which is in "+kind+". Properly installed software does not live there. A portable program you saved and chose to start with Windows would look like this, and so would something unwanted.",
-						known+stop(e.Kind), about(e)...)
+						i18n.T(known)+stop(e.Kind), about(e)...)
 					if file.Exists && file.Program && !file.Signature.Trusted() {
 						f.Severity = High
 						f.Reason += " The file is also not signed by a known maker."
@@ -377,9 +377,9 @@ var startupRules = []Rule{
 				} else if works.Signature.Trusted() {
 					what = "The file is signed by " + works.Signature.Maker() + "."
 				}
-				advice := known
+				advice := i18n.T(known)
 				if runsScript(e) {
-					advice = ownScript
+					advice = i18n.T(ownScript)
 				}
 				found = append(found, r.find(e.Shown(),
 					"This "+strings.ToLower(e.Kind.String())+" runs "+works.Path+", which is in a user's own folder. "+what+" Software for the whole PC is normally installed where only an administrator can change it. A file here can be replaced by any program that user runs.",
@@ -406,7 +406,7 @@ var startupRules = []Rule{
 				if works.Company != "" {
 					reason += " The file says it comes from " + works.Company + ", but anyone can write that into a file."
 				}
-				found = append(found, r.find(e.Shown(), reason, known+stop(e.Kind), about(e)...))
+				found = append(found, r.find(e.Shown(), reason, i18n.T(known)+stop(e.Kind), about(e)...))
 			}
 			return
 		},
@@ -447,7 +447,7 @@ var startupRules = []Rule{
 					reason += " This one is kept outside the Windows and Program Files folders, where installed software normally lives."
 				}
 				severity := r.Severity
-				advice := ownScript
+				advice := i18n.T(ownScript)
 				switch {
 				case EncodedScript(works.Path):
 					severity = High
@@ -479,13 +479,13 @@ var startupRules = []Rule{
 				how := ""
 				switch x.Source {
 				case model.FromFile:
-					how = "It was added by hand from a file, not through the browser's store."
+					how = i18n.T("It was added by hand from a file, not through the browser's store.")
 				case model.Unpacked:
-					how = "It is loaded from a folder on this PC, which needs the browser's developer mode. Whoever can change that folder can change what the extension does."
+					how = i18n.T("It is loaded from a folder on this PC, which needs the browser's developer mode. Whoever can change that folder can change what the extension does.")
 				case model.FromOutside:
 					how = i18n.T("Another program on this PC put it into the browser. Honest software does that now and then, for example an antivirus adding its web shield. It is also how unwanted toolbars arrive.")
 				case model.CommandLine:
-					how = "It is loaded by a switch on the line that starts the browser. That is not how extensions are installed: something changed the browser's shortcut or the way it is started."
+					how = i18n.T("It is loaded by a switch on the line that starts the browser. That is not how extensions are installed: something changed the browser's shortcut or the way it is started.")
 				case model.SourceUnknown:
 					how = "The browser's record does not say where it came from."
 				default:
@@ -496,7 +496,7 @@ var startupRules = []Rule{
 				if may := extensionMay(x); may != "" {
 					reason += " It may " + strings.ToLower(may[:1]) + may[1:] + "."
 				}
-				f := r.find(x.Name, reason, "If you added it yourself, or it belongs to a program you use, nothing needs doing. If you do not recognise it, switch it off. "+removeExtension(x), about(e)...)
+				f := r.find(x.Name, reason, i18n.T("If you added it yourself, or it belongs to a program you use, nothing needs doing. If you do not recognise it, switch it off. ")+removeExtension(x), about(e)...)
 				if x.Source == model.CommandLine {
 					f.Severity = High
 				}
@@ -521,7 +521,7 @@ var startupRules = []Rule{
 					reason += " It may " + strings.ToLower(may[:1]) + may[1:] + "."
 				}
 				found = append(found, r.find(x.Name, reason,
-					"If this PC is managed by your workplace or school, this is their doing and nothing needs doing. If it is your own PC and you never set a policy, ask someone who knows Windows well: the policy has to be removed before the extension can be.", about(e)...))
+					i18n.T("If this PC is managed by your workplace or school, this is their doing and nothing needs doing. If it is your own PC and you never set a policy, ask someone who knows Windows well: the policy has to be removed before the extension can be."), about(e)...))
 			}
 			return
 		},

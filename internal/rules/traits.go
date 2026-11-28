@@ -11,7 +11,7 @@ import (
 
 // This file holds the small questions the rules ask about a file's place
 // and name. They are plain functions, so that they can be used on their
-// own: "is this path in a temporary folder?", "does this name imitate a
+// own: i18n.T("is this path in a temporary folder?"), "does this name imitate a
 // part of Windows?".
 
 // userRest returns the part of a path below one account's folder: for

@@ -69,7 +69,7 @@ var defenceRules = []Rule{
 			}
 			found = append(found, r.find("Files and backups",
 				i18n.T("Controlled folder access is off, and LazaScope found no copy of the account's files being kept: File History has not run in the last 30 days, OneDrive does not copy Documents, Desktop or Pictures, and no backup program is installed. If ransomware got in, there would be nothing to go back to."),
-				"Keep a copy of your files somewhere ransomware cannot reach: File History to a drive you unplug afterwards, or OneDrive's folder backup. Then switch on Controlled folder access: Windows Security, Virus and threat protection, Ransomware protection.",
+				i18n.T("Keep a copy of your files somewhere ransomware cannot reach: File History to a drive you unplug afterwards, or OneDrive's folder backup. Then switch on Controlled folder access: Windows Security, Virus and threat protection, Ransomware protection."),
 				Fact{i18n.T("Controlled folder access"), "Off"}, Fact{"Backups found", "None"}))
 			return
 		},
@@ -87,7 +87,7 @@ var defenceRules = []Rule{
 				name := deviceApp(d)
 				found = append(found, r.find(name+", "+d.Device,
 					name+" has been using the "+d.Device+" since "+d.Start.In(location(s)).Format("15:04 on 2 January")+", going by Windows' own record.",
-					"If you are not on a call or recording, close the program. To see and change which programs may use the "+d.Device+", open Settings, then Privacy and security (Privacy on Windows 10), then "+strings.ToUpper(d.Device[:1])+d.Device[1:]+".",
+					i18n.T("If you are not on a call or recording, close the program. To see and change which programs may use the ")+d.Device+", open Settings, then Privacy and security (Privacy on Windows 10), then "+strings.ToUpper(d.Device[:1])+d.Device[1:]+".",
 					Fact{"Program", d.App}, Fact{"Device", d.Device}))
 			}
 			return
@@ -107,7 +107,7 @@ var defenceRules = []Rule{
 				r.at(DeviceRef(i))
 				finding := r.find(winpathBase(d.App)+", "+d.Device,
 					d.App+" used the "+d.Device+", last on "+d.Start.In(location(s)).Format("2 January 2006 at 15:04")+", and its file carries no maker's signature.",
-					"If you do not know this program, take its permission away: Settings, Privacy and security (Privacy on Windows 10), "+strings.ToUpper(d.Device[:1])+d.Device[1:]+". Then find where it came from under 03 Start-up and 04 Running, and scan the PC with your antivirus.",
+					i18n.T("If you do not know this program, take its permission away: Settings, Privacy and security (Privacy on Windows 10), ")+strings.ToUpper(d.Device[:1])+d.Device[1:]+". Then find where it came from under 03 Start-up and 04 Running, and scan the PC with your antivirus.",
 					Fact{"Program", d.App}, Fact{"Device", d.Device}, Fact{"File", f.Path}, Fact{"Signature", Signature(f)})
 				if d.Device == "camera" {
 					finding.Attack = []string{"T1125"}

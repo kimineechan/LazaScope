@@ -156,7 +156,7 @@ var accountRules = []Rule{
 			}
 			f := r.find("Remote Desktop",
 				"This PC accepts Remote Desktop connections. Anyone who can reach it over the network and knows an account's password can sign in and use it.",
-				"If you do not use it, switch it off under Settings > System > Remote Desktop. If you do, keep it away from the open internet and use strong passwords.",
+				i18n.T("If you do not use it, switch it off under Settings > System > Remote Desktop. If you do, keep it away from the open internet and use strong passwords."),
 				Fact{"Remote Desktop", "On"}, Fact{i18n.T("Asks for a password before showing the sign-in screen"), s.Guard.RemoteNLA.String()})
 			if s.Guard.RemoteNLA == model.No {
 				f.Reason += " It also shows the sign-in screen to anyone who connects, before they have proved who they are, which exposes it to more attacks."
@@ -174,11 +174,11 @@ var accountRules = []Rule{
 				state := "is installed"
 				switch {
 				case tool.Running && tool.Starts:
-					state = "is running now and starts by itself"
+					state = i18n.T("is running now and starts by itself")
 				case tool.Running:
 					state = "is running now"
 				case tool.Starts:
-					state = "is set to start by itself"
+					state = i18n.T("is set to start by itself")
 				}
 				var facts []Fact
 				for _, evidence := range tool.Evidence {
@@ -191,7 +191,7 @@ var accountRules = []Rule{
 				r.at(RemoteRef(tool.Name))
 				f := r.find(tool.Name,
 					tool.Name+" "+state+". It lets another person see or control this PC over the internet. That is fine if you installed it and know who can connect.",
-					"If you use it, check its settings for unattended access and set a strong password there. If you did not install it, or someone on the phone talked you into it, uninstall it under Settings > Apps and change your important passwords from another device.", facts...)
+					i18n.T("If you use it, check its settings for unattended access and set a strong password there. If you did not install it, or someone on the phone talked you into it, uninstall it under Settings > Apps and change your important passwords from another device."), facts...)
 				if !tool.Running && !tool.Starts {
 					f.Severity = Low
 				}
@@ -240,7 +240,7 @@ var accountRules = []Rule{
 				if account.BuiltIn == "Administrator" && account.Disabled == model.No {
 					found = append(found, r.find(account.Name,
 						"The built-in Administrator account ("+account.Name+") is switched on. Windows normally keeps it off and lets people use their own accounts.",
-						"If nobody uses it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open the account and tick Account is disabled. Make sure another administrator account works first."))
+						i18n.T("If nobody uses it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open the account and tick Account is disabled. Make sure another administrator account works first.")))
 				}
 			}
 			return

@@ -34,32 +34,32 @@ func Scrambled(program, command string) []string {
 	add := func(sign string) { signs = append(signs, sign) }
 
 	if cmdline.Encoded(command) {
-		add("It hands PowerShell its instructions in an encoded form, which hides what they say.")
+		add(i18n.T("It hands PowerShell its instructions in an encoded form, which hides what they say."))
 	}
 	if has("frombase64string", "[convert]::", "-bxor", "gzipstream", "deflatestream", "[text.encoding]", "[system.text.encoding]", "certutil -decode", i18n.T("certutil.exe -decode"), "certutil /decode") ||
 		strings.Count(joined, "[char]") >= 3 {
-		add("It unpacks or decodes hidden text before running it.")
+		add(i18n.T("It unpacks or decodes hidden text before running it."))
 	}
 	// A line that only reads one named script file and runs it hides nothing:
 	// the commands are in that file, which the rule for scripts speaks of.
 	_, loads := cmdline.Loads(cmdline.PowerShellCommand(command))
 	if !loads && has("invoke-expression", "iex ", "iex(", "|iex", "| iex", "iex\"", "iex'") {
-		add("It runs a piece of text as commands, so the real commands are not on the line.")
+		add(i18n.T("It runs a piece of text as commands, so the real commands are not on the line."))
 	}
 	web := strings.Contains(joined, "http://") || strings.Contains(joined, "https://") || strings.Contains(joined, "ftp://")
 	if has("downloadstring", "downloadfile", "downloaddata", "net.webclient", "invoke-webrequest", "invoke-restmethod", "start-bitstransfer", "msxml2.xmlhttp", "winhttp.winhttprequest", "-urlcache", "/urlcache", "/transfer") ||
 		(web && has("iwr ", "irm ", "curl ", "wget ", "bitsadmin")) || (web && (stem == "mshta" || stem == "regsvr32" || stem == "msiexec" || stem == "rundll32")) {
-		add("It fetches something from the internet and runs it.")
+		add(i18n.T("It fetches something from the internet and runs it."))
 	}
 	if has("javascript:", "vbscript:") || (stem == "regsvr32" && has("scrobj.dll")) {
-		add("It makes a Windows tool run script that is written on the command line itself.")
+		add(i18n.T("It makes a Windows tool run script that is written on the command line itself."))
 	}
 	if strings.Count(lower, "^") >= 4 || strings.Count(lower, "`") >= 4 || strings.Count(lower, `"+"`)+strings.Count(lower, `'+'`)+strings.Count(lower, `" + "`)+strings.Count(lower, `' + '`) >= 3 || strings.Contains(lower, ":~") {
-		add("Its words are broken into pieces so that they are hard to read or search for.")
+		add(i18n.T("Its words are broken into pieces so that they are hard to read or search for."))
 	}
 	// The encoded commands themselves are such a block, and have been said.
 	if !cmdline.Encoded(command) && blob(command) {
-		add("It carries a long block of unreadable text.")
+		add(i18n.T("It carries a long block of unreadable text."))
 	}
 	return signs
 }

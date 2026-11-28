@@ -193,7 +193,7 @@ var cryptoRules = []Rule{
 					r.at(ConnectionRef(i))
 					found = append(found, r.find(name,
 						c.Process+" is connected to "+name+", a name built from "+service+"'s but not one of "+service+"'s own sites.",
-						"If you opened this site, close it, and do not type a recovery phrase, a password or a code into it. Go to "+service+" by typing its address yourself. If no browser of yours was open on it, scan the PC with your antivirus.",
+						i18n.T("If you opened this site, close it, and do not type a recovery phrase, a password or a code into it. Go to ")+service+" by typing its address yourself. If no browser of yours was open on it, scan the PC with your antivirus.",
 						Fact{"Name", name}, Fact{"Address", c.Remote}, Fact{"Program", c.Process + " (process " + strconv.Itoa(int(c.PID)) + ")"}, Fact{"File", c.File.Path}))
 				}
 			}
@@ -212,7 +212,7 @@ var cryptoRules = []Rule{
 				}
 				r.at(FileRef(p.File.Path))
 				found = append(found, r.find(p.Name, p.Name+" is mining cryptocurrency: "+how+".",
-					seeRunning+"If you did not set mining up yourself, end it there, look for what starts it under 03 Start-up, and scan the PC with your antivirus.", aboutProcess(s, p)...))
+					seeRunning+i18n.T("If you did not set mining up yourself, end it there, look for what starts it under 03 Start-up, and scan the PC with your antivirus."), aboutProcess(s, p)...))
 			}
 			return
 		},
@@ -233,7 +233,7 @@ var cryptoRules = []Rule{
 			if who == "" {
 				who = i18n.T("A program Windows did not name")
 			}
-			reason := "LazaScope copied a made-up " + t.Kind + " address, and a moment later the clipboard held another: " + t.Into + "."
+			reason := i18n.T("LazaScope copied a made-up ") + t.Kind + " address, and a moment later the clipboard held another: " + t.Into + "."
 			if t.By != "" {
 				reason += " Windows says the clipboard was last changed by " + t.By + " (process " + strconv.Itoa(int(t.PID)) + ")."
 			}

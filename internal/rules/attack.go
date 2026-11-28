@@ -34,7 +34,7 @@ func (t Technique) String() string { return t.ID + " " + t.Name }
 var techniques = map[string]string{
 	"T1021.001": "Remote Desktop Protocol",
 	"T1027.010": i18n.T("Command Obfuscation"),
-	"T1036.001": "Invalid Code Signature",
+	"T1036.001": i18n.T("Invalid Code Signature"),
 	"T1036.005": "Match Legitimate Resource Name or Location",
 	"T1053.005": "Scheduled Task",
 	"T1059":     i18n.T("Command and Scripting Interpreter"),
@@ -49,7 +49,7 @@ var techniques = map[string]string{
 	"T1543.003": "Windows Service",
 	"T1546.008": i18n.T("Accessibility Features"),
 	"T1546.010": "AppInit DLLs",
-	"T1546.012": "Image File Execution Options Injection",
+	"T1546.012": i18n.T("Image File Execution Options Injection"),
 	"T1547":     i18n.T("Boot or Logon Autostart Execution"),
 	"T1547.001": "Registry Run Keys / Startup Folder",
 	"T1547.004": "Winlogon Helper DLL",

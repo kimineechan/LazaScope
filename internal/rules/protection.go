@@ -333,7 +333,7 @@ var protectionRules = []Rule{
 			if s.Guard.SecureBoot == model.No {
 				found = append(found, r.find("Secure Boot",
 					"Secure Boot is switched off, so the PC will start any boot software, signed or not. People switch it off to run other operating systems or older hardware.",
-					"It is switched on in the PC's firmware settings (often called BIOS or UEFI), reached with a key such as F2 or Del while the PC starts. Leave it if you switched it off for a reason."))
+					i18n.T("It is switched on in the PC's firmware settings (often called BIOS or UEFI), reached with a key such as F2 or Del while the PC starts. Leave it if you switched it off for a reason.")))
 			}
 			return
 		},
