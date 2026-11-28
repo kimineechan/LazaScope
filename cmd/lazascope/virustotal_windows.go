@@ -100,7 +100,7 @@ func (v *vtPanel) showKey() {
 	case v.broken != "":
 		v.keyState.SetText("The saved key could not be opened. Save it again.")
 	default:
-		v.keyState.SetText("No key saved, so nothing is sent to VirusTotal.")
+		v.keyState.SetText(i18n.T("No key saved, so nothing is sent to VirusTotal."))
 	}
 }
 
@@ -110,7 +110,7 @@ func (v *vtPanel) shown(b *view.Book) {
 	asked, flagged, unknown := 0, 0, 0
 	for _, row := range l.page.Rows {
 		switch row.Cells[0] {
-		case "Not asked yet":
+		case i18n.T("Not asked yet"):
 		case "Not known":
 			asked++
 			unknown++
@@ -137,7 +137,7 @@ func (v *vtPanel) shown(b *view.Book) {
 // that means.
 func (v *vtPanel) explain() {
 	lines := []view.Line{
-		{Style: view.Heading, Text: "How to set up VirusTotal"},
+		{Style: view.Heading, Text: i18n.T("How to set up VirusTotal")},
 		{Style: view.Text, Text: "1. Make a free account at virustotal.com, and open the link VirusTotal sends by email."},
 		{Style: view.Text, Text: "2. Open your account's menu at the top right of VirusTotal's website and choose API key. Copy the key."},
 		{Style: view.Text, Text: "3. Click in the box above, press Ctrl + V to paste the key, and choose Save key."},
@@ -145,7 +145,7 @@ func (v *vtPanel) explain() {
 		{Style: view.Text, Text: "Nothing, until you choose Ask VirusTotal now or Look up file..., or switch on Also after each look. Each lookup then sends VirusTotal a file's fingerprint and your key, never the file itself. VirusTotal learns that your account asked about that file."},
 		{Style: view.Text, Text: i18n.T("A free key may make 4 lookups a minute and 500 a day, for personal use that is not commercial. LazaScope keeps to that pace, and remembers each answer for a week so as not to ask twice.")},
 		{Style: view.Heading, Text: "Where the key is kept"},
-		{Style: view.Text, Text: "In LazaScope's folder inside your own AppData folder, sealed by Windows so that only your Windows account on this PC can open it. Forget removes it, with everything VirusTotal said."},
+		{Style: view.Text, Text: i18n.T("In LazaScope's folder inside your own AppData folder, sealed by Windows so that only your Windows account on this PC can open it. Forget removes it, with everything VirusTotal said.")},
 	}
 	if v.broken != "" {
 		lines = append(lines, view.Line{Style: view.Heading, Text: "The saved key"}, view.Line{Style: view.Text, Text: v.broken})
@@ -206,7 +206,7 @@ func (v *vtPanel) saveKey() {
 
 // forget removes the key and everything VirusTotal said.
 func (v *vtPanel) forget() {
-	const title = "Forget VirusTotal"
+	title := i18n.T("Forget VirusTotal")
 	if v.demo {
 		v.w.Info(title, "This is the made-up PC, which keeps nothing.")
 		return
@@ -227,7 +227,7 @@ func (v *vtPanel) forget() {
 		v.reshow(view.Build(s, rules.Check(s)))
 	}
 	if err := errors.Join(keyErr, memoryErr); err != nil {
-		v.w.Alert(title, "Not everything could be removed: "+sentence(err))
+		v.w.Alert(title, i18n.T("Not everything could be removed: ")+sentence(err))
 		return
 	}
 	v.status.SetText("The VirusTotal key and everything VirusTotal said are removed from this PC.")
@@ -246,7 +246,7 @@ func (v *vtPanel) switchAfterEach() {
 	if on {
 		v.status.SetText(i18n.T("After each look, LazaScope will ask VirusTotal about programs it has no answer for yet."))
 	} else {
-		v.status.SetText("LazaScope will ask VirusTotal only when you choose to.")
+		v.status.SetText(i18n.T("LazaScope will ask VirusTotal only when you choose to."))
 	}
 }
 
@@ -419,7 +419,7 @@ func (v *vtPanel) openPage() {
 		return
 	}
 	if print == "" {
-		v.w.Info(title, "LazaScope has not worked out this file's fingerprint yet. Choose Ask VirusTotal now, or Look up file... on the 03 Start-up or 04 Running page.")
+		v.w.Info(title, i18n.T("LazaScope has not worked out this file's fingerprint yet. Choose Ask VirusTotal now, or Look up file... on the 03 Start-up or 04 Running page."))
 		return
 	}
 	v.offer(path, print)
@@ -459,7 +459,7 @@ func (v *vtPanel) lookUp(l *list, path, print string) {
 		v.w.Post(func() {
 			if err != nil {
 				v.status.SetText("VirusTotal could not be asked: " + sentence(err))
-				v.w.Alert("Look up file", sentence(err))
+				v.w.Alert(i18n.T("Look up file"), sentence(err))
 				return
 			}
 			v.memory.Keep(print, r)

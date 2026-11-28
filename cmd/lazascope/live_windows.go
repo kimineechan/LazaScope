@@ -52,7 +52,7 @@ func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	l.page = &view.Page{Name: "Live", Title: heading.Text(), Intro: intro.Text(), Columns: view.LiveColumns}
 	p.list = l
 	l.detail.Read(paragraphs([]view.Line{
-		{Style: view.Heading, Text: "How the watch works"},
+		{Style: view.Heading, Text: i18n.T("How the watch works")},
 		{Style: view.Text, Text: i18n.T("Choose Start watching. Windows Management Instrumentation, the part of Windows that answers questions about the system, reports each new program, and LazaScope checks it against its 15 detections, listed in docs/DETECTIONS.md. Nothing is changed and nothing is sent anywhere.")},
 		{Style: view.Text, Text: "Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only."},
 		{Style: view.Text, Text: i18n.T("Choose Only what set off a detection above to see just those. The search box at the top works here too.")},

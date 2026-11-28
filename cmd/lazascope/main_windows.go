@@ -197,7 +197,7 @@ func (l *list) fill() {
 		// Nothing has been read yet. An empty list now must not look like a
 		// clean one.
 		l.count.SetText("Looking...")
-		l.detail.Read(winui.Paragraph{Text: l.page.Title, Style: winui.Head}, winui.Paragraph{Text: "LazaScope is looking at this PC. That takes a few seconds, and this list fills in when it is done."})
+		l.detail.Read(winui.Paragraph{Text: l.page.Title, Style: winui.Head}, winui.Paragraph{Text: i18n.T("LazaScope is looking at this PC. That takes a few seconds, and this list fills in when it is done.")})
 		return
 	}
 	switch {
@@ -279,7 +279,7 @@ func (l *list) withPrint(row view.Row) []view.Line {
 	}
 	if !has(print) { // the look had not worked it out
 		lines = append(append([]view.Line{}, lines...),
-			view.Line{Style: view.Heading, Text: "Fingerprint of the file (SHA-256)"}, view.Line{Style: view.Command, Text: print},
+			view.Line{Style: view.Heading, Text: i18n.T("Fingerprint of the file (SHA-256)")}, view.Line{Style: view.Command, Text: print},
 			view.Line{Style: view.Aside, Text: "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
 	}
 	if l.memory != nil && !has(view.VirusTotalHeading) {
@@ -319,7 +319,7 @@ func main() {
 		os.Exit(headless(reportTo, demo))
 	}
 
-	w, err := winui.New("LazaScope | a plain look at this PC", "LazaScopeNativeWindow", width, height)
+	w, err := winui.New(i18n.T("LazaScope | a plain look at this PC"), "LazaScopeNativeWindow", width, height)
 	if err != nil {
 		winui.Fatal("LazaScope", err)
 		return
@@ -355,7 +355,7 @@ func main() {
 	// 01  Overview
 	w.Page(pageOverview)
 	w.Heading(i18n.T("This PC at a glance"), left, 166, across, 30)
-	summary := w.Label("LazaScope is looking at this PC. It reads, and changes nothing.", left, 200, across, 42)
+	summary := w.Label(i18n.T("LazaScope is looking at this PC. It reads, and changes nothing."), left, 200, across, 42)
 	w.Panel(left, 250, across, 266)
 	var lamps, verdicts, facts [model.Areas]*winui.Control
 	for area := model.Protection; area < model.Areas; area++ {
@@ -367,9 +367,9 @@ func main() {
 		page := areaPage[area]
 		w.Button(i18n.T("Open"), left+across-118, y+5, 104, 32, func() { w.ShowPage(page) })
 	}
-	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network, whether the protections are on and how the PC is holding up. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 526, across, 92)
+	about := w.Box(i18n.T("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network, whether the protections are on and how the PC is holding up. It only reads. Nothing on this PC is changed and nothing leaves it."), left, 526, across, 92)
 	again := w.Button(i18n.T("Look again"), left, 628, 150, 38, nil)
-	raise := w.Button(i18n.T("Look again as administrator"), left+162, 628, 264, 38, nil)
+	raise := w.Button(i18n.T(i18n.T("Look again as administrator")), left+162, 628, 264, 38, nil)
 	against := w.Button(i18n.T("Compare with a report..."), left+438, 628, 226, 38, nil)
 	watch := w.Button(i18n.T("Watch for a minute"), left+676, 628, 196, 38, nil)
 	save := w.Button(i18n.T("Save report..."), left+across-212, 628, 212, 38, nil)
@@ -389,7 +389,7 @@ func main() {
 	working := false
 	var vt *vtPanel // the VirusTotal page, made further down
 	lookUp := func(l *list) {
-		const title = "Look up file"
+		title := i18n.T("Look up file")
 		switch {
 		case l.picked < 0 || l.picked >= len(l.shown):
 			w.Info(title, "Select a row first.")
@@ -506,7 +506,7 @@ func main() {
 	)
 	isNew := func(row view.Row) bool { return row.Fresh }
 	addList(pageStartup, true, []filter{
-		{notWindowsName, notWindows, allWindows},
+		{i18n.T(notWindowsName), notWindows, allWindows},
 		{"Everything", everything, ""},
 		{"Only what is worth a look", flagged, noneWorth},
 		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, i18n.T("Everything in this list is switched off.")},
@@ -515,15 +515,15 @@ func main() {
 	})
 	addList(pageRunning, true, []filter{
 		{i18n.T("Everything, as a family tree"), everything, ""},
-		{notWindowsName, notWindows, allWindows},
+		{i18n.T(notWindowsName), notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageConnections, true, []filter{
 		{"Everything", everything, ""},
 		{i18n.T("Connections to the internet"), func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
-		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, "No program is waiting for connections from the network."},
-		{notWindowsName, notWindows, allWindows},
+		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, i18n.T("No program is waiting for connections from the network.")},
+		{i18n.T(notWindowsName), notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
@@ -566,12 +566,12 @@ func main() {
 			return
 		}
 		status.SetText("Saved " + path)
-		colours := fmt.Sprintf("It colours in the %d ATT&CK techniques that the findings may be traces of.", count)
+		colours := fmt.Sprintf(i18n.T("It colours in the %d ATT&CK techniques that the findings may be traces of."), count)
 		switch count {
 		case 0:
-			colours = "None of the findings is a trace of an ATT&CK technique, so it colours nothing in."
+			colours = i18n.T("None of the findings is a trace of an ATT&CK technique, so it colours nothing in.")
 		case 1:
-			colours = "It colours in the one ATT&CK technique that a finding may be a trace of."
+			colours = i18n.T("It colours in the one ATT&CK technique that a finding may be a trace of.")
 		}
 		w.Info(title, "Saved a layer for MITRE's ATT&CK Navigator, the free web page that shows the whole ATT&CK catalogue as a grid. "+colours+
 			"\r\n\r\nTo see it, open the Navigator at mitre-attack.github.io/attack-navigator in your web browser, choose Open Existing Layer, then Upload from local, and pick this file. The Navigator reads the file inside your browser.\r\n\r\nThe layer names this PC and what was found on it. Read it before you send it to anyone.")
@@ -714,7 +714,7 @@ func main() {
 		for _, c := range jobs {
 			c.Enable(false)
 		}
-		status.SetText("Looking at this PC...")
+		status.SetText(i18n.T("Looking at this PC..."))
 		go func() {
 			// A fault of LazaScope's own while looking must end in words on
 			// the screen, not in a window that vanishes.
@@ -752,7 +752,7 @@ func main() {
 					c.Enable(true)
 				}
 				show(b)
-				text := fmt.Sprintf("Looked at this PC in %.1f seconds. Nothing was changed. All work stays on this computer.", s.Took.Seconds())
+				text := fmt.Sprintf(i18n.T("Looked at this PC in %.1f seconds. Nothing was changed. All work stays on this computer."), s.Took.Seconds())
 				if demo {
 					text = i18n.T("This is a made-up PC, to show what findings look like. Start LazaScope without --demo to look at this one.")
 				}
@@ -887,7 +887,7 @@ func main() {
 	raise.Do(func() {
 		self, err := os.Executable()
 		if err != nil {
-			w.Alert("Look again as administrator", "LazaScope could not find its own file to start again.")
+			w.Alert(i18n.T("Look again as administrator"), i18n.T("LazaScope could not find its own file to start again."))
 			return
 		}
 		// Windows asks before giving the rights. On a no, this window stays

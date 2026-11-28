@@ -49,7 +49,7 @@ func newWallets(w *winui.Window, status *winui.Control, demo bool, prints map[st
 	p.print = w.Input("", left+242, 250, 240, 34, nil)
 	p.print.Hint("Paste the maker's SHA-256")
 	w.Button(i18n.T("Check a download..."), left+492, 250, 170, 34, p.checkDownload)
-	p.find = w.Button("Find recovery phrases...", left+672, 250, 214, 34, p.findPhrases)
+	p.find = w.Button(i18n.T("Find recovery phrases..."), left+672, 250, 214, 34, p.findPhrases)
 	count := w.Caption("", left+896, 250, across-896, 34)
 	l := &list{picked: -1, prints: prints, count: count}
 	l.table = w.Table(left, 292, across, 244, []winui.Column{{Title: ""}}, func(row int) { l.pick(row) })
@@ -132,8 +132,8 @@ func (p *walletPanel) swapTest() {
 					"\r\n\r\nDo not send coins from this PC until it is cleaned. The finding is under 08 Worth a look.")
 				return
 			}
-			p.status.SetText("No program swapped the made-up addresses. The clipboard's text is back as it was.")
-			p.w.Info(title, "No program swapped any of the "+strconv.Itoa(len(result.Tried))+" made-up addresses ("+strings.Join(result.Tried, ", ")+").\r\n\r\n"+
+			p.status.SetText(i18n.T("No program swapped the made-up addresses. The clipboard's text is back as it was."))
+			p.w.Info(title, i18n.T("No program swapped any of the ")+strconv.Itoa(len(result.Tried))+" made-up addresses ("+strings.Join(result.Tried, ", ")+").\r\n\r\n"+
 				"That is good news, though not a promise: some malware waits, or only swaps addresses of other coins. Whenever you paste an address, check it character by character against the one you meant.")
 		})
 	}()
@@ -187,7 +187,7 @@ func (p *walletPanel) checkDownload() {
 // phrases written in files, after saying what it reads. While it runs, the
 // same button stops it.
 func (p *walletPanel) findPhrases() {
-	const title = "Find recovery phrases"
+	title := i18n.T("Find recovery phrases")
 	if p.stop != nil {
 		close(p.stop)
 		p.stop = nil
@@ -234,7 +234,7 @@ func (p *walletPanel) findPhrases() {
 			if p.stop == stop {
 				p.stop = nil
 			}
-			p.find.SetText("Find recovery phrases...")
+			p.find.SetText(i18n.T("Find recovery phrases..."))
 			p.find.Enable(true)
 			b := p.book()
 			if b == nil {
@@ -274,7 +274,7 @@ func (p *walletPanel) phrasesFound(title string, result model.PhraseSearch) {
 	}
 	switch {
 	case len(phrases) > 0:
-		p.status.SetText(fmt.Sprintf("Found what is very likely a recovery phrase in %s (%s). See the rows above.", fileCount(len(phrases)), read))
+		p.status.SetText(fmt.Sprintf(i18n.T("Found what is very likely a recovery phrase in %s (%s). See the rows above."), fileCount(len(phrases)), read))
 		text := "LazaScope found what is very likely a recovery phrase in:\r\n\r\n" + strings.Join(phrases, "\r\n") + "\r\n\r\n" +
 			"Whoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and only then delete the file and empty the Recycle Bin. If it is a test phrase that never held coins, there is nothing to move."
 		if len(others) == 1 {
@@ -284,12 +284,12 @@ func (p *walletPanel) phrasesFound(title string, result model.PhraseSearch) {
 		}
 		p.w.Alert(title, text+part+"\r\n\r\nThe words were not shown, kept or sent. Select a row on the Wallets page to read more.")
 	case len(others) > 0:
-		p.status.SetText(fmt.Sprintf("Found recovery words in %s, not confirmed as a phrase (%s). See the rows above.", fileCount(len(others)), read))
+		p.status.SetText(fmt.Sprintf(i18n.T("Found recovery words in %s, not confirmed as a phrase (%s). See the rows above."), fileCount(len(others)), read))
 		p.w.Info(title, "No complete recovery phrase was found, but 12 or more words in a row from the list phrases are made from are in:\r\n\r\n"+strings.Join(others, "\r\n")+
 			"\r\n\r\nIt may be a phrase written down with a slip or in another order, part of one, an example phrase, or something else. Open the file and see."+part)
 	default:
-		p.status.SetText(fmt.Sprintf("No recovery phrase found (%s).", read))
-		text := fmt.Sprintf("No recovery phrase was found in the %s read.", fileCount(result.Read))
+		p.status.SetText(fmt.Sprintf(i18n.T("No recovery phrase found (%s)."), read))
+		text := fmt.Sprintf(i18n.T("No recovery phrase was found in the %s read."), fileCount(result.Read))
 		p.w.Info(title, text+part+"\r\n\r\nA phrase can still hide where this search does not look: in a photo or a screenshot, a PDF, an email, a password manager, or written in another language. The safest place for a phrase is on paper, kept somewhere safe.")
 	}
 }
