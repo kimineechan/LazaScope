@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"lazascope/internal/cmdline"
+	"lazascope/internal/i18n"
 	"lazascope/internal/model"
 	"lazascope/internal/netconn"
 	"lazascope/internal/rules"
@@ -189,7 +190,7 @@ func yes(b bool) string {
 func (b *builder) startup() Page {
 	s := b.s
 	page := Page{
-		Name: "Start-up", Title: "What starts by itself",
+		Name: "Start-up", Title: i18n.T("What starts by itself"),
 		Intro:   "Every program, task, service and driver that Windows starts without being asked, and the extensions that load with each web browser. Most of them belong to Windows or to software you installed.",
 		Columns: []Column{{"Check", 124}, {"Name", 250}, {"Kind", 128}, {"Maker", 200}, {"File", 0}},
 		Unseen:  b.unseen(model.StartsWithWindows),
@@ -284,7 +285,7 @@ func (b *builder) startup() Page {
 func (b *builder) running() Page {
 	s := b.s
 	page := Page{
-		Name: "Running", Title: "What is running now",
+		Name: "Running", Title: i18n.T("What is running now"),
 		Intro:   "Every running program, set under the program that started it. Many are parts of Windows, and one program often runs as several copies.",
 		Columns: []Column{{"Check", 112}, {"Program", 330}, {"Number", 76}, {"Account", 170}, {"Maker", 0}},
 		Unseen:  b.unseen(model.RunningNow),
@@ -356,7 +357,7 @@ func (b *builder) running() Page {
 func (b *builder) connections() Page {
 	s := b.s
 	page := Page{
-		Name: "Connections", Title: "What is talking to the network",
+		Name: "Connections", Title: i18n.T("What is talking to the network"),
 		Intro:   "Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. An address is shown by name where Windows remembers the name that was looked up. LazaScope looks nothing up itself, so the rest stay numbers.",
 		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 290}, {"Reach", 112}, {"Maker", 0}},
 		Unseen:  b.unseen(model.Connections),
@@ -501,7 +502,7 @@ func state(a model.Answer, yes, no string) string {
 func (b *builder) protection() Page {
 	s, g := b.s, b.s.Guard
 	page := Page{
-		Name: "Protection", Title: "How this PC is protected",
+		Name: "Protection", Title: i18n.T("How this PC is protected"),
 		Intro:   "The settings that keep unwanted software out and limit what it can do. These are facts read from Windows. Nothing was tested by attacking the PC.",
 		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
 		Unseen:  b.unseen(model.Protection),
@@ -730,7 +731,7 @@ func (b *builder) protection() Page {
 func (b *builder) accounts() Page {
 	g := b.s.Guard
 	page := Page{
-		Name: "Accounts", Title: "Who can get into this PC",
+		Name: "Accounts", Title: i18n.T("Who can get into this PC"),
 		Intro:   "The accounts with full rights over the PC, and the ways it can be used from somewhere else.",
 		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
 		Unseen:  b.unseen(model.Accounts),
@@ -806,7 +807,7 @@ func invert(a model.Answer) model.Answer {
 
 func (b *builder) worth() Page {
 	page := Page{
-		Name: "Worth a look", Title: "What is worth a second look",
+		Name: "Worth a look", Title: i18n.T("What is worth a second look"),
 		Intro:   "Everything the written rules flagged, the most serious first. A flag is a reason to look, not a verdict: the same signs that mark an intruder also mark plenty of honest software.",
 		Columns: []Column{{"How soon", 124}, {"Where", 214}, {"What was found", 430}, {"About", 0}},
 	}
@@ -993,7 +994,7 @@ func (b *builder) facts(area model.Area) string {
 func (b *builder) health() Page {
 	s, c := b.s, b.s.Condition
 	page := Page{
-		Name: "Health", Title: "How this PC is holding up",
+		Name: "Health", Title: i18n.T("How this PC is holding up"),
 		Intro:   "What Windows wrote in its own log over the last 90 days about failing hardware and about stopping unexpectedly, and how full the disks are. A PC that crashes for no clear reason more often has a worn part than unwanted software.",
 		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
 		Unseen:  b.unseen(model.Health),

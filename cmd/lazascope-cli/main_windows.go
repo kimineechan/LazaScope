@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"lazascope"
+	"lazascope/internal/i18n"
 	"lazascope/internal/view"
 )
 
@@ -69,6 +70,8 @@ var commands = map[string]struct {
 }
 
 func main() {
+	i18n.Init(os.Args)
+
 	// A fault of the tool's own must end in words, and say that nothing on
 	// the PC was touched.
 	defer func() {

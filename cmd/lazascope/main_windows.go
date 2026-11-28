@@ -14,6 +14,7 @@ import (
 	"lazascope"
 	"lazascope/internal/compare"
 	"lazascope/internal/files"
+	"lazascope/internal/i18n"
 	"lazascope/internal/model"
 	"lazascope/internal/query"
 	"lazascope/internal/report"
@@ -290,6 +291,8 @@ func (l *list) withPrint(row view.Row) []view.Line {
 }
 
 func main() {
+	i18n.Init(os.Args)
+
 	// "LazaScope.exe --report file" takes a look and writes the report
 	// without showing a window, for someone helping from a distance.
 	// "--demo" shows a made-up PC in place of this one.
@@ -331,7 +334,7 @@ func main() {
 	for i, section := range []struct {
 		label string
 		width int
-	}{{"01  Overview", 126}, {"02  Protection", 132}, {"03  Start-up", 120}, {"04  Running", 118}, {"05  Connections", 144}, {"06  Accounts", 126}, {"07  Health", 110}, {"08  Worth a look", 184}} {
+	}{{"01  " + i18n.T("Overview"), 126}, {"02  " + i18n.T("Protection"), 132}, {"03  " + i18n.T("Start-up"), 120}, {"04  " + i18n.T("Running"), 118}, {"05  " + i18n.T("Connections"), 144}, {"06  " + i18n.T("Accounts"), 126}, {"07  " + i18n.T("Health"), 110}, {"08  " + i18n.T("Worth a look"), 184}} {
 		nav = append(nav, w.Section(section.label, i, x, 108, section.width, 36))
 		x += section.width + 3
 	}
@@ -340,8 +343,8 @@ func main() {
 	searchBox := w.Input("", left+345, 32, 285, 36, nil)
 	searchBox.Hint("Search the lists, or type ? for help")
 	analyst := w.Switch("Analyst mode", left+642, 32, 160, 36, nil)
-	w.Button("Wallets...", left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
-	w.Button("VirusTotal...", left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
+	w.Button(i18n.T("Wallets..."), left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
+	w.Button(i18n.T("VirusTotal..."), left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
 	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
 
@@ -362,21 +365,21 @@ func main() {
 		verdicts[area] = w.Line("Looking...", left+350, y+1, 520, 22)
 		facts[area] = w.Note("", left+52, y+22, 860, 20)
 		page := areaPage[area]
-		w.Button("Open", left+across-118, y+5, 104, 32, func() { w.ShowPage(page) })
+		w.Button(i18n.T("Open"), left+across-118, y+5, 104, 32, func() { w.ShowPage(page) })
 	}
 	about := w.Box("LazaScope is taking its first look: what starts by itself, what is running, what is talking to the network, whether the protections are on and how the PC is holding up. It only reads. Nothing on this PC is changed and nothing leaves it.", left, 526, across, 92)
-	again := w.Button("Look again", left, 628, 150, 38, nil)
-	raise := w.Button("Look again as administrator", left+162, 628, 264, 38, nil)
-	against := w.Button("Compare with a report...", left+438, 628, 226, 38, nil)
-	watch := w.Button("Watch for a minute", left+676, 628, 196, 38, nil)
-	save := w.Button("Save report...", left+across-212, 628, 212, 38, nil)
+	again := w.Button(i18n.T("Look again"), left, 628, 150, 38, nil)
+	raise := w.Button(i18n.T("Look again as administrator"), left+162, 628, 264, 38, nil)
+	against := w.Button(i18n.T("Compare with a report..."), left+438, 628, 226, 38, nil)
+	watch := w.Button(i18n.T("Watch for a minute"), left+676, 628, 196, 38, nil)
+	save := w.Button(i18n.T("Save report..."), left+across-212, 628, 212, 38, nil)
 	save.Lead(true)
 	jobs = append(jobs, again, raise, against, save)
 	// More ways to look, each with a page of its own.
-	w.Button("Timeline...", left, 676, 150, 36, func() { w.ShowPage(pageTimeline) })
-	w.Button("Protections to switch on...", left+162, 676, 262, 36, func() { w.ShowPage(pageDefences) })
-	w.Button("Camera and microphone...", left+436, 676, 240, 36, func() { w.ShowPage(pageDevices) })
-	w.Button("Watch programs start...", left+688, 676, 230, 36, func() { w.ShowPage(pageLive) })
+	w.Button(i18n.T("Timeline..."), left, 676, 150, 36, func() { w.ShowPage(pageTimeline) })
+	w.Button(i18n.T("Protections to switch on..."), left+162, 676, 262, 36, func() { w.ShowPage(pageDefences) })
+	w.Button(i18n.T("Camera and microphone..."), left+436, 676, 240, 36, func() { w.ShowPage(pageDevices) })
+	w.Button(i18n.T("Watch programs start..."), left+688, 676, 230, 36, func() { w.ShowPage(pageLive) })
 
 	// lookUp works out the fingerprint of the file a row is about and, on
 	// a yes, opens VirusTotal's page for that fingerprint in the user's own
@@ -470,8 +473,8 @@ func main() {
 		}
 		l.count = w.Caption("", x, 250, 384, 34)
 		if files {
-			w.Button("Look up file...", left+across-422, 250, 142, 34, func() { lookUp(l) })
-			w.Button("Show in folder", left+across-272, 250, 130, 34, func() {
+			w.Button(i18n.T("Look up file..."), left+across-422, 250, 142, 34, func() { lookUp(l) })
+			w.Button(i18n.T("Show in folder"), left+across-272, 250, 130, 34, func() {
 				if l.picked < 0 || l.picked >= len(l.shown) {
 					w.Info("Show in folder", "Select a row first.")
 				} else if path := l.shown[l.picked].Path; path == "" {
@@ -481,7 +484,7 @@ func main() {
 				}
 			})
 		}
-		w.Button("Copy details", left+across-136, 250, 136, 34, func() {
+		w.Button(i18n.T("Copy details"), left+across-136, 250, 136, 34, func() {
 			if w.Copy(l.detail.Words()) {
 				status.SetText("Copied the details shown below the list.")
 			} else {
@@ -543,7 +546,7 @@ func main() {
 	addList(pageWorth, true, nil)
 	// The ATT&CK techniques the findings may be traces of, as a layer for
 	// MITRE's ATT&CK Navigator.
-	layerButton := w.Button("Save ATT&CK layer...", left+across-634, 250, 200, 34, func() {
+	layerButton := w.Button(i18n.T("Save ATT&CK layer..."), left+across-634, 250, 200, 34, func() {
 		const title = "Save for the ATT&CK Navigator"
 		if book == nil || busy {
 			return
