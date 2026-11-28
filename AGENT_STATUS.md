@@ -36,6 +36,11 @@ Deutsche Oberfläche für LazaScope, ohne das Verhalten zu ändern: alle sichtba
 - CLI mit `--demo`: Bereichsnamen deutsch; die übrigen Zeilen hängen an den übersetzten
   Regeln.
 
+## Abschluss
+
+- Release **v1.0.2-de** im Fork: https://github.com/immerzu/LazaScope/releases/tag/v1.0.2-de (ZIP mit LazaScope.exe und lazascope-cli.exe).
+- Pull-Request an den Upstream: https://github.com/kimineechan/LazaScope/pull/2
+
 ## Offen
 
 - Wenige UI-Sonderfälle (Dateifilter mit `\x00`, Dateinamen-Vorlagen) bleiben englisch.
