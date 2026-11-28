@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"lazascope/internal/i18n"
 	"strconv"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ func newWallets(w *winui.Window, status *winui.Control, demo bool, prints map[st
 	p.test.Lead(true)
 	p.print = w.Input("", left+242, 250, 240, 34, nil)
 	p.print.Hint("Paste the maker's SHA-256")
-	w.Button("Check a download...", left+492, 250, 170, 34, p.checkDownload)
+	w.Button(i18n.T("Check a download..."), left+492, 250, 170, 34, p.checkDownload)
 	p.find = w.Button("Find recovery phrases...", left+672, 250, 214, 34, p.findPhrases)
 	count := w.Caption("", left+896, 250, across-896, 34)
 	l := &list{picked: -1, prints: prints, count: count}
@@ -126,8 +127,8 @@ func (p *walletPanel) swapTest() {
 				if result.By != "" {
 					who = "Windows says the clipboard was last changed by " + result.By + "."
 				}
-				p.status.SetText("A program swapped a copied wallet address. See 08 Worth a look.")
-				p.w.Alert(title, "A program swapped the made-up "+result.Kind+" address for another:\r\n\r\n"+result.Into+"\r\n\r\n"+who+
+				p.status.SetText(i18n.T("A program swapped a copied wallet address. See 08 Worth a look."))
+				p.w.Alert(title, i18n.T("A program swapped the made-up ")+result.Kind+" address for another:\r\n\r\n"+result.Into+"\r\n\r\n"+who+
 					"\r\n\r\nDo not send coins from this PC until it is cleaned. The finding is under 08 Worth a look.")
 				return
 			}
@@ -141,13 +142,13 @@ func (p *walletPanel) swapTest() {
 // checkDownload compares a downloaded file with the fingerprint its maker
 // publishes.
 func (p *walletPanel) checkDownload() {
-	const title = "Check a download"
+	title := i18n.T("Check a download")
 	want := strings.ToLower(strings.Join(strings.Fields(p.print.Text()), ""))
 	if !virustotal.ValidHash(want) {
 		p.w.Info(title, "Paste the fingerprint into the box first. A wallet's maker publishes a fingerprint (SHA-256) for each download on its own website: 64 letters and digits. Then choose Check a download... and pick the file you downloaded.")
 		return
 	}
-	path, err := p.w.FileDialog("Choose the downloaded file", "Programs and installers (*.exe;*.msi;*.msix;*.zip)\x00*.exe;*.msi;*.msix;*.zip\x00All files (*.*)\x00*.*\x00\x00", "", "", false)
+	path, err := p.w.FileDialog(i18n.T("Choose the downloaded file"), "Programs and installers (*.exe;*.msi;*.msix;*.zip)\x00*.exe;*.msi;*.msix;*.zip\x00All files (*.*)\x00*.*\x00\x00", "", "", false)
 	if err != nil {
 		p.w.Alert(title, err.Error())
 		return

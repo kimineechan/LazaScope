@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"strings"
 	"time"
@@ -73,9 +74,9 @@ func newVirusTotal(w *winui.Window, status *winui.Control, demo bool, prints map
 	w.Button("Save key", left+372, 250, 118, 34, v.saveKey)
 	w.Button("Forget", left+502, 250, 104, 34, v.forget)
 	v.keyState = w.Caption("", left+618, 250, across-618, 34)
-	v.ask = w.Button("Ask VirusTotal now", left, 294, 220, 34, v.score)
+	v.ask = w.Button(i18n.T("Ask VirusTotal now"), left, 294, 220, 34, v.score)
 	v.ask.Lead(true)
-	v.afterEach = w.Switch("Also after each look", left+232, 294, 250, 34, v.switchAfterEach)
+	v.afterEach = w.Switch(i18n.T("Also after each look"), left+232, 294, 250, 34, v.switchAfterEach)
 	v.afterEach.Turn(v.memory.AfterEachLook())
 	count := w.Caption("", left+494, 294, across-494-240, 34)
 	w.Button("Open VirusTotal's page", left+across-228, 294, 228, 34, v.openPage)
@@ -95,7 +96,7 @@ func (v *vtPanel) showKey() {
 	case v.demo:
 		v.keyState.SetText("The made-up PC: its answers are made up too.")
 	case v.client != nil:
-		v.keyState.SetText("A key ending in " + v.client.Ends() + " is saved for your Windows account.")
+		v.keyState.SetText(i18n.T("A key ending in ") + v.client.Ends() + " is saved for your Windows account.")
 	case v.broken != "":
 		v.keyState.SetText("The saved key could not be opened. Save it again.")
 	default:
@@ -142,7 +143,7 @@ func (v *vtPanel) explain() {
 		{Style: view.Text, Text: "3. Click in the box above, press Ctrl + V to paste the key, and choose Save key."},
 		{Style: view.Heading, Text: "What is sent, and when"},
 		{Style: view.Text, Text: "Nothing, until you choose Ask VirusTotal now or Look up file..., or switch on Also after each look. Each lookup then sends VirusTotal a file's fingerprint and your key, never the file itself. VirusTotal learns that your account asked about that file."},
-		{Style: view.Text, Text: "A free key may make 4 lookups a minute and 500 a day, for personal use that is not commercial. LazaScope keeps to that pace, and remembers each answer for a week so as not to ask twice."},
+		{Style: view.Text, Text: i18n.T("A free key may make 4 lookups a minute and 500 a day, for personal use that is not commercial. LazaScope keeps to that pace, and remembers each answer for a week so as not to ask twice.")},
 		{Style: view.Heading, Text: "Where the key is kept"},
 		{Style: view.Text, Text: "In LazaScope's folder inside your own AppData folder, sealed by Windows so that only your Windows account on this PC can open it. Forget removes it, with everything VirusTotal said."},
 	}
@@ -175,7 +176,7 @@ func (v *vtPanel) saveKey() {
 		v.w.Alert(title, sentence(err))
 		return
 	}
-	v.status.SetText("Checking the key with VirusTotal...")
+	v.status.SetText(i18n.T("Checking the key with VirusTotal..."))
 	go func() {
 		_, err := client.Look(context.Background(), emptyFile)
 		v.w.Post(func() {
@@ -237,13 +238,13 @@ func (v *vtPanel) switchAfterEach() {
 	on := v.afterEach.On()
 	if on && v.client == nil {
 		v.afterEach.Turn(false)
-		v.w.Info("Ask after each look", "Save a VirusTotal key first. The steps are in the box below.")
+		v.w.Info(i18n.T("Ask after each look"), "Save a VirusTotal key first. The steps are in the box below.")
 		return
 	}
 	v.memory.SetAfterEachLook(on)
 	v.memory.Save()
 	if on {
-		v.status.SetText("After each look, LazaScope will ask VirusTotal about programs it has no answer for yet.")
+		v.status.SetText(i18n.T("After each look, LazaScope will ask VirusTotal about programs it has no answer for yet."))
 	} else {
 		v.status.SetText("LazaScope will ask VirusTotal only when you choose to.")
 	}
@@ -252,7 +253,7 @@ func (v *vtPanel) switchAfterEach() {
 // score asks VirusTotal about every file on the page, or stops a run that
 // is going on.
 func (v *vtPanel) score() {
-	const title = "Ask VirusTotal"
+	title := i18n.T("Ask VirusTotal")
 	if v.stop != nil {
 		v.stop()
 		return
@@ -324,7 +325,7 @@ func (v *vtPanel) run(b *view.Book, todo []virustotal.Candidate, quiet bool) {
 			}
 			left := (len(todo) - i) * int(virustotal.Pace/time.Second)
 			v.w.Post(func() {
-				v.status.SetText(fmt.Sprintf("Asking VirusTotal about %s, %d of %d. A free key allows 4 lookups a minute, so this takes up to %s.", c.Name, i+1, len(todo), minutes(left)))
+				v.status.SetText(fmt.Sprintf(i18n.T("Asking VirusTotal about %s, %d of %d. A free key allows 4 lookups a minute, so this takes up to %s."), c.Name, i+1, len(todo), minutes(left)))
 			})
 			r, err := client.Look(ctx, print)
 			if err != nil {
@@ -342,7 +343,7 @@ func (v *vtPanel) run(b *view.Book, todo []virustotal.Candidate, quiet bool) {
 		}
 		v.w.Post(func() {
 			v.stop = nil
-			v.ask.SetText("Ask VirusTotal now")
+			v.ask.SetText(i18n.T("Ask VirusTotal now"))
 			v.rejudge()
 			text := fmt.Sprintf("VirusTotal: %d files asked about", asked)
 			if remembered > 0 {
@@ -358,7 +359,7 @@ func (v *vtPanel) run(b *view.Book, todo []virustotal.Candidate, quiet bool) {
 			case halt != nil:
 				v.status.SetText("Stopped: " + sentence(halt))
 				if !quiet {
-					v.w.Alert("Ask VirusTotal", sentence(halt)+"\r\n\r\n"+text)
+					v.w.Alert(i18n.T("Ask VirusTotal"), sentence(halt)+"\r\n\r\n"+text)
 				}
 			default:
 				v.status.SetText(text)
@@ -451,7 +452,7 @@ func (v *vtPanel) lookUp(l *list, path, print string) {
 		v.offer(path, print)
 		return
 	}
-	v.status.SetText("Asking VirusTotal about " + path + "...")
+	v.status.SetText(i18n.T("Asking VirusTotal about ") + path + "...")
 	client := v.client
 	go func() {
 		r, err := client.Look(context.Background(), print)

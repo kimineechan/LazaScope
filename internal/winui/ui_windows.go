@@ -11,6 +11,7 @@ package winui
 
 import (
 	"fmt"
+	"lazascope/internal/i18n"
 	"math"
 	"os"
 	"runtime"
@@ -204,7 +205,7 @@ func New(title, class string, width, height int) (*Window, error) {
 	wc.Size = uint32(unsafe.Sizeof(wc))
 	ok, _, e := user32.NewProc("RegisterClassExW").Call(uintptr(unsafe.Pointer(&wc)))
 	if ok == 0 {
-		return nil, fmt.Errorf("could not register window: %w", e)
+		return nil, fmt.Errorf(i18n.T("could not register window: %w"), e)
 	}
 	// A window with no frame, on the taskbar, that can be minimised. "Layered"
 	// is what lets each pixel have its own opacity.
@@ -224,7 +225,7 @@ func New(title, class string, width, height int) (*Window, error) {
 	h, _, e := createWindow.Call(layered|onTaskbar, uintptr(unsafe.Pointer(className)), uintptr(unsafe.Pointer(ptr(title))),
 		popup|systemMenu|minimiseBox, uintptr(x), uintptr(y), uintptr(winWidth), uintptr(winHeight), 0, 0, w.instance, 0)
 	if h == 0 {
-		return nil, fmt.Errorf("could not create window: %w", e)
+		return nil, fmt.Errorf(i18n.T("could not create window: %w"), e)
 	}
 	w.Handle = h
 	var err error
@@ -458,7 +459,7 @@ func (w *Window) SetHotkey(id int, key, modifiers uint32) error {
 	const noRepeat = 0x4000
 	ok, _, _ := user32.NewProc("RegisterHotKey").Call(w.Handle, uintptr(id), uintptr(modifiers|noRepeat), uintptr(key))
 	if ok == 0 {
-		return fmt.Errorf("another program is already using that shortcut")
+		return fmt.Errorf("%s", i18n.T("another program is already using that shortcut"))
 	}
 	return nil
 }
@@ -540,7 +541,7 @@ func (w *Window) Run() {
 func (w *Window) OpenFolder(path string) {
 	r, _, _ := shell32.NewProc("ShellExecuteW").Call(w.Handle, uintptr(unsafe.Pointer(ptr("open"))), uintptr(unsafe.Pointer(ptr(path))), 0, 0, 1)
 	if r <= 32 {
-		w.Alert("Could not open folder", fmt.Sprintf("Windows error %d", r))
+		w.Alert(i18n.T("Could not open folder"), fmt.Sprintf("Windows error %d", r))
 	}
 }
 

@@ -484,9 +484,9 @@ func main() {
 				}
 			})
 		}
-		w.Button(i18n.T("Copy details"), left+across-136, 250, 136, 34, func() {
+		w.Button(i18n.T(i18n.T("Copy details")), left+across-136, 250, 136, 34, func() {
 			if w.Copy(l.detail.Words()) {
-				status.SetText("Copied the details shown below the list.")
+				status.SetText(i18n.T("Copied the details shown below the list."))
 			} else {
 				status.SetText("The details could not be copied, because another program is using the clipboard. Try again in a moment.")
 			}
@@ -499,8 +499,8 @@ func main() {
 		pageTexts[page] = [2]*winui.Control{heading, intro}
 	}
 	addList(pageProtection, false, nil)
-	const (
-		allWindows = "Everything in this list is a part of Windows."
+	var (
+		allWindows = i18n.T("Everything in this list is a part of Windows.")
 		noneWorth  = "Nothing in this list was flagged by the rules."
 		nothingNew = "Nothing in this list is marked as new. A look on its own has nothing to compare with: on the Overview, use Watch for a minute or Compare with a report first."
 	)
@@ -509,19 +509,19 @@ func main() {
 		{notWindowsName, notWindows, allWindows},
 		{"Everything", everything, ""},
 		{"Only what is worth a look", flagged, noneWorth},
-		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, "Everything in this list is switched off."},
-		{"Browser extensions", func(row view.Row) bool { return row.Group == "extension" }, "No extension was found in the browsers LazaScope knows: Chrome, Edge, Firefox, Brave, Vivaldi and Opera."},
+		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, i18n.T("Everything in this list is switched off.")},
+		{i18n.T("Browser extensions"), func(row view.Row) bool { return row.Group == "extension" }, "No extension was found in the browsers LazaScope knows: Chrome, Edge, Firefox, Brave, Vivaldi and Opera."},
 		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageRunning, true, []filter{
-		{"Everything, as a family tree", everything, ""},
+		{i18n.T("Everything, as a family tree"), everything, ""},
 		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageConnections, true, []filter{
 		{"Everything", everything, ""},
-		{"Connections to the internet", func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
+		{i18n.T("Connections to the internet"), func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
 		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, "No program is waiting for connections from the network."},
 		{notWindowsName, notWindows, allWindows},
 		{"Only what is worth a look", flagged, noneWorth},
@@ -533,7 +533,7 @@ func main() {
 		}
 	}
 	addList(pageTimeline, true, []filter{
-		{"Everything, newest first", everything, ""},
+		{i18n.T("Everything, newest first"), everything, ""},
 		{"The last 24 hours", within(24), "Nothing LazaScope can date happened in the last 24 hours."},
 		{"The last 7 days", within(7 * 24), "Nothing LazaScope can date happened in the last 7 days."},
 		{"The last 30 days", within(30 * 24), "Nothing LazaScope can date happened in the last 30 days."},
@@ -618,7 +618,7 @@ func main() {
 		if q.Empty() {
 			status.SetText("The search is cleared. Every list shows all its rows again.")
 		} else {
-			status.SetText("Every list shows only the rows that match the search.")
+			status.SetText(i18n.T("Every list shows only the rows that match the search."))
 		}
 	})
 	analyst.Do(func() {
@@ -635,9 +635,9 @@ func main() {
 			}
 		}
 		if analystMode {
-			status.SetText("Analyst mode: a row's details end with the exact evidence, times in UTC, and the numbers of rules and ATT&CK techniques.")
+			status.SetText(i18n.T("Analyst mode: a row's details end with the exact evidence, times in UTC, and the numbers of rules and ATT&CK techniques."))
 		} else {
-			status.SetText("Analyst mode is off.")
+			status.SetText(i18n.T("Analyst mode is off."))
 		}
 	})
 
@@ -766,7 +766,7 @@ func main() {
 	// Compare with a report... holds the look on show against a report that
 	// was saved earlier as data, and marks what is new.
 	against.Do(func() {
-		const title = "Compare with a report"
+		title := i18n.T("Compare with a report")
 		if book == nil || busy {
 			return
 		}
@@ -774,7 +774,7 @@ func main() {
 			w.Info(title, "This is the made-up PC, which has no earlier report. On your own PC, save a report as data (.json) today, and compare with it another day to see what has changed.")
 			return
 		}
-		path, err := w.FileDialog("Choose a report that was saved as data", "LazaScope report saved as data (*.json)\x00*.json\x00\x00", "json", "", false)
+		path, err := w.FileDialog(i18n.T("Choose a report that was saved as data"), "LazaScope report saved as data (*.json)\x00*.json\x00\x00", "json", "", false)
 		if err != nil {
 			w.Alert(title, err.Error())
 			return
@@ -819,7 +819,7 @@ func main() {
 				text += "\r\n\r\n" + line
 			}
 		}
-		status.SetText("Compared. In the lists, choose the view What is new to see what was not there before.")
+		status.SetText(i18n.T("Compared. In the lists, choose the view What is new to see what was not there before."))
 		w.Info(title, text+"\r\n\r\nWhat is new is marked New in the lists. Choose the view What is new above a list to see only that.")
 	})
 
