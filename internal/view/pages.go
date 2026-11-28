@@ -19,7 +19,7 @@ import (
 // where Windows keeps its own files, and signed by Microsoft as its own.
 //
 // Some parts of Windows carry two signatures, one in the file in the name
-// "Microsoft Corporation" and one in a catalogue in the name "Microsoft
+// i18n.T("Microsoft Corporation") and one in a catalogue in the name "Microsoft
 // Windows". The checker reports the one in the file, so that name counts
 // too when the file is in the Windows folder. The name Microsoft signs
 // other makers' drivers under does not: those are not parts of Windows.
@@ -28,7 +28,7 @@ func partOfWindows(f model.File, folders model.Folders) bool {
 		return false
 	}
 	switch f.Signature.Signer {
-	case "Microsoft Windows", "Microsoft Windows Publisher", "Microsoft Corporation", "Microsoft Windows Hardware Abstraction Layer Publisher":
+	case "Microsoft Windows", "Microsoft Windows Publisher", i18n.T("Microsoft Corporation"), "Microsoft Windows Hardware Abstraction Layer Publisher":
 		return true
 	}
 	return false
@@ -58,7 +58,7 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	}
 	lines = append(lines, Line{Text, "File:"}, Line{Command, f.Path})
 	if print := b.s.Fingerprint(f.Path); print != "" {
-		lines = append(lines, Line{Text, "Fingerprint (SHA-256):"}, Line{Command, print})
+		lines = append(lines, Line{Text, i18n.T("Fingerprint (SHA-256):")}, Line{Command, print})
 	}
 	if r, ok := b.s.Reputation(f.Path); ok {
 		lines = append(lines, VirusTotalLines(r, b.s.Fingerprint(f.Path))...)
@@ -66,11 +66,11 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	if o := f.Origin; o != nil {
 		lines = append(lines, Line{Heading, "Where it came from"})
 		lines = append(lines, originLines(o)...)
-		lines = append(lines, Line{Aside, "Windows puts this mark on files saved from the internet or from another computer, which is what makes it ask before opening them. It can be removed, so a file without it may still have been downloaded."})
+		lines = append(lines, Line{Aside, i18n.T("Windows puts this mark on files saved from the internet or from another computer, which is what makes it ask before opening them. It can be removed, so a file without it may still have been downloaded.")})
 	}
 	for _, r := range b.s.Ran {
 		if r.Source == "UserAssist" && winpath.Same(r.Path, f.Path) && !r.Last.IsZero() {
-			text := "This account last opened it on " + r.Last.In(location(b.s)).Format("2 January 2006 at 15:04")
+			text := i18n.T("This account last opened it on ") + r.Last.In(location(b.s)).Format("2 January 2006 at 15:04")
 			if r.Count > 0 {
 				text += fmt.Sprintf(", %d times all told", r.Count)
 			}
@@ -81,13 +81,13 @@ func (b *builder) file(lines []Line, f model.File) []Line {
 	case !f.Exists && f.Signature.Problem != "" && f.Signature.Problem != "The file does not exist.":
 		return append(lines, Line{Text, f.Signature.Problem})
 	case !f.Exists:
-		return append(lines, Line{Text, "There is no file at that place."})
+		return append(lines, Line{Text, i18n.T("There is no file at that place.")})
 	case !f.Program:
 		if rules.Script(f.Path) {
-			lines = append(lines, Line{Text, "This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one."})
+			lines = append(lines, Line{Text, i18n.T("This is a script: a text file of commands, not a program. LazaScope checks signatures on programs only, and scripts almost never carry one.")})
 			return opinion(script(lines, f), f.Opinion, "this script", "it", rules.Engine(b.s))
 		}
-		return append(lines, Line{Text, "This is not a program file, so there is no maker's signature to check."})
+		return append(lines, Line{Text, i18n.T("This is not a program file, so there is no maker's signature to check.")})
 	}
 	lines = fact(lines, "Signature", rules.Signature(f))
 	lines = fact(lines, "The file says it is", rules.Claim(f))
@@ -105,7 +105,7 @@ func opinion(lines []Line, o model.Opinion, what, it, engine string) []Line {
 	if strings.HasPrefix(engine, "The ") {
 		engine = "the " + engine[4:]
 	}
-	lines = append(lines, Line{Heading, "What the antivirus says"})
+	lines = append(lines, Line{Heading, i18n.T("What the antivirus says")})
 	text := "LazaScope handed " + what + " to " + engine + " and asked. "
 	switch {
 	case o.Harmful && o.Name != "":
@@ -113,13 +113,13 @@ func opinion(lines []Line, o model.Opinion, what, it, engine string) []Line {
 	case o.Harmful:
 		text += "It calls " + it + " harmful."
 	default:
-		text += "It raised no objection."
+		text += i18n.T("It raised no objection.")
 	}
 	lines = append(lines, Line{Text, text})
 	if o.Harmful {
-		return append(lines, Line{Aside, "That is the antivirus's judgement, not LazaScope's. LazaScope has no detection engine of its own."})
+		return append(lines, Line{Aside, i18n.T("That is the antivirus's judgement, not LazaScope's. LazaScope has no detection engine of its own.")})
 	}
-	return append(lines, Line{Aside, "No objection means the antivirus knows nothing against it today. It is not a promise that it is harmless."})
+	return append(lines, Line{Aside, i18n.T("No objection means the antivirus knows nothing against it today. It is not a promise that it is harmless.")})
 }
 
 // carried adds what the commands on a line say, when the line carries
@@ -128,8 +128,8 @@ func opinion(lines []Line, o model.Opinion, what, it, engine string) []Line {
 func (b *builder) carried(lines []Line, command string, said model.Opinion) []Line {
 	if decoded, ok := cmdline.EncodedCommand(command); ok {
 		reading := scripts.Read(decoded, 12)
-		lines = append(lines, Line{Heading, "What the encoded command says"},
-			Line{Text, "The commands on this line are written in an encoded form, a long run of letters and digits. LazaScope has turned them back into text. Nothing was run."})
+		lines = append(lines, Line{Heading, i18n.T("What the encoded command says")},
+			Line{Text, i18n.T("The commands on this line are written in an encoded form, a long run of letters and digits. LazaScope has turned them back into text. Nothing was run.")})
 		for _, sign := range reading.Signs {
 			lines = append(lines, Line{Text, sign})
 		}
@@ -137,10 +137,10 @@ func (b *builder) carried(lines []Line, command string, said model.Opinion) []Li
 			lines = append(lines, Line{Excerpt, line})
 		}
 		if reading.More {
-			lines = append(lines, Line{Aside, "The decoded commands go on beyond these lines."})
+			lines = append(lines, Line{Aside, i18n.T("The decoded commands go on beyond these lines.")})
 		}
 	}
-	return opinion(lines, said, "the commands on this line", "them", rules.Engine(b.s))
+	return opinion(lines, said, i18n.T("the commands on this line"), "them", rules.Engine(b.s))
 }
 
 // script adds what a script's own text shows: what it can be seen to do,
@@ -148,25 +148,25 @@ func (b *builder) carried(lines []Line, command string, said model.Opinion) []Li
 func script(lines []Line, f model.File) []Line {
 	switch {
 	case rules.EncodedScript(f.Path):
-		return append(lines, Line{Text, "It is saved in a scrambled form, so LazaScope could not read what it says."})
+		return append(lines, Line{Text, i18n.T("It is saved in a scrambled form, so LazaScope could not read what it says.")})
 	case f.Script == nil:
-		return append(lines, Line{Aside, "LazaScope did not read this script: it is very large, or it is not plain text."})
+		return append(lines, Line{Aside, i18n.T("LazaScope did not read this script: it is very large, or it is not plain text.")})
 	}
-	lines = append(lines, Line{Heading, "What the script does, going by its text"})
+	lines = append(lines, Line{Heading, i18n.T("What the script does, going by its text")})
 	if len(f.Script.Signs) == 0 {
-		lines = append(lines, Line{Text, "LazaScope read it and saw none of the things it looks for: reaching the internet, changing what starts with Windows, touching the antivirus or the firewall, and the like."})
+		lines = append(lines, Line{Text, i18n.T("LazaScope read it and saw none of the things it looks for: reaching the internet, changing what starts with Windows, touching the antivirus or the firewall, and the like.")})
 	}
 	for _, sign := range f.Script.Signs {
 		lines = append(lines, Line{Text, sign})
 	}
-	lines = append(lines, Line{Aside, "This is a reading of the text, not a test: nothing was run. A harmless script can do any of these things, and a script can hide what it does."})
+	lines = append(lines, Line{Aside, i18n.T("This is a reading of the text, not a test: nothing was run. A harmless script can do any of these things, and a script can hide what it does.")})
 	if len(f.Script.Lines) > 0 {
 		lines = append(lines, Line{Heading, "How it begins"})
 		for _, line := range f.Script.Lines {
 			lines = append(lines, Line{Excerpt, line})
 		}
 		if f.Script.More {
-			lines = append(lines, Line{Aside, "The script goes on. Open Notepad and drag the file into its window to read all of it. Do not double-click the file, because that runs it."})
+			lines = append(lines, Line{Aside, i18n.T("The script goes on. Open Notepad and drag the file into its window to read all of it. Do not double-click the file, because that runs it.")})
 		}
 	}
 	return lines
@@ -217,24 +217,24 @@ func (b *builder) startup() Page {
 			lines := []Line{{Heading, x.Name}, {Text, e.Kind.Explain()}}
 			lines = fact(lines, "New", strings.TrimPrefix(news, "This entry is new: "))
 			if !x.Enabled {
-				lines = append(lines, Line{Text, "This extension is switched off in the browser, so it does not load."})
+				lines = append(lines, Line{Text, i18n.T("This extension is switched off in the browser, so it does not load.")})
 			}
 			lines = b.said(lines, ref)
 			lines = append(lines, Line{Heading, "Details"})
 			lines = fact(lines, "Browser", x.Browser+", profile "+x.Profile)
 			lines = fact(lines, "Where it came from", x.Source.String())
 			lines = fact(lines, "Version", x.Version)
-			lines = fact(lines, "What it says it is for", x.About)
+			lines = fact(lines, i18n.T("What it says it is for"), x.About)
 			switch {
 			case x.EverySite:
-				lines = append(lines, Line{Text, "It may read and change the pages of every website you visit. Many honest extensions need that, such as ad blockers and password managers. It is also all that a dishonest one needs."})
+				lines = append(lines, Line{Text, i18n.T("It may read and change the pages of every website you visit. Many honest extensions need that, such as ad blockers and password managers. It is also all that a dishonest one needs.")})
 			default:
-				lines = append(lines, Line{Text, "It is not allowed to read every website: only the sites it names, or none."})
+				lines = append(lines, Line{Text, i18n.T("It is not allowed to read every website: only the sites it names, or none.")})
 			}
 			if len(x.May) > 0 {
 				lines = fact(lines, "It may also", strings.Join(x.May, "; "))
 			}
-			lines = fact(lines, "Its number in the browser", x.ID)
+			lines = fact(lines, i18n.T("Its number in the browser"), x.ID)
 			if x.Folder != "" {
 				lines = append(lines, Line{Text, "Folder:"}, Line{Command, x.Folder})
 			}
@@ -248,7 +248,7 @@ func (b *builder) startup() Page {
 			lines = append(lines, Line{Text, news})
 		}
 		if !e.Enabled {
-			lines = append(lines, Line{Text, "This entry is switched off, so it does not start."})
+			lines = append(lines, Line{Text, i18n.T("This entry is switched off, so it does not start.")})
 		}
 		lines = b.said(lines, ref)
 		lines = append(lines, Line{Heading, "Details"})
@@ -272,7 +272,7 @@ func (b *builder) startup() Page {
 			lines = append(lines, Line{Text, "Started through:"}, Line{Command, e.Program.Path})
 		}
 		if works.Path == "" {
-			lines = append(lines, Line{Aside, "LazaScope could not work out which file this entry runs, so it could not check who made it."})
+			lines = append(lines, Line{Aside, i18n.T("LazaScope could not work out which file this entry runs, so it could not check who made it.")})
 		}
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
@@ -306,7 +306,7 @@ func (b *builder) running() Page {
 		}
 		maker, account := p.File.Maker(), p.User
 		if p.File.Path == "" {
-			maker = "Part of Windows itself"
+			maker = i18n.T("Part of Windows itself")
 		}
 		if account == "" {
 			account = "Not known"
@@ -319,7 +319,7 @@ func (b *builder) running() Page {
 			lines = append(lines, Line{Text, news})
 		}
 		if p.Self {
-			lines = append(lines, Line{Text, "This is LazaScope itself, the program you are looking at. It is listed like any other program, but the rules do not judge it."})
+			lines = append(lines, Line{Text, i18n.T("This is LazaScope itself, the program you are looking at. It is listed like any other program, but the rules do not judge it.")})
 		}
 		lines = b.said(lines, refs...)
 		lines = append(lines, Line{Heading, "Details"})
@@ -327,7 +327,7 @@ func (b *builder) running() Page {
 		case p.Parent == 0:
 			lines = fact(lines, "Started by", "Windows itself")
 		case p.ParentGone:
-			lines = fact(lines, "Started by", "a program that has since closed")
+			lines = fact(lines, "Started by", i18n.T("a program that has since closed"))
 		default:
 			lines = fact(lines, "Started by", names[p.Parent]+" (number "+strconv.Itoa(int(p.Parent))+")")
 		}
@@ -341,11 +341,11 @@ func (b *builder) running() Page {
 			lines = append(lines, Line{Text, "Command:"}, Line{Command, p.Command})
 			lines = b.carried(lines, p.Command, p.Said)
 		case p.CommandHidden && p.File.Path != "":
-			lines = append(lines, Line{Aside, "The command that started this program " + model.Withheld(b.s.Elevated, false) + "."})
+			lines = append(lines, Line{Aside, i18n.T("The command that started this program ") + model.Withheld(b.s.Elevated, false) + "."})
 		}
 		lines = b.file(lines, p.File)
 		if p.File.Path == "" {
-			lines = append(lines, Line{Aside, "This is a part of Windows that runs without a program file of its own."})
+			lines = append(lines, Line{Aside, i18n.T("This is a part of Windows that runs without a program file of its own.")})
 		}
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
@@ -387,7 +387,7 @@ func (b *builder) connections() Page {
 			address = c.Names[0] + ":" + strconv.Itoa(c.RemotePort)
 		}
 		if c.Listening {
-			what, address, use = "Waits for connections", c.Protocol+" port "+strconv.Itoa(c.LocalPort), netconn.Service(c.LocalPort)
+			what, address, use = i18n.T("Waits for connections"), c.Protocol+" port "+strconv.Itoa(c.LocalPort), netconn.Service(c.LocalPort)
 			if c.Protocol == "UDP" {
 				what = "Open to receive"
 			}
@@ -410,15 +410,15 @@ func (b *builder) connections() Page {
 			}
 			switch c.Reach {
 			case model.ThisPC:
-				lines = append(lines, Line{Text, "The other end is on this PC itself: two programs here talking to each other."})
+				lines = append(lines, Line{Text, i18n.T("The other end is on this PC itself: two programs here talking to each other.")})
 			case model.LocalNetwork:
-				lines = append(lines, Line{Text, "The other end is on your local network: another device at home or in the office, such as a router or a printer."})
+				lines = append(lines, Line{Text, i18n.T("The other end is on your local network: another device at home or in the office, such as a router or a printer.")})
 			default:
-				lines = append(lines, Line{Text, "The other end is out on the internet."})
+				lines = append(lines, Line{Text, i18n.T("The other end is out on the internet.")})
 			}
 		}
 		if use != "" {
-			lines = append(lines, Line{Text, "That port is normally used for " + use + "."})
+			lines = append(lines, Line{Text, i18n.T("That port is normally used for ") + use + "."})
 		}
 		switch {
 		case c.Listening && c.Reach == model.ThisPC:
@@ -441,7 +441,7 @@ func (b *builder) connections() Page {
 		if c.File.Path == "" {
 			row.Cells[5] = "Not known"
 			if c.PID == 4 {
-				row.Cells[5] = "Part of Windows itself"
+				row.Cells[5] = i18n.T("Part of Windows itself")
 			}
 		}
 		if ref != "" {
@@ -453,14 +453,14 @@ func (b *builder) connections() Page {
 			lines = fact(lines, "The other end", netconn.Join(c.Remote, c.RemotePort))
 			if len(c.Names) > 0 {
 				lines = fact(lines, count(len(c.Names), "Name", "Names")+" looked up for that address", strings.Join(c.Names, ", "))
-				lines = append(lines, Line{Aside, "Windows remembers for a while which name a program asked for and which address came back. This is read from that note. LazaScope made no lookup of its own."})
+				lines = append(lines, Line{Aside, i18n.T("Windows remembers for a while which name a program asked for and which address came back. This is read from that note. LazaScope made no lookup of its own.")})
 			}
 		}
 		lines = fact(lines, "Kind", c.Protocol)
 		if c.PID != 0 {
 			lines = fact(lines, "Process number", strconv.Itoa(int(c.PID)))
 		}
-		lines = fact(lines, "Services inside the program", strings.Join(c.Services, ", "))
+		lines = fact(lines, i18n.T("Services inside the program"), strings.Join(c.Services, ", "))
 		row.Detail = b.file(lines, c.File)
 		page.Rows = append(page.Rows, row)
 	}
@@ -525,34 +525,34 @@ func (b *builder) protection() Page {
 	}
 	antivirus := strings.Join(products, ". ")
 	if antivirus == "" {
-		antivirus = state(g.AntivirusHealth, "Windows Security reports it as good", "Windows Security reports that it needs attention")
+		antivirus = state(g.AntivirusHealth, i18n.T("Windows Security reports it as good"), i18n.T("Windows Security reports that it needs attention"))
 	}
 	if g.AntivirusHealth != model.NotKnown {
-		more = append(more, Line{Text, "Windows Security's own verdict: " + strings.ToLower(state(g.AntivirusHealth, "Good", "Needs attention")) + "."})
+		more = append(more, Line{Text, i18n.T("Windows Security's own verdict: ") + strings.ToLower(state(g.AntivirusHealth, "Good", "Needs attention")) + "."})
 		anyOn = g.AntivirusHealth
 	}
 	add(b.topic("Antivirus", antivirus, anyOn, "Antivirus checks each file as it is opened or downloaded and stops the ones it knows to be harmful. Windows comes with one, Microsoft Defender.", "antivirus", more...))
-	add(b.topic("Defender real-time protection", state(g.RealTime, "On", "Off"), g.RealTime, "Real-time protection is the part of Microsoft Defender that checks files the moment they are opened. With another antivirus installed, Defender steps aside and this is off.", "realtime"))
-	add(b.topic("Defender tamper protection", state(g.Tamper, "On", "Off"), g.Tamper, "Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings.", "tamper"))
+	add(b.topic(i18n.T("Defender real-time protection"), state(g.RealTime, "On", "Off"), g.RealTime, i18n.T("Real-time protection is the part of Microsoft Defender that checks files the moment they are opened. With another antivirus installed, Defender steps aside and this is off."), "realtime"))
+	add(b.topic(i18n.T("Defender tamper protection"), state(g.Tamper, "On", "Off"), g.Tamper, i18n.T("Tamper Protection stops other programs from switching Microsoft Defender off or changing its settings."), "tamper"))
 
 	// What Defender skips.
 	switch {
 	case !g.ExclusionsVisible:
-		unread := "Can only be read with administrator rights"
+		unread := i18n.T("Can only be read with administrator rights")
 		if b.s.Elevated {
 			unread = "Could not be read"
 		}
 		var lines []Line
 		if len(g.LoggedExclusions) > 0 {
-			unread = "Hidden without administrator rights, but Defender's own log shows " + strconv.Itoa(len(g.LoggedExclusions))
-			lines = append(lines, Line{Heading, "What Defender's log shows being added"})
+			unread = i18n.T("Hidden without administrator rights, but Defender's own log shows ") + strconv.Itoa(len(g.LoggedExclusions))
+			lines = append(lines, Line{Heading, i18n.T("What Defender's log shows being added")})
 			for _, e := range g.LoggedExclusions {
 				lines = append(lines, Line{Text, e.Kind + ", added on " + rules.Moment(s, e.When) + ":"}, Line{Command, e.Value})
 			}
 		}
-		add(b.topic("Places Defender skips", unread, model.NotKnown, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe.", "exclusions", lines...))
+		add(b.topic(i18n.T("Places Defender skips"), unread, model.NotKnown, i18n.T("An exclusion tells the antivirus not to look at a folder, a kind of file or a program. Windows hides this list from ordinary programs so that malware cannot read where it would be safe."), "exclusions", lines...))
 	case len(g.Exclusions) == 0:
-		add(b.topic("Places Defender skips", "None", model.Yes, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program.", "exclusions"))
+		add(b.topic(i18n.T("Places Defender skips"), "None", model.Yes, i18n.T("An exclusion tells the antivirus not to look at a folder, a kind of file or a program."), "exclusions"))
 	default:
 		var lines []Line
 		for _, e := range g.Exclusions {
@@ -563,14 +563,14 @@ func (b *builder) protection() Page {
 				}
 			}
 		}
-		add(b.topic("Places Defender skips", count(len(g.Exclusions), "exclusion", "exclusions"), model.Yes, "An exclusion tells the antivirus not to look at a folder, a kind of file or a program.", "exclusions", lines...))
+		add(b.topic(i18n.T("Places Defender skips"), count(len(g.Exclusions), "exclusion", "exclusions"), model.Yes, i18n.T("An exclusion tells the antivirus not to look at a folder, a kind of file or a program."), "exclusions", lines...))
 	}
 
 	// What Defender's own log says it found.
 	if g.HistoryRead {
 		const about = "Microsoft Defender writes down everything it finds and what it did about it. This is that record for the last 90 days. Windows Security shows the same under Protection history."
 		if len(g.Detections) == 0 {
-			add(b.topic("What Defender found lately", "Nothing in the last 90 days", model.Yes, about, "detections"))
+			add(b.topic(i18n.T("What Defender found lately"), i18n.T("Nothing in the last 90 days"), model.Yes, about, "detections"))
 		} else {
 			var lines []Line
 			for i, d := range g.Detections {
@@ -591,7 +591,7 @@ func (b *builder) protection() Page {
 				}
 			}
 			latest := g.Detections[0]
-			add(b.topic("What Defender found lately", count(len(g.Detections), "detection", "detections")+" in the last 90 days, the latest on "+rules.Day(s, latest.When), model.Yes, about, "detections", lines...))
+			add(b.topic(i18n.T("What Defender found lately"), count(len(g.Detections), "detection", "detections")+" in the last 90 days, the latest on "+rules.Day(s, latest.When), model.Yes, about, "detections", lines...))
 		}
 	}
 
@@ -609,11 +609,11 @@ func (b *builder) protection() Page {
 	text := "Not known"
 	switch {
 	case len(offFor) > 0 && len(onFor) > 0:
-		text = "Windows Firewall is on for " + and(onFor) + ", but off for " + and(offFor)
+		text = i18n.T("Windows Firewall is on for ") + and(onFor) + ", but off for " + and(offFor)
 	case len(offFor) > 0:
-		text = "Windows Firewall is off"
+		text = i18n.T("Windows Firewall is off")
 	case len(onFor) > 0:
-		text = "Windows Firewall is on for " + and(onFor)
+		text = i18n.T("Windows Firewall is on for ") + and(onFor)
 		if firewall == model.NotKnown {
 			firewall = model.Yes
 		}
@@ -630,16 +630,16 @@ func (b *builder) protection() Page {
 	case g.UAC == model.No:
 		uac = "Off"
 	case g.UAC == model.Yes && g.UACSilent == model.Yes:
-		uac = "On, but set never to ask"
+		uac = i18n.T("On, but set never to ask")
 	case g.UAC == model.Yes:
-		uac = "On, and asks before giving a program full rights"
+		uac = i18n.T("On, and asks before giving a program full rights")
 	}
-	add(b.topic("User Account Control", uac, good, "User Account Control is the prompt that asks \"Do you want to allow this app to make changes?\" before a program gets full rights over the PC. It is the moment at which a person can say no.", "uac"))
+	add(b.topic(i18n.T("User Account Control"), uac, good, "User Account Control is the prompt that asks \"Do you want to allow this app to make changes?\" before a program gets full rights over the PC. It is the moment at which a person can say no.", "uac"))
 
 	// Updates.
 	updates, updated := "Not known", model.NotKnown
 	if g.UpdateKnown {
-		updates = "Last update installed on " + g.LastUpdate.Format("2 January 2006") + ", " + ago(int(s.Taken.Sub(g.LastUpdate).Hours()/24))
+		updates = i18n.T("Last update installed on ") + g.LastUpdate.Format("2 January 2006") + ", " + ago(int(s.Taken.Sub(g.LastUpdate).Hours()/24))
 		updated = model.Yes
 	}
 	more = nil
@@ -656,7 +656,7 @@ func (b *builder) protection() Page {
 		}
 		add(b.topic("Disk "+v.Drive+" encryption", encrypted, v.Encrypted, "Encryption (BitLocker, or Device encryption) scrambles a disk so that it can only be read after signing in. Without it, anyone who takes the disk can read every file on it.", rules.DiskRef(v.Drive)))
 	}
-	add(b.topic("Secure Boot", state(g.SecureBoot, "On", "Off"), g.SecureBoot, "Secure Boot lets the PC start only software signed by its maker or by Microsoft, which blocks malware that loads before Windows does. A PC made before about 2012 does not have it.", "secureboot"))
+	add(b.topic("Secure Boot", state(g.SecureBoot, "On", "Off"), g.SecureBoot, i18n.T("Secure Boot lets the PC start only software signed by its maker or by Microsoft, which blocks malware that loads before Windows does. A PC made before about 2012 does not have it."), "secureboot"))
 
 	// The hosts file.
 	entries := 0
@@ -678,15 +678,15 @@ func (b *builder) protection() Page {
 	case entries > 0:
 		hosts = count(entries, "entry", "entries")
 	}
-	add(b.topic("Hosts file", hosts, readable, "Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can send a name to any address, or block it.", "hosts", more...))
+	add(b.topic("Hosts file", hosts, readable, i18n.T("Before Windows asks the internet where a website is, it looks in a small text file called hosts. A line there can send a name to any address, or block it."), "hosts", more...))
 
 	// Where the PC's questions go.
-	const names = "Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees the names of the sites this PC looks up, and decides which address each name gets. It is normally the router, which passes the questions on to your internet provider."
+	names := i18n.T("Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees the names of the sites this PC looks up, and decides which address each name gets. It is normally the router, which passes the questions on to your internet provider.")
 	switch {
 	case !g.NameServersRead:
 		add(b.topic("Name servers (DNS)", "Could not be read", model.NotKnown, names, "dns"))
 	case len(g.NameServers) == 0:
-		add(b.topic("Name servers (DNS)", "None: no network connection is up", model.Yes, names, "dns"))
+		add(b.topic("Name servers (DNS)", i18n.T("None: no network connection is up"), model.Yes, names, "dns"))
 	default:
 		var shown []string
 		more = nil
@@ -696,9 +696,9 @@ func (b *builder) protection() Page {
 			case owner != "":
 				whose = owner + ", a public service"
 			case netconn.Reach(server.Address) != model.Internet:
-				whose = "on your own network, usually the router"
+				whose = i18n.T("on your own network, usually the router")
 			}
-			how := "handed out by the network"
+			how := i18n.T("handed out by the network")
 			if server.ByHand {
 				how = "typed in on this PC"
 			}
@@ -709,7 +709,7 @@ func (b *builder) protection() Page {
 	}
 
 	// The go-between for web traffic.
-	const proxy = "A proxy is a go-between that web traffic is handed to and that passes it on. Workplaces use one to filter. Whatever sits in that place can see the traffic that passes through it."
+	proxy := i18n.T("A proxy is a go-between that web traffic is handed to and that passes it on. Workplaces use one to filter. Whatever sits in that place can see the traffic that passes through it.")
 	switch p := g.Proxy; {
 	case !p.Read:
 		add(b.topic("Proxy", "Could not be read", model.NotKnown, proxy, "proxy"))
@@ -737,12 +737,12 @@ func (b *builder) accounts() Page {
 		Unseen:  b.unseen(model.Accounts),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
-	const administrators = "An administrator account can install software and change any setting. Anything that runs under it can ask for those rights too. Fewer administrator accounts mean fewer ways in."
+	administrators := i18n.T("An administrator account can install software and change any setting. Anything that runs under it can ask for those rights too. Fewer administrator accounts mean fewer ways in.")
 	if !g.AdminsVisible {
-		add(b.topic("Administrator accounts", "Could not be read", model.NotKnown, administrators, ""))
+		add(b.topic(i18n.T("Administrator accounts"), "Could not be read", model.NotKnown, administrators, ""))
 	}
 	for _, a := range g.Admins {
-		what, how := "Administrator account", a.Name
+		what, how := i18n.T("Administrator account"), a.Name
 		switch {
 		case a.Group:
 			what, how = "Administrator group", a.Name+", a group: every account in it is an administrator"
@@ -764,14 +764,14 @@ func (b *builder) accounts() Page {
 	add(b.topic("Automatic sign-in", sign, invert(g.AutoSignIn), "Automatic sign-in skips the password when the PC starts, so whoever switches it on is in.", "autosignin"))
 	remote := state(g.RemoteDesktop, "On", "Off")
 	if g.RemoteDesktop == model.Yes && g.RemoteNLA == model.No {
-		remote = "On, and it shows the sign-in screen before asking for a password"
+		remote = i18n.T("On, and it shows the sign-in screen before asking for a password")
 	}
 	add(b.topic("Remote Desktop", remote, invert(g.RemoteDesktop), "Remote Desktop is built into Windows. It lets someone sign in to this PC from another device and use it as if they sat in front of it. It is off unless someone switches it on.", "rdp"))
 
-	const remoteTools = "Remote-control programs let someone else see the screen and use the mouse and keyboard over the internet. They are honest tools, and also the first thing a fake support caller asks for."
+	remoteTools := i18n.T("Remote-control programs let someone else see the screen and use the mouse and keyboard over the internet. They are honest tools, and also the first thing a fake support caller asks for.")
 	tools := rules.RemoteTools(b.s)
 	if len(tools) == 0 {
-		add(b.topic("Remote-control software", "None of the programs LazaScope knows by name was found", model.Yes, remoteTools, ""))
+		add(b.topic(i18n.T("Remote-control software"), i18n.T("None of the programs LazaScope knows by name was found"), model.Yes, remoteTools, ""))
 	}
 	for _, tool := range tools {
 		var how []string
@@ -788,7 +788,7 @@ func (b *builder) accounts() Page {
 		for _, evidence := range tool.Evidence {
 			lines = append(lines, Line{Text, evidence})
 		}
-		add(b.topic("Remote-control software", tool.Name+": "+strings.Join(how, ", "), model.Yes, remoteTools, rules.RemoteRef(tool.Name), lines...))
+		add(b.topic(i18n.T("Remote-control software"), tool.Name+": "+strings.Join(how, ", "), model.Yes, remoteTools, rules.RemoteRef(tool.Name), lines...))
 	}
 	return page
 }
@@ -829,8 +829,8 @@ func (b *builder) worth() Page {
 					row.Path = fact.Value
 				}
 				if print := b.s.Fingerprint(fact.Value); print != "" {
-					lines = append(lines, Line{Text, "Fingerprint of that file (SHA-256):"}, Line{Command, print},
-						Line{Aside, "A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere."})
+					lines = append(lines, Line{Text, i18n.T("Fingerprint of that file (SHA-256):")}, Line{Command, print},
+						Line{Aside, i18n.T("A fingerprint is a long number worked out from every byte of a file. Two files with the same fingerprint are the same file, so it can be looked up without sending the file anywhere.")})
 				}
 			default:
 				lines = append(lines, Line{Text, fact.Label + ": " + fact.Value})
@@ -838,7 +838,7 @@ func (b *builder) worth() Page {
 		}
 		lines = append(lines, Line{Aside, "Rule: " + f.Rule})
 		if attack := rules.Attack(f.Attack); attack != "" {
-			lines = append(lines, Line{Aside, "MITRE ATT&CK, the public catalogue of attackers' methods (version " + rules.AttackVersion + "): " + attack})
+			lines = append(lines, Line{Aside, i18n.T("MITRE ATT&CK, the public catalogue of attackers' methods (version ") + rules.AttackVersion + "): " + attack})
 		}
 		row.Detail = lines
 		page.Rows = append(page.Rows, row)
@@ -1000,20 +1000,18 @@ func (b *builder) health() Page {
 		Unseen:  b.unseen(model.Health),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
-	const (
-		hardware = "Processors, memory and other parts check themselves as they work. Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none."
-		crashes  = "A blue screen is Windows stopping itself because carrying on could damage data. Windows notes the stop code of each one, which says in what way it went wrong."
-		stops    = "Each time the PC goes off without shutting down, and without a blue screen, Windows notes it at the next start: a power cut, an empty battery, a freeze ended with the power button, or overheating."
-		disk     = "A disk that can no longer read part of itself, or whose filing system is damaged, reports it here before it fails outright."
-		wiped    = "The logs are where Windows writes down what happened on the PC. This row says whether one of them was cleared, which also removes whatever LazaScope would have read from it."
-		room     = "Windows needs free room on its own disk for updates and for its working files."
-	)
+	hardware := i18n.T("Processors, memory and other parts check themselves as they work. Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none.")
+	crashes := i18n.T("A blue screen is Windows stopping itself because carrying on could damage data. Windows notes the stop code of each one, which says in what way it went wrong.")
+	stops := i18n.T("Each time the PC goes off without shutting down, and without a blue screen, Windows notes it at the next start: a power cut, an empty battery, a freeze ended with the power button, or overheating.")
+	disk := i18n.T("A disk that can no longer read part of itself, or whose filing system is damaged, reports it here before it fails outright.")
+	wiped := i18n.T("The logs are where Windows writes down what happened on the PC. This row says whether one of them was cleared, which also removes whatever LazaScope would have read from it.")
+	room := i18n.T("Windows needs free room on its own disk for updates and for its working files.")
 	if !c.Read {
 		for _, row := range []struct{ what, about, ref string }{{"Hardware errors", hardware, "hardware"}, {"Blue-screen crashes", crashes, "crashes"}, {"Disk faults", disk, "disk"}, {"Windows logs", wiped, "wiped"}} {
 			add(b.topic(row.what, "Could not be read", model.NotKnown, row.about, row.ref))
 		}
 	} else {
-		none := "None in the last 90 days"
+		none := i18n.T("None in the last 90 days")
 		latest := func(n int, one, many string, when time.Time) string {
 			return count(n, one, many) + " in the last 90 days, the latest on " + rules.Day(s, when)
 		}
@@ -1051,16 +1049,16 @@ func (b *builder) health() Page {
 		}
 		// Going off without a shutdown.
 		if len(c.PowerCuts) == 0 {
-			add(b.topic("Stops without a shutdown", none, model.Yes, stops, "stops"))
+			add(b.topic(i18n.T("Stops without a shutdown"), none, model.Yes, stops, "stops"))
 		} else {
 			var lines []Line
 			for i, when := range c.PowerCuts {
 				if i >= 60 {
 					break
 				}
-				lines = append(lines, Line{Text, "Noticed when Windows started on " + rules.Moment(s, when) + "."})
+				lines = append(lines, Line{Text, i18n.T("Noticed when Windows started on ") + rules.Moment(s, when) + "."})
 			}
-			add(b.topic("Stops without a shutdown", latest(len(c.PowerCuts), "stop", "stops", c.PowerCuts[0]), model.Yes, stops, "stops", lines...))
+			add(b.topic(i18n.T("Stops without a shutdown"), latest(len(c.PowerCuts), "stop", "stops", c.PowerCuts[0]), model.Yes, stops, "stops", lines...))
 		}
 		// Disks.
 		var lines []Line
@@ -1079,7 +1077,7 @@ func (b *builder) health() Page {
 		}
 		// Cleared logs.
 		if len(c.Wiped) == 0 {
-			add(b.topic("Windows logs", "None was cleared in the last 90 days", model.Yes, wiped, "wiped"))
+			add(b.topic("Windows logs", i18n.T("None was cleared in the last 90 days"), model.Yes, wiped, "wiped"))
 		} else {
 			var lines []Line
 			for _, wipe := range c.Wiped {
