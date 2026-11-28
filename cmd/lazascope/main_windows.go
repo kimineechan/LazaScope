@@ -327,7 +327,7 @@ func main() {
 	w.Grip(100)
 	w.Frame()
 	w.Title("LazaScope", left, 24, 430, 40)
-	w.Quiet("What starts. What runs. What is worth a second look.", left+1, 66, 880, 22)
+	w.Quiet(i18n.T("What starts. What runs. What is worth a second look."), left+1, 66, 880, 22)
 	w.Strip(left, 104, across, 44)
 	var nav []*winui.Control
 	x := left + 4
@@ -341,7 +341,7 @@ func main() {
 	// The search box and analyst mode work on every list, and VirusTotal has
 	// a page of its own; all three can be reached from every page.
 	searchBox := w.Input("", left+345, 32, 285, 36, nil)
-	searchBox.Hint("Search the lists, or type ? for help")
+	searchBox.Hint(i18n.T("Search the lists, or type ? for help"))
 	analyst := w.Switch("Analyst mode", left+642, 32, 160, 36, nil)
 	w.Button(i18n.T("Wallets..."), left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
 	w.Button(i18n.T("VirusTotal..."), left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
@@ -684,7 +684,7 @@ func main() {
 			verdicts[area].Tint(colour)
 			facts[area].SetText(glance.Facts)
 		}
-		note := "LazaScope read this PC and changed nothing. It is not an antivirus: it shows what is there and what is unusual, and leaves the judging to you. Worth a look does not mean harmful."
+		note := i18n.T("LazaScope read this PC and changed nothing. It is not an antivirus: it shows what is there and what is unusual, and leaves the judging to you. Worth a look does not mean harmful.")
 		if unseen := len(b.Worth.Unseen); unseen > 0 && !b.Snapshot.Elevated {
 			note += fmt.Sprintf("\r\nWithout administrator rights, %d things could not be read. They are listed under 08 Worth a look.", unseen)
 		}
@@ -754,7 +754,7 @@ func main() {
 				show(b)
 				text := fmt.Sprintf("Looked at this PC in %.1f seconds. Nothing was changed. All work stays on this computer.", s.Took.Seconds())
 				if demo {
-					text = "This is a made-up PC, to show what findings look like. Start LazaScope without --demo to look at this one."
+					text = i18n.T("This is a made-up PC, to show what findings look like. Start LazaScope without --demo to look at this one.")
 				}
 				status.SetText(text)
 				vt.afterLook(b)

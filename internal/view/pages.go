@@ -904,13 +904,13 @@ func (b *builder) facts(area model.Area) string {
 				off++
 			}
 		}
-		text := count(all, "thing is set to start by itself", "things are set to start by themselves")
+		text := count(all, i18n.T("thing is set to start by itself"), i18n.T("things are set to start by themselves"))
 		if off > 0 {
-			text += ", " + strconv.Itoa(off) + " of them switched off"
+			text += ", " + strconv.Itoa(off) + i18n.T(" of them switched off")
 		}
-		text += ". " + count(other, "is", "are") + " not part of Windows."
+		text += ". " + count(other, i18n.T("is"), i18n.T("are")) + i18n.T(" not part of Windows.")
 		if extensions > 0 {
-			text += " " + count(extensions, "browser extension", "browser extensions") + "."
+			text += " " + count(extensions, i18n.T("browser extension"), i18n.T("browser extensions")) + "."
 		}
 		return text
 	case model.RunningNow:
@@ -923,7 +923,7 @@ func (b *builder) facts(area model.Area) string {
 				other++
 			}
 		}
-		return count(len(s.Processes), "program is", "programs are") + " running. " + count(other, "of them is", "of them are") + " not part of Windows."
+		return count(len(s.Processes), i18n.T("program is"), i18n.T("programs are")) + i18n.T(" running. ") + count(other, i18n.T("of them is"), i18n.T("of them are")) + i18n.T(" not part of Windows.")
 	case model.Connections:
 		if len(s.Connections) == 0 {
 			return ""
@@ -937,7 +937,7 @@ func (b *builder) facts(area model.Area) string {
 				waiting[strconv.Itoa(int(c.PID))] = true
 			}
 		}
-		return count(out, "connection", "connections") + " to the internet. " + count(len(waiting), "program waits", "programs wait") + " for connections from the network."
+		return count(out, i18n.T("connection"), i18n.T("connections")) + i18n.T(" to the internet. ") + count(len(waiting), i18n.T("program waits"), i18n.T("programs wait")) + i18n.T(" for connections from the network.")
 	case model.Accounts:
 		var parts []string
 		if g.AdminsVisible {
@@ -947,15 +947,15 @@ func (b *builder) facts(area model.Area) string {
 					active++
 				}
 			}
-			parts = append(parts, count(active, "administrator account", "administrator accounts")+" in use")
+			parts = append(parts, count(active, i18n.T("administrator account"), i18n.T("administrator accounts"))+i18n.T(" in use"))
 		}
 		if g.RemoteDesktop != model.NotKnown {
-			parts = append(parts, "Remote Desktop "+strings.ToLower(state(g.RemoteDesktop, "On", "Off")))
+			parts = append(parts, i18n.T("Remote Desktop ")+strings.ToLower(state(g.RemoteDesktop, i18n.T("On"), i18n.T("Off"))))
 		}
 		if tools := rules.RemoteTools(s); len(tools) > 0 {
-			parts = append(parts, count(len(tools), "remote-control program", "remote-control programs"))
+			parts = append(parts, count(len(tools), i18n.T("remote-control program"), i18n.T("remote-control programs")))
 		} else if len(s.Processes) > 0 {
-			parts = append(parts, "No remote-control software found")
+			parts = append(parts, i18n.T("No remote-control software found"))
 		}
 		if len(parts) == 0 {
 			return ""
@@ -967,18 +967,18 @@ func (b *builder) facts(area model.Area) string {
 		if c.Read {
 			switch {
 			case len(c.Hardware) == 0 && len(c.Crashes) == 0:
-				parts = append(parts, "No hardware errors and no blue screens in the last 90 days")
+				parts = append(parts, i18n.T("No hardware errors and no blue screens in the last 90 days"))
 			case len(c.Hardware) == 0:
-				parts = append(parts, count(len(c.Crashes), "blue screen", "blue screens")+" in the last 90 days, and no hardware errors")
+				parts = append(parts, count(len(c.Crashes), i18n.T("blue screen"), i18n.T("blue screens"))+i18n.T(" in the last 90 days, and no hardware errors"))
 			case len(c.Crashes) == 0:
-				parts = append(parts, count(len(c.Hardware), "hardware error", "hardware errors")+" in the last 90 days, and no blue screens")
+				parts = append(parts, count(len(c.Hardware), i18n.T("hardware error"), i18n.T("hardware errors"))+i18n.T(" in the last 90 days, and no blue screens"))
 			default:
-				parts = append(parts, count(len(c.Hardware), "hardware error", "hardware errors")+" and "+count(len(c.Crashes), "blue screen", "blue screens")+" in the last 90 days")
+				parts = append(parts, count(len(c.Hardware), i18n.T("hardware error"), i18n.T("hardware errors"))+i18n.T(" and ")+count(len(c.Crashes), i18n.T("blue screen"), i18n.T("blue screens"))+i18n.T(" in the last 90 days"))
 			}
 		}
 		for _, drive := range c.Drives {
 			if strings.HasPrefix(strings.ToUpper(s.Folders.Windows), strings.ToUpper(drive.Letter)) {
-				parts = append(parts, drive.Letter+" has "+rules.Size(drive.Free)+" free")
+				parts = append(parts, drive.Letter+i18n.T(" has ")+rules.Size(drive.Free)+i18n.T(" free"))
 			}
 		}
 		if len(parts) == 0 {
