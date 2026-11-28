@@ -202,7 +202,7 @@ func (l *list) fill() {
 	}
 	switch {
 	case len(l.page.Rows) == 0:
-		l.count.SetText("Nothing to show.")
+		l.count.SetText(i18n.T("Nothing to show."))
 	case !search.Empty():
 		l.count.SetText(fmt.Sprintf("%d of %d match the search.", len(l.shown), len(l.page.Rows)))
 	case len(l.shown) == len(l.page.Rows):
@@ -215,21 +215,21 @@ func (l *list) fill() {
 	lines := []view.Line{{Style: view.Heading, Text: l.page.Title}, {Style: view.Text, Text: "Select a row to read what it is and why it is there."}}
 	switch {
 	case l.page.Name == "Worth a look" && len(l.page.Rows) == 0:
-		lines[1].Text = "Nothing on this PC stood out to the rules. That is not a promise that nothing is wrong: LazaScope only knows the signs it was taught."
+		lines[1].Text = i18n.T("Nothing on this PC stood out to the rules. That is not a promise that nothing is wrong: LazaScope only knows the signs it was taught.")
 	case len(l.page.Rows) == 0 && len(l.page.Unseen) > 0:
 		// An empty list is not a clean one when the reading failed.
 		lines[1].Text = "This list is empty because it could not be read, not because there is nothing there."
 	case len(l.page.Rows) == 0:
 		lines[1].Text = "Windows reported nothing for this list."
 	case len(l.shown) == 0 && !search.Empty():
-		lines[1].Text = "Nothing in this list matches the search. Clear the search box at the top to see the whole list."
+		lines[1].Text = i18n.T("Nothing in this list matches the search. Clear the search box at the top to see the whole list.")
 	case len(l.shown) == 0:
 		if none == "" {
-			none = "Nothing in this list matches the view chosen above."
+			none = i18n.T("Nothing in this list matches the view chosen above.")
 		}
 		if name == whatIsNew && l.page.Compared {
 			// Something was compared, and it showed nothing new here.
-			none = "Nothing in this list is new, or came and went, in what was compared."
+			none = i18n.T("Nothing in this list is new, or came and went, in what was compared.")
 		}
 		lines[1].Text = none + " Choose another view above to see the rest of the list."
 	}
@@ -346,7 +346,7 @@ func main() {
 	w.Button(i18n.T("Wallets..."), left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
 	w.Button(i18n.T("VirusTotal..."), left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
-	status := w.Quiet("Ready. All work stays on this computer.", left, 730, across, 24)
+	status := w.Quiet(i18n.T("Ready. All work stays on this computer."), left, 730, across, 24)
 
 	var book *view.Book
 	var jobs []*winui.Control // what cannot be used while a look is being taken
@@ -411,11 +411,11 @@ func main() {
 			}
 			if !w.Ask(title, "Look this file up on VirusTotal?\r\n\r\n"+path+"\r\n\r\nVirusTotal is a website, owned by Google, that shows what about 70 antivirus products say about a file. Your web browser will open its page for this file's fingerprint:\r\n\r\n"+print+
 				"\r\n\r\nOnly the fingerprint is sent, and it is your browser that sends it. The file itself stays on this PC. If VirusTotal has never seen the file, it says so. That is common for new and home-made programs, and is not a bad sign in itself.\r\n\r\nTo see VirusTotal's answer here in LazaScope instead, set up a free key with the VirusTotal... button at the top right.\r\n\r\nOpen the page now?") {
-				status.SetText("Nothing was sent. The fingerprint is shown with the file's details, and Copy details copies it.")
+				status.SetText(i18n.T("Nothing was sent. The fingerprint is shown with the file's details, and Copy details copies it."))
 				return
 			}
 			if w.Browse(address) {
-				status.SetText("Opened VirusTotal's page for the file in your browser. Only the file's fingerprint was sent.")
+				status.SetText(i18n.T("Opened VirusTotal's page for the file in your browser. Only the file's fingerprint was sent."))
 			} else {
 				w.Alert(title, "Windows could not open your browser. You can type this address into it yourself:\r\n\r\n"+address)
 			}
@@ -501,14 +501,14 @@ func main() {
 	addList(pageProtection, false, nil)
 	var (
 		allWindows = i18n.T("Everything in this list is a part of Windows.")
-		noneWorth  = "Nothing in this list was flagged by the rules."
-		nothingNew = "Nothing in this list is marked as new. A look on its own has nothing to compare with: on the Overview, use Watch for a minute or Compare with a report first."
+		noneWorth  = i18n.T("Nothing in this list was flagged by the rules.")
+		nothingNew = i18n.T("Nothing in this list is marked as new. A look on its own has nothing to compare with: on the Overview, use Watch for a minute or Compare with a report first.")
 	)
 	isNew := func(row view.Row) bool { return row.Fresh }
 	addList(pageStartup, true, []filter{
 		{i18n.T(notWindowsName), notWindows, allWindows},
 		{"Everything", everything, ""},
-		{"Only what is worth a look", flagged, noneWorth},
+		{i18n.T("Only what is worth a look"), flagged, noneWorth},
 		{"Only what is switched on", func(row view.Row) bool { return !row.Off }, i18n.T("Everything in this list is switched off.")},
 		{i18n.T("Browser extensions"), func(row view.Row) bool { return row.Group == "extension" }, "No extension was found in the browsers LazaScope knows: Chrome, Edge, Firefox, Brave, Vivaldi and Opera."},
 		{whatIsNew, isNew, nothingNew},
@@ -516,7 +516,7 @@ func main() {
 	addList(pageRunning, true, []filter{
 		{i18n.T("Everything, as a family tree"), everything, ""},
 		{i18n.T(notWindowsName), notWindows, allWindows},
-		{"Only what is worth a look", flagged, noneWorth},
+		{i18n.T("Only what is worth a look"), flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
 	addList(pageConnections, true, []filter{
@@ -524,7 +524,7 @@ func main() {
 		{i18n.T("Connections to the internet"), func(row view.Row) bool { return row.Group == "internet" }, "No program is connected to the internet at the moment."},
 		{"Ports open to the network", func(row view.Row) bool { return row.Group == "waits" }, i18n.T("No program is waiting for connections from the network.")},
 		{i18n.T(notWindowsName), notWindows, allWindows},
-		{"Only what is worth a look", flagged, noneWorth},
+		{i18n.T("Only what is worth a look"), flagged, noneWorth},
 		{whatIsNew, isNew, nothingNew},
 	})
 	within := func(hours int) func(view.Row) bool {
@@ -534,10 +534,10 @@ func main() {
 	}
 	addList(pageTimeline, true, []filter{
 		{i18n.T("Everything, newest first"), everything, ""},
-		{"The last 24 hours", within(24), "Nothing LazaScope can date happened in the last 24 hours."},
-		{"The last 7 days", within(7 * 24), "Nothing LazaScope can date happened in the last 7 days."},
-		{"The last 30 days", within(30 * 24), "Nothing LazaScope can date happened in the last 30 days."},
-		{"Only what is worth a look", flagged, noneWorth},
+		{"The last 24 hours", within(24), i18n.T("Nothing LazaScope can date happened in the last 24 hours.")},
+		{"The last 7 days", within(7 * 24), i18n.T("Nothing LazaScope can date happened in the last 7 days.")},
+		{"The last 30 days", within(30 * 24), i18n.T("Nothing LazaScope can date happened in the last 30 days.")},
+		{i18n.T("Only what is worth a look"), flagged, noneWorth},
 	})
 	addList(pageDefences, false, nil)
 	addList(pageDevices, true, nil)
@@ -547,7 +547,7 @@ func main() {
 	// The ATT&CK techniques the findings may be traces of, as a layer for
 	// MITRE's ATT&CK Navigator.
 	layerButton := w.Button(i18n.T("Save ATT&CK layer..."), left+across-634, 250, 200, 34, func() {
-		const title = "Save for the ATT&CK Navigator"
+		title := i18n.T("Save for the ATT&CK Navigator")
 		if book == nil || busy {
 			return
 		}
@@ -692,7 +692,7 @@ func main() {
 		// With the rights already held there is nothing more to ask for, and
 		// the button says so.
 		if b.Snapshot.Elevated {
-			raise.SetText("Running as administrator")
+			raise.SetText(i18n.T("Running as administrator"))
 		}
 		raise.Enable(!b.Snapshot.Elevated && !demo)
 		lay(b, false)
@@ -908,9 +908,9 @@ func main() {
 		}
 		b := book
 		name := fmt.Sprintf("LazaScope report %s %s.html", b.Snapshot.Computer, b.Snapshot.Taken.Format("2006-01-02"))
-		path, err := w.FileDialog("Save the report", reportFilter, "html", name, true)
+		path, err := w.FileDialog(i18n.T("Save the report"), reportFilter, "html", name, true)
 		if err != nil {
-			w.Alert("Save the report", err.Error())
+			w.Alert(i18n.T("Save the report"), err.Error())
 			return
 		}
 		if path == "" {
@@ -918,15 +918,15 @@ func main() {
 		}
 		content, err := report.Render(b, lazascope.Version(), path)
 		if err != nil {
-			w.Alert("Save the report", sentence(err)+" Choose one of the three kinds in the list at the foot of the Save window.")
+			w.Alert(i18n.T("Save the report"), sentence(err)+" Choose one of the three kinds in the list at the foot of the Save window.")
 			return
 		}
 		if err := os.WriteFile(path, content, 0600); err != nil {
-			w.Alert("Save the report", "The report could not be saved: "+sentence(err))
+			w.Alert(i18n.T("Save the report"), "The report could not be saved: "+sentence(err))
 			return
 		}
 		status.SetText("Saved " + path)
-		w.Info("Report saved", "The report names this PC, your account, the programs you run and the addresses they talk to. Read it before you send it to anyone.")
+		w.Info(i18n.T("Report saved"), "The report names this PC, your account, the programs you run and the addresses they talk to. Read it before you send it to anyone.")
 	})
 
 	w.ShowPage(pageOverview)

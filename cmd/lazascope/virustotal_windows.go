@@ -79,7 +79,7 @@ func newVirusTotal(w *winui.Window, status *winui.Control, demo bool, prints map
 	v.afterEach = w.Switch(i18n.T("Also after each look"), left+232, 294, 250, 34, v.switchAfterEach)
 	v.afterEach.Turn(v.memory.AfterEachLook())
 	count := w.Caption("", left+494, 294, across-494-240, 34)
-	w.Button("Open VirusTotal's page", left+across-228, 294, 228, 34, v.openPage)
+	w.Button(i18n.T("Open VirusTotal's page"), left+across-228, 294, 228, 34, v.openPage)
 	l := &list{picked: -1, prints: prints, memory: v.memory, count: count}
 	l.table = w.Table(left, 338, across, 198, []winui.Column{{Title: ""}}, func(row int) { l.pick(row) })
 	l.detail = w.Reader(left, 544, across, 168)
@@ -142,7 +142,7 @@ func (v *vtPanel) explain() {
 		{Style: view.Text, Text: "2. Open your account's menu at the top right of VirusTotal's website and choose API key. Copy the key."},
 		{Style: view.Text, Text: "3. Click in the box above, press Ctrl + V to paste the key, and choose Save key."},
 		{Style: view.Heading, Text: "What is sent, and when"},
-		{Style: view.Text, Text: "Nothing, until you choose Ask VirusTotal now or Look up file..., or switch on Also after each look. Each lookup then sends VirusTotal a file's fingerprint and your key, never the file itself. VirusTotal learns that your account asked about that file."},
+		{Style: view.Text, Text: i18n.T("Nothing, until you choose Ask VirusTotal now or Look up file..., or switch on Also after each look. Each lookup then sends VirusTotal a file's fingerprint and your key, never the file itself. VirusTotal learns that your account asked about that file.")},
 		{Style: view.Text, Text: i18n.T("A free key may make 4 lookups a minute and 500 a day, for personal use that is not commercial. LazaScope keeps to that pace, and remembers each answer for a week so as not to ask twice.")},
 		{Style: view.Heading, Text: "Where the key is kept"},
 		{Style: view.Text, Text: i18n.T("In LazaScope's folder inside your own AppData folder, sealed by Windows so that only your Windows account on this PC can open it. Forget removes it, with everything VirusTotal said.")},
@@ -155,7 +155,7 @@ func (v *vtPanel) explain() {
 
 // saveKey checks the key typed in the box with VirusTotal, and keeps it.
 func (v *vtPanel) saveKey() {
-	const title = "Save the VirusTotal key"
+	title := i18n.T("Save the VirusTotal key")
 	if v.demo {
 		v.w.Info(title, "This is the made-up PC. Start LazaScope without --demo to set up VirusTotal.")
 		return
@@ -238,7 +238,7 @@ func (v *vtPanel) switchAfterEach() {
 	on := v.afterEach.On()
 	if on && v.client == nil {
 		v.afterEach.Turn(false)
-		v.w.Info(i18n.T("Ask after each look"), "Save a VirusTotal key first. The steps are in the box below.")
+		v.w.Info(i18n.T("Ask after each look"), i18n.T("Save a VirusTotal key first. The steps are in the box below."))
 		return
 	}
 	v.memory.SetAfterEachLook(on)
@@ -263,7 +263,7 @@ func (v *vtPanel) score() {
 		v.w.Info(title, "This is the made-up PC, and its answers are made up. On your own PC, this asks VirusTotal about the programs listed here.")
 		return
 	case v.client == nil:
-		v.w.Info(title, "Save a VirusTotal key first. The steps are in the box below.")
+		v.w.Info(title, i18n.T("Save a VirusTotal key first. The steps are in the box below."))
 		v.explain()
 		return
 	}
@@ -406,7 +406,7 @@ func (v *vtPanel) rejudge() {
 
 // openPage offers to open VirusTotal's page for the file chosen in the list.
 func (v *vtPanel) openPage() {
-	const title = "Open VirusTotal's page"
+	title := i18n.T("Open VirusTotal's page")
 	l := v.list
 	if l.picked < 0 || l.picked >= len(l.shown) {
 		v.w.Info(title, "Select a row first.")
@@ -435,13 +435,13 @@ func (v *vtPanel) offer(path, print string) {
 	if r, ok := v.memory.Answer(print); ok {
 		said = "VirusTotal says: " + rules.VirusTotalSays(r) + ".\r\n\r\n"
 	}
-	if !v.w.Ask("Open VirusTotal's page", said+"Open VirusTotal's page for this file in your browser?\r\n\r\n"+path+"\r\n\r\nYour browser sends VirusTotal the fingerprint, as part of the page's address:\r\n\r\n"+print+"\r\n\r\nThe file itself stays on this PC.") {
+	if !v.w.Ask(i18n.T("Open VirusTotal's page"), said+"Open VirusTotal's page for this file in your browser?\r\n\r\n"+path+"\r\n\r\nYour browser sends VirusTotal the fingerprint, as part of the page's address:\r\n\r\n"+print+"\r\n\r\nThe file itself stays on this PC.") {
 		return
 	}
 	if v.w.Browse(address) {
-		v.status.SetText("Opened VirusTotal's page for the file in your browser. Only its fingerprint was sent.")
+		v.status.SetText(i18n.T("Opened VirusTotal's page for the file in your browser. Only its fingerprint was sent."))
 	} else {
-		v.w.Alert("Open VirusTotal's page", "Windows could not open your browser. You can type this address into it yourself:\r\n\r\n"+address)
+		v.w.Alert(i18n.T("Open VirusTotal's page"), "Windows could not open your browser. You can type this address into it yourself:\r\n\r\n"+address)
 	}
 }
 

@@ -36,7 +36,7 @@ func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	p.button = w.Button("Start watching", left, 250, 180, 34, p.toggle)
 	p.button.Lead(true)
 	p.choice = w.Choice([]string{i18n.T("Every program"), "Only what set off a detection"}, left+192, 250, 300, 34, p.refill)
-	count := w.Caption("Not watching.", left+504, 250, across-504-148, 34)
+	count := w.Caption(i18n.T("Not watching."), left+504, 250, across-504-148, 34)
 	w.Button(i18n.T("Copy details"), left+across-136, 250, 136, 34, func() {
 		if w.Copy(p.list.detail.Words()) {
 			status.SetText(i18n.T("Copied the details shown below the list."))
@@ -88,7 +88,7 @@ func (p *livePanel) refill() {
 func (p *livePanel) counts() {
 	state := "Watching."
 	if !p.started {
-		state = "Not watching."
+		state = i18n.T("Not watching.")
 	}
 	p.list.count.SetText(fmt.Sprintf("%s %d programs started, %d set off a detection.", state, len(p.rows), p.alerts))
 }
