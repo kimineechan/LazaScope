@@ -8,6 +8,7 @@
 package view
 
 import (
+	"lazascope/internal/i18n"
 	"fmt"
 	"sort"
 	"strconv"
@@ -306,21 +307,21 @@ func verdict(light rules.Light, findings []rules.Finding, area model.Area) strin
 	high, medium, low := rules.Count(findings, area)
 	var parts []string
 	if high > 0 {
-		parts = append(parts, strconv.Itoa(high)+" to look at first")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d to look at first"), high))
 	}
 	if medium > 0 {
-		parts = append(parts, strconv.Itoa(medium)+" worth a look")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d worth a look"), medium))
 	}
 	if low > 0 {
-		parts = append(parts, strconv.Itoa(low)+" good to know")
+		parts = append(parts, fmt.Sprintf(i18n.T("%d good to know"), low))
 	}
 	switch {
 	case light == rules.Grey:
 		return "Could not be read"
 	case high == 0 && medium == 0 && low == 0:
-		return "Nothing stands out"
+		return i18n.T("Nothing stands out")
 	case high == 0 && medium == 0:
-		return "Nothing stands out (" + parts[0] + ")"
+		return i18n.T("Nothing stands out") + " (" + parts[0] + ")"
 	}
 	return strings.Join(parts, ", ")
 }

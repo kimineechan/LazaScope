@@ -354,7 +354,7 @@ func main() {
 
 	// 01  Overview
 	w.Page(pageOverview)
-	w.Heading("This PC at a glance", left, 166, across, 30)
+	w.Heading(i18n.T("This PC at a glance"), left, 166, across, 30)
 	summary := w.Label("LazaScope is looking at this PC. It reads, and changes nothing.", left, 200, across, 42)
 	w.Panel(left, 250, across, 266)
 	var lamps, verdicts, facts [model.Areas]*winui.Control
