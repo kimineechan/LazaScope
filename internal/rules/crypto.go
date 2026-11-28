@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"lazascope/internal/i18n"
 	"strconv"
 	"strings"
 
@@ -34,7 +35,7 @@ func listed(words []string) string {
 var cryptoRules = []Rule{
 	{
 		ID: "extension-fake-wallet", Area: model.StartsWithWindows, Severity: High,
-		Title: "An extension takes a wallet's name, but is not that wallet",
+		Title: i18n.T("An extension takes a wallet's name, but is not that wallet"),
 		Why:   "Fake wallet extensions copy a real wallet's name and look, then send the recovery phrase typed into them to a thief. An extension's number tells them apart: the makers of a wallet publish the number of the real one.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
@@ -61,7 +62,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "wallet-program-unsigned", Area: model.RunningNow, Severity: Medium,
-		Title: "A wallet program carries no working signature from its maker",
+		Title: i18n.T("A wallet program carries no working signature from its maker"),
 		Why:   "Fake copies of wallet programs are a common way to steal coins. Most makers sign their wallet programs, so a missing or broken signature is a reason to check where this one came from.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
@@ -84,7 +85,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "wallet-files-synced", Area: model.Protection, Severity: Medium, Topic: "wallets",
-		Title: "Wallet files are copied to a cloud service",
+		Title: i18n.T("Wallet files are copied to a cloud service"),
 		Why:   "Wallet files can hold the keys to coins. In a folder that a cloud service copies, they are also wherever that account is: anyone who gets into the account gets a copy.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, w := range s.Wallets {
@@ -101,7 +102,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "wallet-files-unencrypted", Area: model.Protection, Severity: Low, Topic: "wallets",
-		Title: "Wallet files are on a disk that is not encrypted",
+		Title: i18n.T("Wallet files are on a disk that is not encrypted"),
 		Why:   "Without encryption, anyone who takes the PC or its disk can copy every file on it, wallet files included.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			open := map[string]bool{}
@@ -130,7 +131,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "clipboard-history-wallets", Area: model.Protection, Severity: Low, Topic: "clipboard",
-		Title: "Windows keeps a history of what is copied, on a PC with a wallet",
+		Title: i18n.T("Windows keeps a history of what is copied, on a PC with a wallet"),
 		Why:   "With clipboard history on, whatever is copied stays in a list that anyone at the PC can open with Windows key + V. A copied recovery phrase or private key stays there too.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Clipboard.History != model.Yes {
@@ -160,7 +161,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "hosts-crypto-redirect", Area: model.Protection, Severity: High, Topic: "hosts",
-		Title: "The hosts file sends a cryptocurrency site somewhere else",
+		Title: i18n.T("The hosts file sends a cryptocurrency site somewhere else"),
 		Why:   "A line in the hosts file decides where a website's name leads on this PC. Pointing a wallet's or an exchange's own name at another address lets a fake copy of the site show the real name in the address bar.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, entry := range s.Guard.Hosts {
@@ -178,7 +179,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "crypto-lookalike-site", Area: model.Connections, Severity: Medium,
-		Title: "A program talked to a site named like a cryptocurrency service",
+		Title: i18n.T("A program talked to a site named like a cryptocurrency service"),
 		Why:   "Copies of wallet and exchange sites use names built from the real ones, such as metamask-login.com, to catch people who misread them. This is read from the names this PC looked up, which Windows remembers for a while.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			seen := map[string]bool{}
@@ -201,7 +202,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "running-miner", Area: model.RunningNow, Severity: Medium,
-		Title: "A program is mining cryptocurrency",
+		Title: i18n.T("A program is mining cryptocurrency"),
 		Why:   "Mining keeps the processor or the graphics card busy for hours, which costs electricity and wears the PC. Some people mine on purpose; malware that mines for someone else is common too.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
@@ -218,7 +219,7 @@ var cryptoRules = []Rule{
 	},
 	{
 		ID: "clipboard-address-swapped", Area: model.RunningNow, Severity: High, Topic: "swaptest",
-		Title: "A program swapped a copied wallet address for another",
+		Title: i18n.T("A program swapped a copied wallet address for another"),
 		Why:   "Clipboard-stealing malware watches for a copied wallet address and puts the thief's in its place, so that coins sent to the pasted address go to the thief. LazaScope's address-swap test copies made-up addresses that no wallet accepts, and watches.",
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			t := s.SwapTest
