@@ -117,7 +117,7 @@ var protectionRules = []Rule{
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.Tamper == model.No && defenderInUse(s.Guard) && s.Guard.RealTime != model.No {
 				found = append(found, r.find("Tamper Protection",
-					"Tamper Protection is off, so a program with administrator rights could switch Microsoft Defender off without asking you.",
+					i18n.T("Tamper Protection is off, so a program with administrator rights could switch Microsoft Defender off without asking you."),
 					i18n.T(openSecurity)+"Under Virus and threat protection > Manage settings, switch Tamper Protection on."))
 			}
 			return
@@ -230,7 +230,7 @@ var protectionRules = []Rule{
 				return
 			}
 			f := r.find("Windows Update",
-				"The last update Windows installed was on "+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
+				i18n.T("The last update Windows installed was on ")+g.LastUpdate.Format("2 January 2006")+", "+strconv.Itoa(days)+" days ago. Updates normally arrive every month.",
 				i18n.T("Open Settings, go to Windows Update (inside Update and Security on Windows 10) and choose Check for updates. If nothing is offered, check whether this version of Windows still receives updates."),
 				Fact{"Windows", strings.TrimSpace(s.Windows + " build " + g.Build)}, Fact{"Last update installed", g.LastUpdate.Format("2 January 2006")})
 			if days > 180 {
@@ -267,20 +267,20 @@ var protectionRules = []Rule{
 				}
 			}
 			facts = append([]Fact{{"File", s.Guard.HostsPath}}, facts...)
-			const edit = "The file is plain text and can be read in Notepad. Changing it needs administrator rights. If you did not add these lines yourself, ask someone who knows Windows well before removing them."
+			edit := i18n.T("The file is plain text and can be read in Notepad. Changing it needs administrator rights. If you did not add these lines yourself, ask someone who knows Windows well before removing them.")
 			if len(blockedSecurity) > 0 {
 				f := r.find(plural(len(blockedSecurity), i18n.T("security or update site blocked"), i18n.T("security or update sites blocked")),
-					"The hosts file stops this PC from reaching "+list(blockedSecurity, 5)+". Blocking update and antivirus sites is what malware does to keep a PC from being cleaned. Some people block Microsoft sites on purpose to stop data being sent.", edit, facts...)
+					i18n.T("The hosts file stops this PC from reaching ")+list(blockedSecurity, 5)+". Blocking update and antivirus sites is what malware does to keep a PC from being cleaned. Some people block Microsoft sites on purpose to stop data being sent.", edit, facts...)
 				f.Severity = High
 				found = append(found, f)
 			}
 			if len(redirected) > 0 {
 				found = append(found, r.find(plural(len(redirected), "name redirected", "names redirected"),
-					"The hosts file sends "+list(redirected, 4)+". Anyone opening such a name on this PC lands at that address instead of the real site.", edit, facts...))
+					i18n.T("The hosts file sends ")+list(redirected, 4)+". Anyone opening such a name on this PC lands at that address instead of the real site.", edit, facts...))
 			}
 			if len(blocked) > 0 {
 				f := r.find(plural(len(blocked), "site blocked", "sites blocked"),
-					"The hosts file blocks "+list(blocked, 5)+" by pointing the names at this PC itself. Ad blockers and some programs' licence checks do this. It is harmless if you or a program you trust added the lines.", edit, facts...)
+					i18n.T("The hosts file blocks ")+list(blocked, 5)+" by pointing the names at this PC itself. Ad blockers and some programs' licence checks do this. It is harmless if you or a program you trust added the lines.", edit, facts...)
 				f.Severity = Low
 				found = append(found, f)
 			}

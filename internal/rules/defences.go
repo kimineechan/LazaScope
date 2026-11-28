@@ -48,8 +48,8 @@ var defenceRules = []Rule{
 				return
 			}
 			found = append(found, r.find(count(len(off), "protection", "protections")+" off",
-				"This PC already has these protections, but they are switched off: "+listed(off)+".",
-				"The Protections to switch on page, reached from the Overview, says what each one does and where to switch it on. Most are a switch in Windows Security.", facts...))
+				i18n.T("This PC already has these protections, but they are switched off: ")+listed(off)+".",
+				i18n.T("The Protections to switch on page, reached from the Overview, says what each one does and where to switch it on. Most are a switch in Windows Security."), facts...))
 			return
 		},
 	},

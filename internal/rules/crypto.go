@@ -170,7 +170,7 @@ var cryptoRules = []Rule{
 					continue
 				}
 				found = append(found, r.find(host,
-					"The hosts file tells this PC that "+host+", "+service+"'s own site, is at "+entry.Address+". Every program on the PC, the browser included, then goes there instead of to "+service+".",
+					i18n.T("The hosts file tells this PC that ")+host+", "+service+"'s own site, is at "+entry.Address+". Every program on the PC, the browser included, then goes there instead of to "+service+".",
 					"Unless you added this line yourself for testing, remove it: open Notepad as administrator, open "+s.Guard.HostsPath+", delete the line and save. Then scan the PC with your antivirus, and do not sign in to "+service+" from this PC until that is done.",
 					Fact{"Name", host}, Fact{"Sent to", entry.Address}, Fact{"File", s.Guard.HostsPath}))
 			}

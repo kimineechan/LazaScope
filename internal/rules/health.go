@@ -220,7 +220,7 @@ var healthRules = []Rule{
 				}
 			}
 			return []Finding{r.find(plural(len(stops), "sudden stop", "sudden stops"),
-				"This PC went off without shutting down "+plural(len(stops), "time", "times")+" "+period+", with no blue screen. The power went, the battery ran out, the PC froze and was held down by its power button, or it overheated and cut out. The latest was noticed when Windows started on "+Day(s, stops[0])+".",
+				i18n.T("This PC went off without shutting down ")+plural(len(stops), "time", "times")+" "+period+", with no blue screen. The power went, the battery ran out, the PC froze and was held down by its power button, or it overheated and cut out. The latest was noticed when Windows started on "+Day(s, stops[0])+".",
 				i18n.T("If you remember holding the power button down, that is all this is. If the PC goes off by itself when it is working hard, it is probably overheating: clear the vents and stand it on a hard surface."), facts...)}
 		},
 	},
@@ -397,7 +397,7 @@ var historyRules = []Rule{
 				}
 			}
 			f := r.find(plural(len(values), i18n.T("exclusion in Defender's log"), i18n.T("exclusions in Defender's log")),
-				"The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: "+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
+				i18n.T("The list of what Microsoft Defender skips cannot be read without administrator rights. Defender's own log can, and it shows this being added to the list and not taken off since: ")+list(values, 5)+". Anything placed there, or matching it, is not checked. The log does not reach back for ever, so there may be older exclusions that it no longer shows.",
 				openSecurity+"Under Virus and threat protection > Manage settings > Exclusions you can see the list as it stands, and remove any you did not add yourself. Looking again as administrator shows the list here too.", facts...)
 			if broad != "" {
 				f.Severity = High
@@ -459,7 +459,7 @@ var networkRules = []Rule{
 				return
 			}
 			return []Finding{r.find(list(odd, 4),
-				"This PC is set by hand to ask "+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
+				i18n.T("This PC is set by hand to ask ")+list(odd, 4)+" for the addresses of websites. That is not the router, and not one of the public services LazaScope knows by name (Cloudflare, Google, Quad9, OpenDNS, AdGuard). Whoever runs it can see which sites this PC looks up, and decides where each name leads.",
 				i18n.T("If you, your workplace or your internet provider set this, nothing needs doing: filtering and privacy services work this way. If nobody did, set it back to automatic. On Windows 11: Settings > Network & internet, the connection's properties, DNS server assignment, Edit, Automatic (DHCP). On Windows 10: press Windows key + R, type ncpa.cpl, open the connection's Properties, then Internet Protocol Version 4 (TCP/IPv4), Properties, and choose Obtain DNS server address automatically; do the same for Version 6."), facts...)}
 		},
 	},
@@ -476,7 +476,7 @@ var networkRules = []Rule{
 			reason := ""
 			if p.Server != "" {
 				facts = append(facts, Fact{"Proxy", p.Server})
-				reason = "This account's web traffic is set to go through " + p.Server + "."
+				reason = i18n.T("This account's web traffic is set to go through ") + p.Server + "."
 				// A proxy on this PC itself is a program here. Say which, if it is waiting there.
 				server := p.Server
 				if cut := strings.Index(server, "="); cut >= 0 {

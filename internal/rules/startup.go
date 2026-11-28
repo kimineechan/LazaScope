@@ -64,7 +64,7 @@ func about(e model.Startup) []Fact {
 	}
 	if works.Exists && works.Program {
 		add("Signature", Signature(works))
-		add("The file says it is", Claim(works))
+		add(i18n.T("The file says it is"), Claim(works))
 	}
 	add("Starts", e.Trigger)
 	add("Runs as", e.Account)
@@ -78,9 +78,9 @@ func about(e model.Startup) []Fact {
 	}
 	switch {
 	case works.Opinion.Harmful, e.Said.Harmful:
-		add("The antivirus, asked just now", "Calls it harmful")
+		add(i18n.T("The antivirus, asked just now"), "Calls it harmful")
 	case works.Opinion.Asked, e.Said.Asked:
-		add("The antivirus, asked just now", i18n.T("Raised no objection"))
+		add(i18n.T("The antivirus, asked just now"), i18n.T("Raised no objection"))
 	}
 	return facts
 }
@@ -140,7 +140,7 @@ func Engine(s *model.Snapshot) string {
 	if s.Engine != "" {
 		return s.Engine
 	}
-	return "The antivirus on this PC"
+	return i18n.T("The antivirus on this PC")
 }
 
 // ownScript is the advice for a script, which has no maker to look up but
@@ -157,7 +157,7 @@ var startupRules = []Rule{
 				r.at(StartupRef(i))
 				if works := e.Works(); e.Enabled && works.Exists && works.Signature.Changed() {
 					found = append(found, r.find(e.Shown(),
-						"This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
+						i18n.T("This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program."),
 						i18n.T("Reinstall the program from its maker's website and scan the PC with your antivirus. ")+stop(e.Kind), about(e)...))
 				}
 			}
@@ -232,7 +232,7 @@ var startupRules = []Rule{
 						}
 					}
 				case e.Said.Harmful:
-					opinion, what, it = e.Said, "the commands carried on this entry's line", "them"
+					opinion, what, it = e.Said, i18n.T("the commands carried on this entry's line"), "them"
 					why = " A command kept in the registry or in a task is not a file, so the antivirus only meets it at the moment it runs."
 				default:
 					continue
@@ -369,13 +369,13 @@ var startupRules = []Rule{
 				if e.Kind == model.ScheduledTask && works.Program && works.Signature.Trusted() {
 					continue
 				}
-				what := "The file is not signed by a known maker."
+				what := i18n.T("The file is not signed by a known maker.")
 				if runsScript(e) {
-					what = "The file is a script: a text file of commands, which almost never carries a maker's signature."
+					what = i18n.T("The file is a script: a text file of commands, which almost never carries a maker's signature.")
 				} else if !works.Program {
-					what = "The file is not a program, so there is no maker's signature to check."
+					what = i18n.T("The file is not a program, so there is no maker's signature to check.")
 				} else if works.Signature.Trusted() {
-					what = "The file is signed by " + works.Signature.Maker() + "."
+					what = i18n.T("The file is signed by ") + works.Signature.Maker() + "."
 				}
 				advice := i18n.T(known)
 				if runsScript(e) {
@@ -399,9 +399,9 @@ var startupRules = []Rule{
 				if !e.Enabled || !works.Exists || !works.Program || works.Signature.Trusted() || works.Signature.Changed() || works.Signature.Status == sigcheck.Unknown {
 					continue
 				}
-				reason := "This program starts by itself and carries no maker's signature, so Windows cannot say who made it or whether it has been changed. Small free tools and programs people build themselves are often unsigned. So is most malware."
+				reason := i18n.T("This program starts by itself and carries no maker's signature, so Windows cannot say who made it or whether it has been changed. Small free tools and programs people build themselves are often unsigned. So is most malware.")
 				if works.Signature.Status == sigcheck.Invalid {
-					reason = "This program starts by itself and its signature does not check out. " + works.Signature.Problem + " Windows therefore cannot vouch for who made it. LazaScope checks without going online, so a certificate Windows has never seen before can show up this way."
+					reason = i18n.T("This program starts by itself and its signature does not check out. ") + works.Signature.Problem + " Windows therefore cannot vouch for who made it. LazaScope checks without going online, so a certificate Windows has never seen before can show up this way."
 				}
 				if works.Company != "" {
 					reason += " The file says it comes from " + works.Company + ", but anyone can write that into a file."
@@ -487,7 +487,7 @@ var startupRules = []Rule{
 				case model.CommandLine:
 					how = i18n.T("It is loaded by a switch on the line that starts the browser. That is not how extensions are installed: something changed the browser's shortcut or the way it is started.")
 				case model.SourceUnknown:
-					how = "The browser's record does not say where it came from."
+					how = i18n.T("The browser's record does not say where it came from.")
 				default:
 					continue
 				}
@@ -543,7 +543,7 @@ var startupRules = []Rule{
 					continue
 				}
 				found = append(found, r.find(e.Shown(),
-					"This entry is meant to start "+works.Path+", but there is no such file. It is most likely left over from a program that was removed. It does no harm as it is.",
+					i18n.T("This entry is meant to start ")+works.Path+", but there is no such file. It is most likely left over from a program that was removed. It does no harm as it is.",
 					"You can leave it as it is. "+stop(e.Kind), about(e)...))
 			}
 			return

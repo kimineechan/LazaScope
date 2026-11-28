@@ -155,7 +155,7 @@ var accountRules = []Rule{
 				return
 			}
 			f := r.find("Remote Desktop",
-				"This PC accepts Remote Desktop connections. Anyone who can reach it over the network and knows an account's password can sign in and use it.",
+				i18n.T("This PC accepts Remote Desktop connections. Anyone who can reach it over the network and knows an account's password can sign in and use it."),
 				i18n.T("If you do not use it, switch it off under Settings > System > Remote Desktop. If you do, keep it away from the open internet and use strong passwords."),
 				Fact{"Remote Desktop", "On"}, Fact{i18n.T("Asks for a password before showing the sign-in screen"), s.Guard.RemoteNLA.String()})
 			if s.Guard.RemoteNLA == model.No {
@@ -207,7 +207,7 @@ var accountRules = []Rule{
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.Guest == model.Yes {
 				found = append(found, r.find("Guest account",
-					"The built-in Guest account is switched on. It has no password, so anyone can sign in with it.",
+					i18n.T("The built-in Guest account is switched on. It has no password, so anyone can sign in with it."),
 					"Unless you need it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open Guest and tick Account is disabled."))
 			}
 			return
@@ -239,7 +239,7 @@ var accountRules = []Rule{
 				r.at(AdminRef(account.Name))
 				if account.BuiltIn == "Administrator" && account.Disabled == model.No {
 					found = append(found, r.find(account.Name,
-						"The built-in Administrator account ("+account.Name+") is switched on. Windows normally keeps it off and lets people use their own accounts.",
+						i18n.T("The built-in Administrator account (")+account.Name+") is switched on. Windows normally keeps it off and lets people use their own accounts.",
 						i18n.T("If nobody uses it, switch it off: open Computer Management from the Start menu, go to Local Users and Groups > Users, open the account and tick Account is disabled. Make sure another administrator account works first.")))
 				}
 			}
