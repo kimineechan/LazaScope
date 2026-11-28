@@ -31,7 +31,7 @@ type livePanel struct {
 func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	p := &livePanel{w: w, status: status, demo: demo}
 	w.Page(pageLive)
-	heading := w.Heading("Watch programs start, live", left, 166, across, 30)
+	heading := w.Heading(i18n.T("Watch programs start, live"), left, 166, across, 30)
 	intro := w.Label(i18n.T("Every program that starts while this runs, checked the moment Windows reports it against LazaScope's detections, such as Word starting PowerShell or a command that deletes Windows' backups."), left, 200, across, 42)
 	p.button = w.Button(i18n.T("Start watching"), left, 250, 180, 34, p.toggle)
 	p.button.Lead(true)
@@ -54,7 +54,7 @@ func newLive(w *winui.Window, status *winui.Control, demo bool) *livePanel {
 	l.detail.Read(paragraphs([]view.Line{
 		{Style: view.Heading, Text: i18n.T("How the watch works")},
 		{Style: view.Text, Text: i18n.T("Choose Start watching. Windows Management Instrumentation, the part of Windows that answers questions about the system, reports each new program, and LazaScope checks it against its 15 detections, listed in docs/DETECTIONS.md. Nothing is changed and nothing is sent anywhere.")},
-		{Style: view.Text, Text: "Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only."},
+		{Style: view.Text, Text: i18n.T("Windows reports new programs once a second, so one that starts and ends within the same second can be missed. The command lines of other accounts' programs are given to administrators only.")},
 		{Style: view.Text, Text: i18n.T("Choose Only what set off a detection above to see just those. The search box at the top works here too.")},
 	})...)
 	return p
@@ -96,7 +96,7 @@ func (p *livePanel) counts() {
 // toggle starts or stops the watch.
 func (p *livePanel) toggle() {
 	if p.demo {
-		p.w.Info("Watch programs start", "This is the made-up PC, where nothing runs. On your own PC this lists every program that starts while it watches, and checks each against the detections.")
+		p.w.Info("Watch programs start", i18n.T("This is the made-up PC, where nothing runs. On your own PC this lists every program that starts while it watches, and checks each against the detections."))
 		return
 	}
 	if p.started {
@@ -111,7 +111,7 @@ func (p *livePanel) toggle() {
 	p.started = true
 	p.button.SetText(i18n.T("Stop watching"))
 	p.counts()
-	p.status.SetText("Watching programs start. Nothing is changed; LazaScope only reads what Windows reports.")
+	p.status.SetText(i18n.T("Watching programs start. Nothing is changed; LazaScope only reads what Windows reports."))
 	stop := p.stop
 	go func() {
 		err := sensor.Watch(stop, func(e detect.Event) {
@@ -138,7 +138,7 @@ func (p *livePanel) toggle() {
 				p.started = false
 				p.button.SetText(i18n.T("Start watching"))
 				p.counts()
-				p.status.SetText("The watch stopped: " + sentence(err))
+				p.status.SetText(i18n.T("The watch stopped: ") + sentence(err))
 			}
 		})
 	}()

@@ -68,7 +68,7 @@ func (p *walletPanel) swapTest() {
 		return
 	}
 	if p.demo {
-		p.w.Info(title, "This is the made-up PC. On your own PC, this copies made-up wallet addresses for a few seconds and watches whether any program swaps them for another.")
+		p.w.Info(title, i18n.T("This is the made-up PC. On your own PC, this copies made-up wallet addresses for a few seconds and watches whether any program swaps them for another."))
 		return
 	}
 	if b := p.book(); b == nil || p.busy() {
@@ -80,7 +80,7 @@ func (p *walletPanel) swapTest() {
 		return
 	}
 	text := "Some malware watches for a copied wallet address and puts a thief's address in its place. This test copies three made-up addresses, one at a time, and watches for two seconds each whether anything changes them.\r\n\r\n" +
-		"The made-up addresses have broken checksums, so no wallet would send coins to them even if one were pasted, and Windows is told to keep them out of the clipboard history. Afterwards LazaScope puts back the text that is on the clipboard now."
+		i18n.T("The made-up addresses have broken checksums, so no wallet would send coins to them even if one were pasted, and Windows is told to keep them out of the clipboard history. Afterwards LazaScope puts back the text that is on the clipboard now.")
 	if saved.HadOther {
 		text += "\r\n\r\nThe clipboard holds a picture or files at the moment. Those cannot be put back: copy them again afterwards if you need them."
 	}
@@ -101,7 +101,7 @@ func (p *walletPanel) swapTest() {
 				err = nil
 			}
 			if err != nil {
-				p.status.SetText("The test could not run: " + sentence(err))
+				p.status.SetText(i18n.T("The test could not run: ") + sentence(err))
 				p.w.Alert(title, sentence(err))
 				return
 			}
@@ -123,9 +123,9 @@ func (p *walletPanel) swapTest() {
 				p.reshow(view.Build(s, rules.Check(s)))
 			}
 			if result.Swapped {
-				who := "Windows could not say which program did it."
+				who := i18n.T("Windows could not say which program did it.")
 				if result.By != "" {
-					who = "Windows says the clipboard was last changed by " + result.By + "."
+					who = i18n.T("Windows says the clipboard was last changed by ") + result.By + "."
 				}
 				p.status.SetText(i18n.T("A program swapped a copied wallet address. See 08 Worth a look."))
 				p.w.Alert(title, i18n.T("A program swapped the made-up ")+result.Kind+" address for another:\r\n\r\n"+result.Into+"\r\n\r\n"+who+
@@ -156,7 +156,7 @@ func (p *walletPanel) checkDownload() {
 	if path == "" {
 		return
 	}
-	p.status.SetText("Working out the fingerprint of " + path + "...")
+	p.status.SetText(i18n.T("Working out the fingerprint of ") + path + "...")
 	go func() {
 		print, err := files.Fingerprint(path)
 		library := files.Open()
@@ -203,12 +203,12 @@ func (p *walletPanel) findPhrases() {
 		p.w.Info(title, "This is the made-up PC, so LazaScope shows what a search could find there.\r\n\r\nOn your own PC, this reads the text files and documents in your Desktop, Documents and Downloads folders and looks for recovery phrases, without ever showing the words.")
 		b.Snapshot.Phrases = sample.Phrases()
 		p.reshow(view.Build(b.Snapshot, b.Findings))
-		p.status.SetText("The made-up PC: a recovery phrase in one file, and recovery words in another.")
+		p.status.SetText(i18n.T("The made-up PC: a recovery phrase in one file, and recovery words in another."))
 		return
 	}
 	places := phrase.Places()
 	if len(places) == 0 {
-		p.w.Alert(title, "Windows did not say where this account's Desktop, Documents and Downloads folders are, so there is nowhere to search.")
+		p.w.Alert(title, i18n.T("Windows did not say where this account's Desktop, Documents and Downloads folders are, so there is nowhere to search."))
 		return
 	}
 	text := "A recovery phrase is the 12 to 24 words a cryptocurrency wallet gives you to write down. Whoever has them has the wallet's coins, so a phrase saved in a file can be taken by any program that reads the file.\r\n\r\n" +
@@ -242,7 +242,7 @@ func (p *walletPanel) findPhrases() {
 			}
 			if p.busy() {
 				// A new look is on its way and will replace this one.
-				p.status.SetText("The search ended while LazaScope was looking at the PC again. Search again to see what it finds.")
+				p.status.SetText(i18n.T("The search ended while LazaScope was looking at the PC again. Search again to see what it finds."))
 				return
 			}
 			b.Snapshot.Phrases = &result
@@ -276,7 +276,7 @@ func (p *walletPanel) phrasesFound(title string, result model.PhraseSearch) {
 	case len(phrases) > 0:
 		p.status.SetText(fmt.Sprintf(i18n.T("Found what is very likely a recovery phrase in %s (%s). See the rows above."), fileCount(len(phrases)), read))
 		text := "LazaScope found what is very likely a recovery phrase in:\r\n\r\n" + strings.Join(phrases, "\r\n") + "\r\n\r\n" +
-			"Whoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and only then delete the file and empty the Recycle Bin. If it is a test phrase that never held coins, there is nothing to move."
+			i18n.T("Whoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust, move the coins into it, and only then delete the file and empty the Recycle Bin. If it is a test phrase that never held coins, there is nothing to move.")
 		if len(others) == 1 {
 			text += "\r\n\r\nOne more file holds a run of recovery words that LazaScope could not confirm as a phrase. It is on the list too."
 		} else if len(others) > 1 {
