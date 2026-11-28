@@ -342,7 +342,7 @@ func main() {
 	// a page of its own; all three can be reached from every page.
 	searchBox := w.Input("", left+345, 32, 285, 36, nil)
 	searchBox.Hint(i18n.T("Search the lists, or type ? for help"))
-	analyst := w.Switch("Analyst mode", left+642, 32, 160, 36, nil)
+	analyst := w.Switch(i18n.T("Analyst mode"), left+642, 32, 160, 36, nil)
 	w.Button(i18n.T("Wallets..."), left+814, 32, 120, 36, func() { w.ShowPage(pageWallets) })
 	w.Button(i18n.T("VirusTotal..."), left+across-150, 32, 150, 36, func() { w.ShowPage(pageVirusTotal) })
 	w.Rule(left, 722, across)
@@ -686,7 +686,7 @@ func main() {
 		}
 		note := i18n.T("LazaScope read this PC and changed nothing. It is not an antivirus: it shows what is there and what is unusual, and leaves the judging to you. Worth a look does not mean harmful.")
 		if unseen := len(b.Worth.Unseen); unseen > 0 && !b.Snapshot.Elevated {
-			note += fmt.Sprintf("\r\nWithout administrator rights, %d things could not be read. They are listed under 08 Worth a look.", unseen)
+			note += fmt.Sprintf(i18n.T("\r\nWithout administrator rights, %d things could not be read. They are listed under 08 Worth a look."), unseen)
 		}
 		about.SetText(note)
 		// With the rights already held there is nothing more to ask for, and
@@ -696,7 +696,7 @@ func main() {
 		}
 		raise.Enable(!b.Snapshot.Elevated && !demo)
 		lay(b, false)
-		nav[pageWorth].SetText(fmt.Sprintf("08  Worth a look (%d)", len(b.Findings)))
+		nav[pageWorth].SetText(fmt.Sprintf(i18n.T("08  Worth a look (%d)"), len(b.Findings)))
 		vt.shown(b)
 	}
 	vt.reshow = show

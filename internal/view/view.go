@@ -400,9 +400,9 @@ func (b *builder) unseen(areas ...model.Area) []string {
 func ago(days int) string {
 	switch {
 	case days <= 0:
-		return "today"
+		return i18n.T("today")
 	case days == 1:
-		return "yesterday"
+		return i18n.T("yesterday")
 	}
-	return fmt.Sprintf("%d days ago", days)
+	return fmt.Sprintf(i18n.T("%d days ago"), days)
 }

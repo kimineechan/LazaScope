@@ -864,7 +864,7 @@ func (b *builder) facts(area model.Area) string {
 			on = g.AntivirusHealth
 		}
 		if on != model.NotKnown {
-			parts = append(parts, "Antivirus "+strings.ToLower(state(on, "On", "Off")))
+			parts = append(parts, i18n.T("Antivirus ")+strings.ToLower(state(on, i18n.T("On"), i18n.T("Off"))))
 		}
 		firewall := g.FirewallHealth
 		for _, p := range g.Firewall {
@@ -875,10 +875,10 @@ func (b *builder) facts(area model.Area) string {
 			}
 		}
 		if firewall != model.NotKnown {
-			parts = append(parts, "Firewall "+strings.ToLower(state(firewall, "On", "Off")))
+			parts = append(parts, i18n.T("Firewall ")+strings.ToLower(state(firewall, i18n.T("On"), i18n.T("Off"))))
 		}
 		if g.UpdateKnown {
-			parts = append(parts, "Last update "+ago(int(s.Taken.Sub(g.LastUpdate).Hours()/24)))
+			parts = append(parts, i18n.T("Last update ")+ago(int(s.Taken.Sub(g.LastUpdate).Hours()/24)))
 		}
 		if len(parts) == 0 {
 			return ""

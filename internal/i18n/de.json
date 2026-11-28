@@ -83,5 +83,16 @@
   "with administrator rights": "mit Administratorrechten",
   ". Looked at on ": ". Geprüft am ",
   " at ": " um ",
-  " as ": " als "
+  " as ": " als ",
+  "today": "heute",
+  "yesterday": "gestern",
+  "%d days ago": "vor %d Tagen",
+  "Antivirus ": "Antivirus ",
+  "Last update ": "Letzte Aktualisierung ",
+  "Analyst mode": "Analystenmodus",
+  "Wallets...": "Wallets...",
+  "VirusTotal...": "VirusTotal...",
+  "08  Worth a look (%d)": "08  Prüfenswert (%d)",
+  "Firewall ": "Firewall ",
+  "\r\nWithout administrator rights, %d things could not be read. They are listed under 08 Worth a look.": "\r\nOhne Administratorrechte konnten %d Dinge nicht gelesen werden. Sie stehen unter 08 Prüfenswert."
 }
