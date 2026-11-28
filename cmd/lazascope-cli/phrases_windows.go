@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"lazascope/internal/i18n"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,7 +22,7 @@ func phraseSearch(folders []string) error {
 	if len(folders) == 0 {
 		folders = phrase.Places()
 		if len(folders) == 0 {
-			return errors.New("Windows did not say where this account's Desktop, Documents and Downloads folders are, so there is nowhere to search")
+			return errors.New(i18n.T("Windows did not say where this account's Desktop, Documents and Downloads folders are, so there is nowhere to search"))
 		}
 	}
 	for i, folder := range folders {
@@ -32,11 +33,11 @@ func phraseSearch(folders []string) error {
 			return fmt.Errorf("%s is not a folder that can be opened", folder)
 		}
 	}
-	fmt.Println("Searching for recovery phrases in:")
+	fmt.Println(i18n.T("Searching for recovery phrases in:"))
 	for _, folder := range folders {
 		fmt.Println("  " + folder)
 	}
-	fmt.Println("Only where they are is noted. The words are never shown, kept or sent.")
+	fmt.Println(i18n.T("Only where they are is noted. The words are never shown, kept or sent."))
 	noted := false
 	result := phrase.Search(folders, nil, func(read int) {
 		noted = true
@@ -83,7 +84,7 @@ func phraseSearch(folders []string) error {
 		label, about := "LOOK", fmt.Sprintf("%s: %d recovery words in a row, not confirmed as a phrase", at, f.Words)
 		switch {
 		case f.List:
-			label, about = "LIST", "the recovery word list itself, in its own order: not a phrase"
+			label, about = "LIST", i18n.T("the recovery word list itself, in its own order: not a phrase")
 		case f.Phrase > 0 && f.Electrum:
 			phrases++
 			label, about = "FIRST", fmt.Sprintf("%s: a complete %d-word Electrum seed whose check holds", at, f.Phrase)
@@ -101,7 +102,7 @@ func phraseSearch(folders []string) error {
 	}
 	if phrases > 0 {
 		fmt.Println("\nWhoever has a phrase has the wallet's coins. If a phrase belongs to a wallet that holds coins, make a new wallet on a device you trust,")
-		fmt.Println("move the coins into it, and only then delete the file and empty the Recycle Bin. A test phrase that never held coins needs nothing moved.")
+		fmt.Println(i18n.T("move the coins into it, and only then delete the file and empty the Recycle Bin. A test phrase that never held coins needs nothing moved."))
 	}
 	return nil
 }
