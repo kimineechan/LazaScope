@@ -191,8 +191,8 @@ func (b *builder) startup() Page {
 	s := b.s
 	page := Page{
 		Name: "Start-up", Title: i18n.T("What starts by itself"),
-		Intro:   "Every program, task, service and driver that Windows starts without being asked, and the extensions that load with each web browser. Most of them belong to Windows or to software you installed.",
-		Columns: []Column{{"Check", 124}, {"Name", 250}, {"Kind", 128}, {"Maker", 200}, {"File", 0}},
+		Intro:   i18n.T("Every program, task, service and driver that Windows starts without being asked, and the extensions that load with each web browser. Most of them belong to Windows or to software you installed."),
+		Columns: []Column{{i18n.T("Check"), 124}, {i18n.T("Name"), 250}, {i18n.T("Kind"), 128}, {i18n.T("Maker"), 200}, {i18n.T("File"), 0}},
 		Unseen:  b.unseen(model.StartsWithWindows),
 	}
 	for i, e := range s.Startup {
@@ -286,8 +286,8 @@ func (b *builder) running() Page {
 	s := b.s
 	page := Page{
 		Name: "Running", Title: i18n.T("What is running now"),
-		Intro:   "Every running program, set under the program that started it. Many are parts of Windows, and one program often runs as several copies.",
-		Columns: []Column{{"Check", 112}, {"Program", 330}, {"Number", 76}, {"Account", 170}, {"Maker", 0}},
+		Intro:   i18n.T("Every running program, set under the program that started it. Many are parts of Windows, and one program often runs as several copies."),
+		Columns: []Column{{i18n.T("Check"), 112}, {i18n.T("Program"), 330}, {i18n.T("Number"), 76}, {i18n.T("Account"), 170}, {i18n.T("Maker"), 0}},
 		Unseen:  b.unseen(model.RunningNow),
 	}
 	names := map[uint32]string{}
@@ -358,8 +358,8 @@ func (b *builder) connections() Page {
 	s := b.s
 	page := Page{
 		Name: "Connections", Title: i18n.T("What is talking to the network"),
-		Intro:   "Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. An address is shown by name where Windows remembers the name that was looked up. LazaScope looks nothing up itself, so the rest stay numbers.",
-		Columns: []Column{{"Check", 112}, {"Program", 220}, {"What", 156}, {"Address", 290}, {"Reach", 112}, {"Maker", 0}},
+		Intro:   i18n.T("Each connection a program has open, and each port a program is waiting on for others to connect. A port is a numbered door on the PC. An address is shown by name where Windows remembers the name that was looked up. LazaScope looks nothing up itself, so the rest stay numbers."),
+		Columns: []Column{{i18n.T("Check"), 112}, {i18n.T("Program"), 220}, {i18n.T("What"), 156}, {i18n.T("Address"), 290}, {i18n.T("Reach"), 112}, {i18n.T("Maker"), 0}},
 		Unseen:  b.unseen(model.Connections),
 	}
 	for i, c := range s.Connections {
@@ -503,8 +503,8 @@ func (b *builder) protection() Page {
 	s, g := b.s, b.s.Guard
 	page := Page{
 		Name: "Protection", Title: i18n.T("How this PC is protected"),
-		Intro:   "The settings that keep unwanted software out and limit what it can do. These are facts read from Windows. Nothing was tested by attacking the PC.",
-		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
+		Intro:   i18n.T("The settings that keep unwanted software out and limit what it can do. These are facts read from Windows. Nothing was tested by attacking the PC."),
+		Columns: []Column{{i18n.T("Check"), 124}, {i18n.T("What"), 250}, {i18n.T("How it stands"), 0}},
 		Unseen:  b.unseen(model.Protection),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
@@ -732,8 +732,8 @@ func (b *builder) accounts() Page {
 	g := b.s.Guard
 	page := Page{
 		Name: "Accounts", Title: i18n.T("Who can get into this PC"),
-		Intro:   "The accounts with full rights over the PC, and the ways it can be used from somewhere else.",
-		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
+		Intro:   i18n.T("The accounts with full rights over the PC, and the ways it can be used from somewhere else."),
+		Columns: []Column{{i18n.T("Check"), 124}, {i18n.T("What"), 250}, {i18n.T("How it stands"), 0}},
 		Unseen:  b.unseen(model.Accounts),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
@@ -808,8 +808,8 @@ func invert(a model.Answer) model.Answer {
 func (b *builder) worth() Page {
 	page := Page{
 		Name: "Worth a look", Title: i18n.T("What is worth a second look"),
-		Intro:   "Everything the written rules flagged, the most serious first. A flag is a reason to look, not a verdict: the same signs that mark an intruder also mark plenty of honest software.",
-		Columns: []Column{{"How soon", 124}, {"Where", 214}, {"What was found", 430}, {"About", 0}},
+		Intro:   i18n.T("Everything the written rules flagged, the most serious first. A flag is a reason to look, not a verdict: the same signs that mark an intruder also mark plenty of honest software."),
+		Columns: []Column{{i18n.T("How soon"), 124}, {i18n.T("Where"), 214}, {i18n.T("What was found"), 430}, {i18n.T("About"), 0}},
 	}
 	for _, gap := range b.s.Gaps {
 		page.Unseen = append(page.Unseen, gap.What)
@@ -995,8 +995,8 @@ func (b *builder) health() Page {
 	s, c := b.s, b.s.Condition
 	page := Page{
 		Name: "Health", Title: i18n.T("How this PC is holding up"),
-		Intro:   "What Windows wrote in its own log over the last 90 days about failing hardware and about stopping unexpectedly, and how full the disks are. A PC that crashes for no clear reason more often has a worn part than unwanted software.",
-		Columns: []Column{{"Check", 124}, {"What", 250}, {"How it stands", 0}},
+		Intro:   i18n.T("What Windows wrote in its own log over the last 90 days about failing hardware and about stopping unexpectedly, and how full the disks are. A PC that crashes for no clear reason more often has a worn part than unwanted software."),
+		Columns: []Column{{i18n.T("Check"), 124}, {i18n.T("What"), 250}, {i18n.T("How it stands"), 0}},
 		Unseen:  b.unseen(model.Health),
 	}
 	add := func(row Row) { page.Rows = append(page.Rows, row) }
