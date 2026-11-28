@@ -85,7 +85,7 @@ var healthRules = []Rule{
 	{
 		ID: "hardware-errors", Area: model.Health, Severity: Medium, Topic: "hardware",
 		Title: i18n.T("The hardware has been reporting errors"),
-		Why:   "Processors, memory and other parts check themselves as they work, and Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none. A part that keeps reporting them is usually failing, overheating or being run harder than it was made for, and it is a common cause of crashes that look like software trouble.",
+		Why:   i18n.T("Processors, memory and other parts check themselves as they work, and Windows writes down every error they report, including the ones that were corrected on the spot. A healthy PC reports none. A part that keeps reporting them is usually failing, overheating or being run harder than it was made for, and it is a common cause of crashes that look like software trouble."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			faults := s.Condition.Hardware
 			if len(faults) == 0 {
@@ -142,7 +142,7 @@ var healthRules = []Rule{
 	{
 		ID: "blue-screens", Area: model.Health, Severity: Medium, Topic: "crashes",
 		Title: i18n.T("Windows has been stopping with a blue screen"),
-		Why:   "A blue screen is Windows stopping itself because carrying on could damage data. One can be a passing fault. Several mean something is wrong underneath: a failing part, a faulty driver, or now and then software that reaches into the core of Windows.",
+		Why:   i18n.T("A blue screen is Windows stopping itself because carrying on could damage data. One can be a passing fault. Several mean something is wrong underneath: a failing part, a faulty driver, or now and then software that reaches into the core of Windows."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			crashes := s.Condition.Crashes
 			if len(crashes) == 0 {
@@ -180,7 +180,7 @@ var healthRules = []Rule{
 	{
 		ID: "disk-faults", Area: model.Health, Severity: Medium, Topic: "disk",
 		Title: i18n.T("A disk has reported faults"),
-		Why:   "A disk that can no longer read part of itself, or whose filing system is damaged, says so in Windows' log before it fails outright. That warning is the time to copy files off it.",
+		Why:   i18n.T("A disk that can no longer read part of itself, or whose filing system is damaged, says so in Windows' log before it fails outright. That warning is the time to copy files off it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			faults := s.Condition.Disk
 			if len(faults) == 0 {
@@ -207,7 +207,7 @@ var healthRules = []Rule{
 	{
 		ID: "sudden-stops", Area: model.Health, Severity: Low, Topic: "stops",
 		Title: i18n.T("The PC has gone off without shutting down"),
-		Why:   "When a PC loses power, freezes and is held down by its power button, or overheats and cuts out, Windows notes at the next start that it was never shut down. Now and then is normal for a laptop. Often is a sign of overheating or a failing battery or power supply, and each sudden stop risks damaging whatever was being saved.",
+		Why:   i18n.T("When a PC loses power, freezes and is held down by its power button, or overheats and cuts out, Windows notes at the next start that it was never shut down. Now and then is normal for a laptop. Often is a sign of overheating or a failing battery or power supply, and each sudden stop risks damaging whatever was being saved."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			stops := s.Condition.PowerCuts
 			if len(stops) < 3 {
@@ -227,7 +227,7 @@ var healthRules = []Rule{
 	{
 		ID: "disk-nearly-full", Area: model.Health, Severity: Low,
 		Title: i18n.T("The Windows disk is nearly full"),
-		Why:   "Windows needs free room for updates and for its own working files. With little left, updates fail, which leaves security holes open, and the PC becomes slow and unreliable.",
+		Why:   i18n.T("Windows needs free room for updates and for its own working files. With little left, updates fail, which leaves security holes open, and the PC becomes slow and unreliable."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, drive := range s.Condition.Drives {
 				if !strings.HasPrefix(strings.ToUpper(s.Folders.Windows), strings.ToUpper(drive.Letter)) || drive.Size == 0 {
@@ -249,7 +249,7 @@ var healthRules = []Rule{
 	{
 		ID: "log-cleared", Area: model.Health, Severity: Medium, Topic: "wiped",
 		Title: i18n.T("A Windows log was wiped"),
-		Why:   "The logs are where Windows writes down what happened on the PC: sign-ins, crashes, what was installed. Clearing one is rare in everyday use. Some clean-up tools do it, and so does someone who wants to remove the traces of what they did.",
+		Why:   i18n.T("The logs are where Windows writes down what happened on the PC: sign-ins, crashes, what was installed. Clearing one is rare in everyday use. Some clean-up tools do it, and so does someone who wants to remove the traces of what they did."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			wipes := s.Condition.Wiped
 			if len(wipes) == 0 {
@@ -304,7 +304,7 @@ var historyRules = []Rule{
 	{
 		ID: "defender-found-something", Area: model.Protection, Severity: Medium, Topic: "detections",
 		Title: i18n.T("Microsoft Defender found something not long ago"),
-		Why:   "When the antivirus stops a file, it did its job, and the file is usually gone. It is still worth knowing that it happened and where the file came from, because whatever brought one unwanted file may bring another. Antivirus is also sometimes wrong, most often about tools people build themselves.",
+		Why:   i18n.T("When the antivirus stops a file, it did its job, and the file is usually gone. It is still worth knowing that it happened and where the file came from, because whatever brought one unwanted file may bring another. Antivirus is also sometimes wrong, most often about tools people build themselves."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if !g.HistoryRead || len(g.Detections) == 0 {
@@ -380,7 +380,7 @@ var historyRules = []Rule{
 	{
 		ID: "defender-exclusions-logged", Area: model.Protection, Severity: Medium, Topic: "exclusions",
 		Title: i18n.T("Microsoft Defender's log shows places it was told to skip"),
-		Why:   "Windows hides the list of what Microsoft Defender skips from programs without administrator rights, so that malware cannot read where it would be safe. Defender's own log is not hidden, and it records every time something is added to that list or taken off it.",
+		Why:   i18n.T("Windows hides the list of what Microsoft Defender skips from programs without administrator rights, so that malware cannot read where it would be safe. Defender's own log is not hidden, and it records every time something is added to that list or taken off it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			if g.ExclusionsVisible || len(g.LoggedExclusions) == 0 {
@@ -409,7 +409,7 @@ var historyRules = []Rule{
 	{
 		ID: "defender-switched-off", Area: model.Protection, Severity: Low, Topic: "realtime",
 		Title: i18n.T("Defender's real-time protection was switched off for a while"),
-		Why:   "Real-time protection is the part of the antivirus that checks files as they are opened. People switch it off to install something the antivirus objects to. Malware tries to switch it off for the same reason, and Windows switches it back on by itself after a while.",
+		Why:   i18n.T("Real-time protection is the part of the antivirus that checks files as they are opened. People switch it off to install something the antivirus objects to. Malware tries to switch it off for the same reason, and Windows switches it back on by itself after a while."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			g := s.Guard
 			// An old switching off and on again is history, not news.
@@ -442,7 +442,7 @@ var networkRules = []Rule{
 	{
 		ID: "dns-set-by-hand", Area: model.Protection, Severity: Medium, Topic: "dns",
 		Title: i18n.T("Website names are looked up through a server someone typed in"),
-		Why:   "Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees every name that is looked up, and can answer with the address of a fake copy. A PC normally asks whatever its router tells it to. Some people set a public service such as Cloudflare or Quad9 by hand. Malware has been known to set a server of its own.",
+		Why:   i18n.T("Before a program can reach a website, the PC asks a name server (a DNS server) for the site's address. Whoever runs that server sees every name that is looked up, and can answer with the address of a fake copy. A PC normally asks whatever its router tells it to. Some people set a public service such as Cloudflare or Quad9 by hand. Malware has been known to set a server of its own."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			var odd []string
 			var facts []Fact
@@ -466,7 +466,7 @@ var networkRules = []Rule{
 	{
 		ID: "proxy-set", Area: model.Protection, Severity: Medium, Topic: "proxy",
 		Title: i18n.T("Web traffic is sent through a go-between"),
-		Why:   "A proxy is a go-between: the browser and other programs hand their web traffic to it, and it passes the traffic on. Workplaces and schools use one to filter, and some ad blockers and security programs run one on the PC itself. Whatever sits in that place can read what passes through it, and with a certificate of its own on the PC it can read secure pages too. Unwanted software sets a proxy for exactly that reason.",
+		Why:   i18n.T("A proxy is a go-between: the browser and other programs hand their web traffic to it, and it passes the traffic on. Workplaces and schools use one to filter, and some ad blockers and security programs run one on the PC itself. Whatever sits in that place can read what passes through it, and with a certificate of its own on the PC it can read secure pages too. Unwanted software sets a proxy for exactly that reason."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			p := s.Guard.Proxy
 			if p.Server == "" && p.Script == "" {

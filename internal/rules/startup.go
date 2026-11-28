@@ -151,7 +151,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-altered", Area: model.StartsWithWindows, Severity: High,
 		Title: i18n.T("Starts by itself and was changed after its maker signed it"),
-		Why:   "A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker. Unwanted code that hides inside another program does that.",
+		Why:   i18n.T("A digital signature breaks if a single byte of the file changes. A signed program that no longer matches its signature has been altered since it left its maker. Unwanted code that hides inside another program does that."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -167,7 +167,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-system-name", Area: model.StartsWithWindows, Severity: High,
 		Title: i18n.T("Named like a part of Windows, but not where Windows keeps it"),
-		Why:   "Windows' own programs, such as svchost.exe, live in the Windows folder. A file with one of those names anywhere else is a classic disguise: it hopes to be passed over in a list.",
+		Why:   i18n.T("Windows' own programs, such as svchost.exe, live in the Windows folder. A file with one of those names anywhere else is a classic disguise: it hopes to be passed over in a list."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -192,7 +192,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-scrambled-command", Area: model.StartsWithWindows, Severity: High,
 		Title: i18n.T("Starts a scripting tool with a scrambled command"),
-		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions from people and from antivirus by encoding them, breaking the words up, or fetching the real commands from the internet at the last moment.",
+		Why:   i18n.T("PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions from people and from antivirus by encoding them, breaking the words up, or fetching the real commands from the internet at the last moment."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -213,7 +213,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-antivirus-objects", Area: model.StartsWithWindows, Severity: High,
 		Title: i18n.T("The antivirus objects to something that starts by itself"),
-		Why:   "LazaScope has no detection engine of its own. It hands each script that starts by itself, and each command carried on a start-up line, to the antivirus installed on this PC and asks what it makes of it. When the antivirus calls one harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves.",
+		Why:   i18n.T("LazaScope has no detection engine of its own. It hands each script that starts by itself, and each command carried on a start-up line, to the antivirus installed on this PC and asks what it makes of it. When the antivirus calls one harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				if !e.Enabled {
@@ -251,7 +251,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-logon-setting", Area: model.StartsWithWindows, Severity: High,
 		Title: i18n.T("Windows' sign-in programs have been changed"),
-		Why:   "Two settings name what Windows runs while a user signs in: the desktop (explorer.exe) and a helper (userinit.exe). Anything added there runs at every sign-in before the user sees the desktop, which makes these settings a favourite hiding place.",
+		Why:   i18n.T("Two settings name what Windows runs while a user signs in: the desktop (explorer.exe) and a helper (userinit.exe). Anything added there runs at every sign-in before the user sees the desktop, which makes these settings a favourite hiding place."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -275,7 +275,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-debugger", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("Another program is set to run in place of a normal one"),
-		Why:   "Windows has a developer setting called a debugger: when the named program is opened, Windows starts the debugger in its place. It is a known trick for swapping one program for another, most famously to open a command window from the sign-in screen without a password.",
+		Why:   i18n.T("Windows has a developer setting called a debugger: when the named program is opened, Windows starts the debugger in its place. It is a known trick for swapping one program for another, most famously to open a command window from the sign-in screen without a password."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -300,7 +300,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-loaded-library", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("A library is set to load into every program"),
-		Why:   "An old Windows setting (AppInit_DLLs) loads the named libraries into every program that shows a window. Very little modern software uses it, and it gives whatever is named there a view into almost everything the user does.",
+		Why:   i18n.T("An old Windows setting (AppInit_DLLs) loads the named libraries into every program that shows a window. Very little modern software uses it, and it gives whatever is named there a view into almost everything the user does."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -321,7 +321,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-temp-folder", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("Starts from a temporary or download folder"),
-		Why:   "Installed software lives in Program Files. Temporary and download folders are where files land from the internet and where installers unpack, so something that starts from there at every boot was probably never properly installed. Malware often runs from these folders because any program may write to them.",
+		Why:   i18n.T("Installed software lives in Program Files. Temporary and download folders are where files land from the internet and where installers unpack, so something that starts from there at every boot was probably never properly installed. Malware often runs from these folders because any program may write to them."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -350,7 +350,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-user-folder", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("A task, service or driver runs from a user's folder"),
-		Why:   "Services, drivers and most scheduled tasks belong to the whole PC and are installed into Program Files or Windows, where only an administrator can change them. One that runs a file from a user's own folder is unusual for real software, and the file can be swapped by any program that user runs.",
+		Why:   i18n.T("Services, drivers and most scheduled tasks belong to the whole PC and are installed into Program Files or Windows, where only an administrator can change them. One that runs a file from a user's own folder is unusual for real software, and the file can be swapped by any program that user runs."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -391,7 +391,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-unsigned", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("Starts by itself and is not signed by its maker"),
-		Why:   "A digital signature is a maker's seal on a file. Nearly all commercial software is signed, so that Windows can show who made it and that nobody has changed it since. Something that starts by itself with no valid signature is not proof of harm, as small free tools are often unsigned, but it cannot be traced to anyone.",
+		Why:   i18n.T("A digital signature is a maker's seal on a file. Nearly all commercial software is signed, so that Windows can show who made it and that nobody has changed it since. Something that starts by itself with no valid signature is not proof of harm, as small free tools are often unsigned, but it cannot be traced to anyone."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -414,7 +414,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-script", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("Starts a script by itself"),
-		Why:   "A script is a text file of commands that a scripting tool carries out. Scripts are easy to write, almost never carry a maker's signature, and can be rewritten by anything able to change the file. People use them to open their own things at sign-in, and unwanted software uses them to keep itself going. Scripts kept in the Windows folder or Program Files, where only an administrator can change them, are left out. A script run by a scheduled task or a service is only good to know, because administrators and PC makers set those up for upkeep.",
+		Why:   i18n.T("A script is a text file of commands that a scripting tool carries out. Scripts are easy to write, almost never carry a maker's signature, and can be rewritten by anything able to change the file. People use them to open their own things at sign-in, and unwanted software uses them to keep itself going. Scripts kept in the Windows folder or Program Files, where only an administrator can change them, are left out. A script run by a scheduled task or a service is only good to know, because administrators and PC makers set those up for upkeep."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))
@@ -469,7 +469,7 @@ var startupRules = []Rule{
 	{
 		ID: "extension-not-from-store", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("A browser extension did not come from the browser's store"),
-		Why:   "An extension loads whenever its browser is open, and many may read and change every page you visit, including what you type into them. The browsers' stores check what they hand out, and browsers make it awkward on purpose to add an extension any other way. One that got in from a file, from a folder or through another program skipped that check. Developers load their own this way. So does software that wants to change your searches or read your pages.",
+		Why:   i18n.T("An extension loads whenever its browser is open, and many may read and change every page you visit, including what you type into them. The browsers' stores check what they hand out, and browsers make it awkward on purpose to add an extension any other way. One that got in from a file, from a folder or through another program skipped that check. Developers load their own this way. So does software that wants to change your searches or read your pages."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				x := e.Extension
@@ -508,7 +508,7 @@ var startupRules = []Rule{
 	{
 		ID: "extension-forced", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("A browser extension is forced on by a policy"),
-		Why:   "A policy is a setting that overrides the user's own choices. Workplaces and schools use one to put an extension on every PC they manage, and such an extension cannot be removed from inside the browser. On a PC nobody manages, a forced extension is a known trick of unwanted software: it uses the policy to make itself hard to remove.",
+		Why:   i18n.T("A policy is a setting that overrides the user's own choices. Workplaces and schools use one to put an extension on every PC they manage, and such an extension cannot be removed from inside the browser. On a PC nobody manages, a forced extension is a known trick of unwanted software: it uses the policy to make itself hard to remove."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				x := e.Extension
@@ -529,7 +529,7 @@ var startupRules = []Rule{
 	{
 		ID: "startup-missing-file", Area: model.StartsWithWindows, Severity: Low,
 		Title: i18n.T("Points at a file that is no longer there"),
-		Why:   "When a program is removed, the entry that started it is sometimes left behind. It does nothing, because there is nothing to start. It is worth tidying, and worth knowing about in case the file comes back.",
+		Why:   i18n.T("When a program is removed, the entry that started it is sometimes left behind. It does nothing, because there is nothing to start. It is worth tidying, and worth knowing about in case the file comes back."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				r.at(StartupRef(i))

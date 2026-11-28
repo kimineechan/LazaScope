@@ -34,7 +34,7 @@ var defenceRules = []Rule{
 	{
 		ID: "defences-off", Area: model.Protection, Severity: Low, Topic: "defences",
 		Title: i18n.T("Protections this PC already has are switched off"),
-		Why:   "Windows and Microsoft Defender come with protections that stay off until someone switches them on, or that someone switched off. Each costs nothing and is already on the PC.",
+		Why:   i18n.T("Windows and Microsoft Defender come with protections that stay off until someone switches them on, or that someone switched off. Each costs nothing and is already on the PC."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			var off []string
 			var facts []Fact
@@ -56,7 +56,7 @@ var defenceRules = []Rule{
 	{
 		ID: "ransomware-not-ready", Area: model.Protection, Severity: Medium, Topic: "ransomware",
 		Title: i18n.T("Nothing would stop ransomware, or give the files back"),
-		Why:   "Ransomware locks every file it can reach and asks for money to unlock them. Two things limit the harm: Controlled folder access, which stops unknown programs from changing the folders that matter, and a copy of the files kept somewhere else. This PC shows neither.",
+		Why:   i18n.T("Ransomware locks every file it can reach and asks for money to unlock them. Two things limit the harm: Controlled folder access, which stops unknown programs from changing the folders that matter, and a copy of the files kept somewhere else. This PC shows neither."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			guarded := false
 			for _, d := range s.Defences {
@@ -77,7 +77,7 @@ var defenceRules = []Rule{
 	{
 		ID: "device-in-use", Area: model.Accounts, Severity: Low, Topic: "devices",
 		Title: i18n.T("A program is using the camera or the microphone now"),
-		Why:   "Windows notes when each program starts and stops using the camera or the microphone. One that has started and not stopped is using it now: a video call, or something else.",
+		Why:   i18n.T("Windows notes when each program starts and stops using the camera or the microphone. One that has started and not stopped is using it now: a video call, or something else."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, d := range s.DeviceUses {
 				if !d.InUse() {
@@ -96,7 +96,7 @@ var defenceRules = []Rule{
 	{
 		ID: "device-used-unsigned", Area: model.Accounts, Severity: Medium,
 		Title: i18n.T("A program with no maker's signature used the camera or the microphone"),
-		Why:   "Spying tools watch and listen through the camera and the microphone. The video-call and recording programs people use are signed by their makers; a program without a signature that used either is worth a look.",
+		Why:   i18n.T("Spying tools watch and listen through the camera and the microphone. The video-call and recording programs people use are signed by their makers; a program without a signature that used either is worth a look."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, d := range s.DeviceUses {
 				f := d.File

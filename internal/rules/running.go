@@ -44,7 +44,7 @@ var runningRules = []Rule{
 	{
 		ID: "running-altered", Area: model.RunningNow, Severity: High,
 		Title: i18n.T("A running program was changed after its maker signed it"),
-		Why:   "A digital signature breaks if a single byte of the file changes. A running program that no longer matches its signature has been altered since it left its maker.",
+		Why:   i18n.T("A digital signature breaks if a single byte of the file changes. A running program that no longer matches its signature has been altered since it left its maker."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
 				r.at(FileRef(p.File.Path))
@@ -60,7 +60,7 @@ var runningRules = []Rule{
 	{
 		ID: "running-system-name", Area: model.RunningNow, Severity: High,
 		Title: i18n.T("A running program is named like a part of Windows, but is not where Windows keeps it"),
-		Why:   "Windows' own programs, such as svchost.exe, run from the Windows folder. A running program with one of those names from anywhere else is a classic disguise: in Task Manager it looks like one more piece of Windows.",
+		Why:   i18n.T("Windows' own programs, such as svchost.exe, run from the Windows folder. A running program with one of those names from anywhere else is a classic disguise: in Task Manager it looks like one more piece of Windows."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
 				r.at(FileRef(p.File.Path))
@@ -80,7 +80,7 @@ var runningRules = []Rule{
 	{
 		ID: "running-temp-folder", Area: model.RunningNow, Severity: Medium,
 		Title: i18n.T("A program is running from a temporary or download folder"),
-		Why:   "Installed software runs from Program Files. Temporary and download folders are where files land from the internet and where installers unpack. An installer or a portable tool you just opened runs from there for a while. Malware runs from there because any program may write to those folders.",
+		Why:   i18n.T("Installed software runs from Program Files. Temporary and download folders are where files land from the internet and where installers unpack. An installer or a portable tool you just opened runs from there for a while. Malware runs from there because any program may write to those folders."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range once(s.Processes) {
 				r.at(FileRef(p.File.Path))
@@ -103,7 +103,7 @@ var runningRules = []Rule{
 	{
 		ID: "running-antivirus-objects", Area: model.RunningNow, Severity: High,
 		Title: i18n.T("The antivirus objects to a command that is running"),
-		Why:   "LazaScope hands the commands that scripting tools were started with to the antivirus installed on this PC and asks what it makes of them. When the antivirus calls them harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves.",
+		Why:   i18n.T("LazaScope hands the commands that scripting tools were started with to the antivirus installed on this PC and asks what it makes of them. When the antivirus calls them harmful, that is the judgement of a product made for exactly this. An antivirus can still be wrong, most often about tools people write themselves."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, p := range s.Processes {
 				if !p.Said.Harmful || p.Self {
@@ -123,7 +123,7 @@ var runningRules = []Rule{
 	{
 		ID: "running-scrambled-command", Area: model.RunningNow, Severity: Medium,
 		Title: i18n.T("A scripting tool is running a scrambled command"),
-		Why:   "PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything.",
+		Why:   i18n.T("PowerShell, cmd and their relatives run whatever they are handed. Attackers hide their instructions by encoding them, breaking the words up, or fetching the real commands from the internet. Some developer and management tools pass encoded commands too, so this is worth a look rather than proof of anything."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			// A shell that only passes a scrambled command on to the tool it
 			// starts shows the same text twice. The tool that carries it out
@@ -210,7 +210,7 @@ var connectionRules = []Rule{
 	{
 		ID: "listener-unsigned", Area: model.Connections, Severity: Medium,
 		Title: i18n.T("An unsigned program is waiting for incoming connections"),
-		Why:   "A program that waits for connections lets other devices start a conversation with this PC. That is how file sharing and games work, and it is also how a back door works. When the program has no valid signature, nobody can say who made it.",
+		Why:   i18n.T("A program that waits for connections lets other devices start a conversation with this PC. That is how file sharing and games work, and it is also how a back door works. When the program has no valid signature, nobody can say who made it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			// One finding for each program, with all the ports it waits on.
 			ports := map[string][]string{}

@@ -19,7 +19,7 @@ var virusTotalRules = []Rule{
 	{
 		ID: "startup-virustotal-flags", Area: model.StartsWithWindows, Severity: Medium,
 		Title: i18n.T("Antivirus engines on VirusTotal flag something that starts by itself"),
-		Why:   "VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that starts with Windows, that is worth a look. One or two flags on a little-known or home-made program are often false alarms; many flags are a strong sign.",
+		Why:   i18n.T("VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that starts with Windows, that is worth a look. One or two flags on a little-known or home-made program are often false alarms; many flags are a strong sign."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for i, e := range s.Startup {
 				works := e.Works()
@@ -38,7 +38,7 @@ var virusTotalRules = []Rule{
 	{
 		ID: "running-virustotal-flags", Area: model.RunningNow, Severity: Medium,
 		Title: i18n.T("Antivirus engines on VirusTotal flag a running program"),
-		Why:   "VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that is running now, that is worth a look. A program that also starts by itself is flagged once, under what starts by itself.",
+		Why:   i18n.T("VirusTotal runs each file it is shown through about 70 antivirus engines. When some of them flag a program that is running now, that is worth a look. A program that also starts by itself is flagged once, under what starts by itself."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			starts := map[string]bool{}
 			for _, e := range s.Startup {

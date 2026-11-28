@@ -149,7 +149,7 @@ var accountRules = []Rule{
 	{
 		ID: "remote-desktop-on", Area: model.Accounts, Severity: Medium, Topic: "rdp",
 		Title: i18n.T("Remote Desktop is switched on"),
-		Why:   "Remote Desktop lets someone sign in to this PC from another device and use it as if they sat in front of it. It is off by default. When it is on, anyone who can reach the PC and guess or steal a password gets the whole desktop, and it is one of the most attacked doors on the internet.",
+		Why:   i18n.T("Remote Desktop lets someone sign in to this PC from another device and use it as if they sat in front of it. It is off by default. When it is on, anyone who can reach the PC and guess or steal a password gets the whole desktop, and it is one of the most attacked doors on the internet."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.RemoteDesktop != model.Yes {
 				return
@@ -168,7 +168,7 @@ var accountRules = []Rule{
 	{
 		ID: "remote-tool", Area: model.Accounts, Severity: Medium,
 		Title: i18n.T("Remote-control software is on this PC"),
-		Why:   "Programs such as AnyDesk and TeamViewer let someone else see the screen and use the mouse and keyboard from anywhere. That is exactly what they are for, and it is fine if you installed one. They are also the first thing a fake support caller asks a victim to install, and intruders leave them behind as a way back in.",
+		Why:   i18n.T("Programs such as AnyDesk and TeamViewer let someone else see the screen and use the mouse and keyboard from anywhere. That is exactly what they are for, and it is fine if you installed one. They are also the first thing a fake support caller asks a victim to install, and intruders leave them behind as a way back in."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, tool := range RemoteTools(s) {
 				state := "is installed"
@@ -203,7 +203,7 @@ var accountRules = []Rule{
 	{
 		ID: "guest-on", Area: model.Accounts, Severity: Medium, Topic: "guest",
 		Title: i18n.T("The Guest account is switched on"),
-		Why:   "Guest is a built-in account with no password. Windows keeps it switched off. Switched on, it lets anyone at the keyboard, and in some set-ups anyone on the network, use the PC without proving who they are.",
+		Why:   i18n.T("Guest is a built-in account with no password. Windows keeps it switched off. Switched on, it lets anyone at the keyboard, and in some set-ups anyone on the network, use the PC without proving who they are."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.Guest == model.Yes {
 				found = append(found, r.find("Guest account",
@@ -216,7 +216,7 @@ var accountRules = []Rule{
 	{
 		ID: "auto-sign-in", Area: model.Accounts, Severity: Medium, Topic: "autosignin",
 		Title: i18n.T("Windows signs in by itself"),
-		Why:   "Automatic sign-in skips the password when the PC starts. Anyone who switches the PC on gets the account and everything in it. The password is also kept on the PC where programs can read it.",
+		Why:   i18n.T("Automatic sign-in skips the password when the PC starts. Anyone who switches the PC on gets the account and everything in it. The password is also kept on the PC where programs can read it."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			if s.Guard.AutoSignIn == model.Yes {
 				who := "an account"
@@ -233,7 +233,7 @@ var accountRules = []Rule{
 	{
 		ID: "builtin-administrator-on", Area: model.Accounts, Severity: Low,
 		Title: i18n.T("The built-in Administrator account is switched on"),
-		Why:   "Every PC has a hidden account called Administrator that Windows keeps switched off. It has full rights, its name is known to every attacker, and by default Windows does not ask it to confirm anything.",
+		Why:   i18n.T("Every PC has a hidden account called Administrator that Windows keeps switched off. It has full rights, its name is known to every attacker, and by default Windows does not ask it to confirm anything."),
 		check: func(s *model.Snapshot, r *Rule) (found []Finding) {
 			for _, account := range s.Guard.Admins {
 				r.at(AdminRef(account.Name))
