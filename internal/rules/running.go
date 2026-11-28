@@ -33,7 +33,7 @@ func aboutProcess(s *model.Snapshot, p model.Process) []Fact {
 		add("Running since", p.Started.Format("2 January 2006 at 15:04"))
 	}
 	if len(p.Services) > 0 {
-		add("Services inside it", strings.Join(p.Services, ", "))
+		add(i18n.T("Services inside it"), strings.Join(p.Services, ", "))
 	}
 	return facts
 }
@@ -51,7 +51,7 @@ var runningRules = []Rule{
 				if p.File.Exists && p.File.Signature.Changed() {
 					found = append(found, r.find(p.Name,
 						"This running program carries a maker's signature, but the file no longer matches it. Something changed the file after it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
-						"Reinstall the program from its maker's website and scan the PC with your antivirus.", aboutProcess(s, p)...))
+						i18n.T("Reinstall the program from its maker's website and scan the PC with your antivirus."), aboutProcess(s, p)...))
 				}
 			}
 			return
@@ -115,7 +115,7 @@ var runningRules = []Rule{
 					reason += " and names them " + p.Said.Name
 				}
 				found = append(found, r.find(p.Name, reason+". That is the antivirus's judgement and not LazaScope's. The antivirus watches scripting tools as they work, so it has most likely stopped these commands already. That they are still on a running program's line is what makes this worth looking at first.",
-					"Look at what started it: the Running now page shows each program under the one that launched it. Open Windows Security from the Start menu, look at Protection history and run a full scan.", aboutProcess(s, p)...))
+					i18n.T("Look at what started it: the Running now page shows each program under the one that launched it. Open Windows Security from the Start menu, look at Protection history and run a full scan."), aboutProcess(s, p)...))
 			}
 			return
 		},
@@ -148,7 +148,7 @@ var runningRules = []Rule{
 				}
 				f := r.find(p.Name,
 					p.Name+" carries out whatever commands it is given, and the commands it is running now are hidden. "+strings.Join(signs, " ")+" Some developer tools and management software do this for ordinary reasons.",
-					"Look at what started it: the Running now page shows each program under the one that launched it. If it belongs to a tool you use, nothing needs doing. If nothing explains it, show it to someone who knows Windows well.", aboutProcess(s, p)...)
+					i18n.T("Look at what started it: the Running now page shows each program under the one that launched it. If it belongs to a tool you use, nothing needs doing. If nothing explains it, show it to someone who knows Windows well."), aboutProcess(s, p)...)
 				if Hidden(p.File.Path, p.Command) {
 					f.Reason += " It was also told to work without showing a window."
 				}

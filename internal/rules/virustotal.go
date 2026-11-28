@@ -83,7 +83,7 @@ func VirusTotalSays(r model.Reputation) string {
 	case r.Engines() == 0:
 		return "VirusTotal knows this file, but has no engines' verdicts on it yet"
 	case r.Flags() == 0:
-		return fmt.Sprintf("none of the %d antivirus engines flags it", r.Engines())
+		return fmt.Sprintf(i18n.T("none of the %d antivirus engines flags it"), r.Engines())
 	}
 	text := fmt.Sprintf("%d of %d antivirus engines flag it", r.Flags(), r.Engines())
 	switch {
@@ -110,7 +110,7 @@ func flagAdvice(r model.Reputation, page string) string {
 	if FlagSeverity(r) == High {
 		return i18n.T("Do not open it. Select it under ") + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it, then run a full scan with your antivirus. Unless you installed it yourself and know why it is flagged, ask someone who knows Windows well to remove it."
 	}
-	return "One or two flags on a little-known or home-made program are often false alarms, and some engines flag remote-control and system tools as unwanted rather than harmful. Select it under " + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it. If you know the program and installed it yourself, nothing needs doing."
+	return i18n.T("One or two flags on a little-known or home-made program are often false alarms, and some engines flag remote-control and system tools as unwanted rather than harmful. Select it under ") + page + " and choose Look up file... to read on VirusTotal's page what each engine calls it. If you know the program and installed it yourself, nothing needs doing."
 }
 
 // flagFacts is the evidence: the count, the label and the engines' names.

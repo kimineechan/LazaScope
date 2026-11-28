@@ -94,7 +94,7 @@ var cryptoRules = []Rule{
 				}
 				found = append(found, r.find(w.Name,
 					w.Name+"'s files, which can hold the keys to coins, are in "+w.Where+", a folder that "+w.Synced+" copies to the internet. Most wallets lock their files with a password, which is then all that stands between whoever gets into the "+w.Synced+" account and the coins.",
-					"Move the wallet's files out of the synced folder, or at least make sure the wallet has a long password of its own and the "+w.Synced+" account has two-step sign-in.",
+					i18n.T("Move the wallet's files out of the synced folder, or at least make sure the wallet has a long password of its own and the ")+w.Synced+" account has two-step sign-in.",
 					Fact{"Wallet", w.Name}, Fact{"Folder", w.Where}, Fact{"Copied by", w.Synced}))
 			}
 			return
@@ -124,7 +124,7 @@ var cryptoRules = []Rule{
 			}
 			found = append(found, r.find(strings.Join(names, ", "),
 				"The files of "+listed(names)+" are on drive "+listed(each(drives))+", which is not encrypted. Anyone who takes the PC or its disk can copy them. Most wallets lock their files with a password too.",
-				"Switch on BitLocker, or Device encryption where Windows offers it (in Settings, under Privacy and security on Windows 11, or Update and Security on Windows 10), and give each wallet a long password of its own.",
+				i18n.T("Switch on BitLocker, or Device encryption where Windows offers it (in Settings, under Privacy and security on Windows 11, or Update and Security on Windows 10), and give each wallet a long password of its own."),
 				Fact{"Wallets", strings.Join(names, ", ")}))
 			return
 		},
@@ -148,12 +148,12 @@ var cryptoRules = []Rule{
 			}
 			names = each(names)
 			reason := i18n.T("Clipboard history is on, and this PC has a wallet (") + listed(names) + "). Whatever is copied, a recovery phrase or a private key included, stays in the list that Windows key + V shows until the PC restarts or the list is cleared."
-			f := r.find("Clipboard history", reason, "Never copy a recovery phrase. To switch the history off, open Settings, then System, then Clipboard, and turn Clipboard history off. Clear clipboard data on the same page empties it now.",
+			f := r.find("Clipboard history", reason, i18n.T("Never copy a recovery phrase. To switch the history off, open Settings, then System, then Clipboard, and turn Clipboard history off. Clear clipboard data on the same page empties it now."),
 				Fact{"Clipboard history", "On"}, Fact{"Wallets", strings.Join(names, ", ")})
 			if s.Clipboard.Cloud == model.Yes {
 				f.Severity = Medium
 				f.Reason += " It is also sent to the other devices signed in to the same Microsoft account."
-				f.Facts = append(f.Facts, Fact{"Sent to other devices", "Yes"})
+				f.Facts = append(f.Facts, Fact{i18n.T("Sent to other devices"), "Yes"})
 			}
 			found = append(found, f)
 			return

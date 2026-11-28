@@ -216,7 +216,7 @@ var healthRules = []Rule{
 			var facts []Fact
 			for i, when := range stops {
 				if i < 6 {
-					facts = append(facts, Fact{"Noticed when Windows started", Moment(s, when)})
+					facts = append(facts, Fact{i18n.T("Noticed when Windows started"), Moment(s, when)})
 				}
 			}
 			return []Finding{r.find(plural(len(stops), "sudden stop", "sudden stops"),
@@ -240,7 +240,7 @@ var healthRules = []Rule{
 				r.at(SpaceRef(drive.Letter))
 				found = append(found, r.find("Drive "+drive.Letter,
 					"Drive "+drive.Letter+", which holds Windows, has "+Size(drive.Free)+" free of "+Size(drive.Size)+". Windows updates need several gigabytes of free room to install.",
-					"Open Settings > System > Storage to see what takes the room, and let Windows clean up what is not needed. Empty the Recycle Bin and the Downloads folder first.",
+					i18n.T("Open Settings > System > Storage to see what takes the room, and let Windows clean up what is not needed. Empty the Recycle Bin and the Downloads folder first."),
 					Fact{"Free", Size(drive.Free)}, Fact{"Size", Size(drive.Size)}))
 			}
 			return
@@ -326,7 +326,7 @@ var historyRules = []Rule{
 					}
 				}
 				f := r.find(i18n.T("A test of the antivirus"), "Microsoft Defender's own log shows "+plural(len(g.Detections), "detection", "detections")+" "+period+", and each is the harmless sample that antivirus makers agree on for checking that an antivirus works. Somebody, or some program, tested the antivirus on this PC, and it passed. Nothing harmful was found.",
-					"Nothing needs doing. LazaScope's own tests do this, and so do some security tools.", tests...)
+					i18n.T("Nothing needs doing. LazaScope's own tests do this, and so do some security tools."), tests...)
 				f.Severity = Low
 				return []Finding{f}
 			}
@@ -357,7 +357,7 @@ var historyRules = []Rule{
 			if latest.Path != "" {
 				what += " in " + latest.Path
 			}
-			reason := "Microsoft Defender's own log shows that it found " + what + " on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
+			reason := i18n.T("Microsoft Defender's own log shows that it found ") + what + " on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			if len(g.Detections) > 1 {
 				reason = "Microsoft Defender's own log shows " + strconv.Itoa(len(g.Detections)) + " detections " + i18n.T(period) + ". The latest was " + what + ", on " + Day(s, latest.When) + " (" + Ago(s, latest.When) + ")."
 			}
@@ -423,7 +423,7 @@ var historyRules = []Rule{
 				}
 			}
 			latest := g.SwitchedOff[0]
-			reason := "Microsoft Defender's log shows that its real-time protection was switched off on " + Day(s, latest) + " (" + Ago(s, latest) + ")"
+			reason := i18n.T("Microsoft Defender's log shows that its real-time protection was switched off on ") + Day(s, latest) + " (" + Ago(s, latest) + ")"
 			if len(g.SwitchedOff) > 1 {
 				reason += ", and " + plural(len(g.SwitchedOff)-1, "more time", "more times") + " " + i18n.T(period)
 			}
@@ -431,7 +431,7 @@ var historyRules = []Rule{
 			if g.RealTime == model.Yes {
 				reason += " It is on now."
 			}
-			return []Finding{r.find("Real-time protection", reason+" While it was off, files were not checked as they were opened.",
+			return []Finding{r.find(i18n.T("Real-time protection"), reason+" While it was off, files were not checked as they were opened.",
 				i18n.T("If you switched it off yourself, nothing needs doing. If you did not, look at what was installed or opened on that day, and run a full scan from Windows Security."), facts...)}
 		},
 	},

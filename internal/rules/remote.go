@@ -110,7 +110,7 @@ func RemoteTools(s *model.Snapshot) []RemoteTool {
 					continue
 				}
 				hit.Starts = true
-				note("Starts by itself: " + e.Kind.String() + " " + e.Shown())
+				note(i18n.T("Starts by itself: ") + e.Kind.String() + " " + e.Shown())
 			}
 		}
 		if !tool.builtIn {

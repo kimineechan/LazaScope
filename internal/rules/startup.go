@@ -31,7 +31,7 @@ func aboutExtension(e model.Startup) []Fact {
 func extensionMay(x *model.Extension) string {
 	may := append([]string{}, x.May...)
 	if x.EverySite {
-		may = append([]string{"read and change the pages of every website you visit"}, may...)
+		may = append([]string{i18n.T("read and change the pages of every website you visit")}, may...)
 	}
 	if len(may) == 0 {
 		return ""
@@ -80,7 +80,7 @@ func about(e model.Startup) []Fact {
 	case works.Opinion.Harmful, e.Said.Harmful:
 		add("The antivirus, asked just now", "Calls it harmful")
 	case works.Opinion.Asked, e.Said.Asked:
-		add("The antivirus, asked just now", "Raised no objection")
+		add("The antivirus, asked just now", i18n.T("Raised no objection"))
 	}
 	return facts
 }
@@ -97,7 +97,7 @@ func Signature(f model.File) string {
 	case sigcheck.Unsigned:
 		return "Not signed"
 	case sigcheck.Invalid:
-		text := "Signature not valid"
+		text := i18n.T("Signature not valid")
 		if f.Signature.Signer != "" {
 			text += ", in the name of " + f.Signature.Signer
 		}
@@ -158,7 +158,7 @@ var startupRules = []Rule{
 				if works := e.Works(); e.Enabled && works.Exists && works.Signature.Changed() {
 					found = append(found, r.find(e.Shown(),
 						"This program carries a maker's signature, but the file no longer matches it. Something has changed the file since it was signed. A damaged download or a badly made patch can do that, and so can unwanted code that hides inside another program.",
-						"Reinstall the program from its maker's website and scan the PC with your antivirus. "+stop(e.Kind), about(e)...))
+						i18n.T("Reinstall the program from its maker's website and scan the PC with your antivirus. ")+stop(e.Kind), about(e)...))
 				}
 			}
 			return
